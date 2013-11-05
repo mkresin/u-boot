@@ -385,6 +385,9 @@ $(obj)u-boot.bin:	$(obj)u-boot
 		$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
 		$(BOARD_SIZE_CHECK)
 
+$(obj)u-boot.bin.lzo:	$(obj)u-boot.bin
+		cat $< | lzop -9 -f - > $@
+
 $(obj)u-boot.ldr:	$(obj)u-boot
 		$(CREATE_LDR_ENV)
 		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
@@ -415,6 +418,9 @@ endef
 
 $(obj)u-boot.img:	$(obj)u-boot.bin
 		$(call GEN_UBOOT_IMAGE,none)
+
+$(obj)u-boot.lzo.img:	$(obj)u-boot.bin.lzo
+		$(call GEN_UBOOT_IMAGE,lzo)
 
 $(obj)u-boot.imx: $(obj)u-boot.bin depend
 		$(MAKE) $(build) $(SRCTREE)/arch/arm/imx-common $(OBJTREE)/u-boot.imx
@@ -541,6 +547,13 @@ $(obj)u-boot.ltq.sfspl:	$(obj)u-boot.img $(obj)spl/u-boot-spl.bin
 			-s $(obj)spl/u-boot-spl.bin \
 			-u $< -o $@
 
+$(obj)u-boot.ltq.lzo.sfspl: $(obj)u-boot.lzo.img $(obj)spl/u-boot-spl.bin
+		$(obj)tools/ltq-boot-image -t sfspl \
+			-e $(CONFIG_SPL_TEXT_BASE) \
+			-x $(CONFIG_SPL_U_BOOT_OFFS) \
+			-s $(obj)spl/u-boot-spl.bin \
+			-u $< -o $@
+
 $(obj)u-boot.ltq.nandspl:	$(obj)u-boot.img $(obj)spl/u-boot-spl.bin $(obj)tpl/u-boot-tpl.bin
 		$(obj)tools/ltq-boot-image -t nandspl \
 			-e $(CONFIG_SPL_TEXT_BASE) \
@@ -551,7 +564,25 @@ $(obj)u-boot.ltq.nandspl:	$(obj)u-boot.img $(obj)spl/u-boot-spl.bin $(obj)tpl/u-
 			-T $(obj)tpl/u-boot-tpl.bin \
 			-u $< -o $@
 
+$(obj)u-boot.ltq.lzo.nandspl: $(obj)u-boot.lzo.img $(obj)spl/u-boot-spl.bin $(obj)tpl/u-boot-tpl.bin
+		$(obj)tools/ltq-boot-image -t nandspl \
+			-e $(CONFIG_SPL_TEXT_BASE) \
+			-x $(CONFIG_SPL_U_BOOT_OFFS) \
+			-X $(CONFIG_SPL_TPL_OFFS) \
+			-p $(CONFIG_SYS_NAND_PAGE_SIZE) \
+			-s $(obj)spl/u-boot-spl.bin \
+			-T $(obj)tpl/u-boot-tpl.bin \
+			-u $< -o $@
+
 $(obj)u-boot.ltq.norspl: $(obj)u-boot.img $(obj)spl/u-boot-spl.bin $(obj)tpl/u-boot-tpl.bin
+	$(obj)tools/ltq-boot-image -t norspl \
+			-x $(CONFIG_SPL_U_BOOT_OFFS) \
+			-X $(CONFIG_SPL_TPL_OFFS) \
+			-s $(obj)spl/u-boot-spl.bin \
+			-T $(obj)tpl/u-boot-tpl.bin \
+			-u $< -o $@
+
+$(obj)u-boot.ltq.lzo.norspl: $(obj)u-boot.lzo.img $(obj)spl/u-boot-spl.bin $(obj)tpl/u-boot-tpl.bin
 	$(obj)tools/ltq-boot-image -t norspl \
 			-x $(CONFIG_SPL_U_BOOT_OFFS) \
 			-X $(CONFIG_SPL_TPL_OFFS) \
@@ -872,6 +903,9 @@ clobber:	tidy
 	@rm -f $(obj)u-boot.dtb
 	@rm -f $(obj)u-boot.sb
 	@rm -f $(obj)u-boot.spr
+	@rm -f $(obj)u-boot.bin.lzo
+	@rm -f $(obj)u-boot.ltq.lzo.nandspl
+	@rm -f $(obj)u-boot.lzo.img
 	@rm -f $(obj)nand_spl/{u-boot.{lds,lst},System.map}
 	@rm -f $(obj)nand_spl/{u-boot-nand_spl.lds,u-boot-spl,u-boot-spl.map}
 	@rm -f $(obj)spl/{u-boot-spl,u-boot-spl.bin,u-boot-spl.map}

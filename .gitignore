@@ -48,8 +48,12 @@
 /u-boot.ais
 /u-boot.dtb
 /u-boot.sb
+/u-boot.bin.lzo
+/u-boot.ltq.lzo.norspl
 /u-boot.ltq.norspl
+/u-boot.ltq.lzo.nandspl
 /u-boot.ltq.nandspl
+/u-boot.lzo.img
 
 #
 # Generated files

@@ -16,11 +16,14 @@ LIBS-y += $(CPUDIR)/lantiq-common/
 ifndef CONFIG_SPL_BUILD
 ifdef CONFIG_SYS_BOOT_SFSPL
 ALL-y += $(obj)u-boot.ltq.sfspl
+ALL-$(CONFIG_SPL_LZO_SUPPORT) += $(obj)u-boot.ltq.lzo.sfspl
 endif
 ifdef CONFIG_SYS_BOOT_NORSPL
 ALL-y += $(obj)u-boot.ltq.norspl
+ALL-$(CONFIG_SPL_LZO_SUPPORT) += $(obj)u-boot.ltq.lzo.norspl
 endif
 ifdef CONFIG_SYS_BOOT_NANDSPL
 ALL-y += $(obj)u-boot.ltq.nandspl
+ALL-$(CONFIG_SPL_LZO_SUPPORT) += $(obj)u-boot.ltq.lzo.nandspl
 endif
 endif

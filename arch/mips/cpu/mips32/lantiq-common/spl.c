@@ -10,6 +10,7 @@
 #include <spi_flash.h>
 #include <nand.h>
 #include <linux/compiler.h>
+#include <linux/lzo.h>
 #include <asm/mipsregs.h>
 #include <asm/arch/nand.h>
 #include <asm/lantiq/spl.h>
@@ -33,10 +34,22 @@ static u8 spl_mc_tune_buf[CONFIG_SYS_NAND_PAGE_SIZE];
 static u8 spl_mc_tune_buf[sizeof(struct mc_tune_cfg)];
 #endif
 
+static int spl_is_comp_lzo(const struct spl_image *spl)
+{
+#if defined(CONFIG_LTQ_SPL_COMP_LZO)
+		return spl->comp == IH_COMP_LZO;
+#else
+		return 0;
+#endif
+}
+
 static int spl_is_compressed(const struct spl_image *spl)
 {
 	if (spl->comp == IH_COMP_NONE)
 		return 0;
+
+	if (spl_is_comp_lzo(spl))
+		return 1;
 
 	spl_puts("SPL: unsupported compression type\n");
 
@@ -106,9 +119,32 @@ static int spl_copy_image(struct spl_image *spl, unsigned long addr)
 	return 0;
 }
 
+static int spl_uncompress_lzo(struct spl_image *spl, unsigned long addr)
+{
+	size_t len = CONFIG_SYS_LOAD_SIZE;
+	int ret;
+
+	spl_puts("SPL: decompressing U-Boot with LZO\n");
+
+	ret = lzop_decompress(
+		(const unsigned char*)addr, spl->data_size,
+		(unsigned char *) spl->entry_addr, &len);
+
+	spl->entry_size = len;
+
+	return ret;
+}
+
 static int spl_uncompress(struct spl_image *spl, unsigned long addr)
 {
-	return -1;
+	int ret;
+
+	if (spl_is_comp_lzo(spl))
+		ret = spl_uncompress_lzo(spl, addr);
+	else
+		ret = 1;
+
+	return ret;
 }
 
 static int spl_flash_init(void)
