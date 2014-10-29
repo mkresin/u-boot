@@ -50,4 +50,4 @@ PLATFORM_CPPFLAGS		+= -msoft-float
 PLATFORM_LDFLAGS		+= -G 0 -static -n -nostdlib $(ENDIANNESS)
 PLATFORM_RELFLAGS		+= -ffunction-sections -fdata-sections
 LDFLAGS_FINAL			+= --gc-sections -pie
-OBJCFLAGS			+= -j .u_boot_list -j .rel.dyn
+OBJCFLAGS			+= -j .u_boot_list -j .rel.dyn -j .padding
