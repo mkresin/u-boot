@@ -10,12 +10,17 @@
 #include <asm/lantiq/clk.h>
 #include <asm/lantiq/io.h>
 
-#define CGU_SYS_DDR_SEL		(1 << 0)
-#define CGU_SYS_CPU_SEL		(1 << 2)
+#define CGU_SYS_DDR_SHIFT	0
+#define CGU_SYS_CPU_SHIFT	2
 #define CGU_SYS_SYS_SHIFT	3
+#define CGU_SYS_FPI_SHIFT	6
+#define CGU_SYS_PPE_SHIFT	7
+
+#define CGU_SYS_DDR_MASK	(1 << CGU_SYS_DDR_SHIFT)
+#define CGU_SYS_CPU_MASK	(1 << CGU_SYS_CPU_SHIFT)
 #define CGU_SYS_SYS_MASK	(0x3 << CGU_SYS_SYS_SHIFT)
-#define CGU_SYS_FPI_SEL		(1 << 6)
-#define CGU_SYS_PPE_SEL		(1 << 7)
+#define CGU_SYS_FPI_MASK	(1 << CGU_SYS_FPI_SHIFT)
+#define CGU_SYS_PPE_MASK	(1 << CGU_SYS_PPE_SHIFT)
 
 struct ltq_cgu_regs {
 	u32	rsvd0;
@@ -68,7 +73,7 @@ unsigned long ltq_get_io_region_clock(void)
 	u32 ddr_sel;
 	unsigned long clk;
 
-	ddr_sel = ltq_cgu_sys_readl(1, CGU_SYS_DDR_SEL);
+	ddr_sel = ltq_cgu_sys_readl(CGU_SYS_DDR_MASK, CGU_SYS_DDR_SHIFT);
 
 	if (ddr_sel)
 		clk = ltq_get_system_clock() / 3;
@@ -83,7 +88,7 @@ unsigned long ltq_get_cpu_clock(void)
 	u32 cpu_sel;
 	unsigned long clk;
 
-	cpu_sel = ltq_cgu_sys_readl(1, CGU_SYS_CPU_SEL);
+	cpu_sel = ltq_cgu_sys_readl(CGU_SYS_CPU_MASK, CGU_SYS_CPU_SHIFT);
 
 	if (cpu_sel)
 		clk = ltq_get_io_region_clock();
@@ -98,7 +103,7 @@ unsigned long ltq_get_bus_clock(void)
 	u32 fpi_sel;
 	unsigned long clk;
 
-	fpi_sel = ltq_cgu_sys_readl(1, CGU_SYS_FPI_SEL);
+	fpi_sel = ltq_cgu_sys_readl(CGU_SYS_FPI_MASK, CGU_SYS_FPI_SHIFT);
 
 	if (fpi_sel)
 		clk = ltq_get_io_region_clock() / 2;
