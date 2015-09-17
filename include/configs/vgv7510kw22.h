@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+ * Copyright (C) 2016 Mathias Kresin <dev@kresin.me>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -18,28 +19,16 @@
 
 #define CONFIG_LTQ_SUPPORT_NOR_FLASH		/* Have a parallel NOR flash */
 
-#define CONFIG_LTQ_SUPPORT_SPI_FLASH
-#define CONFIG_SPI_FLASH_MACRONIX		/* Have a MX29GL128EL parallel flash */
+#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
 
-#define CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH	/* Build SPI flash SPL */
-#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
-#define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
+#define CONFIG_LTQ_SPL_CONSOLE
+#define CONFIG_LTQ_SPL_COMP_LZO
 
-#define CONFIG_SPL_SPI_BUS		0
-#define CONFIG_SPL_SPI_CS		4
-#define CONFIG_SPL_SPI_MAX_HZ		25000000
-#define CONFIG_SPL_SPI_MODE		0
-
-#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH		/* Build NOR flash SPL */
+#define CONFIG_LTQ_SPL_MC_TUNE
 
 #define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
 
 /* Environment */
-#define CONFIG_ENV_SPI_BUS		CONFIG_SPL_SPI_BUS
-#define CONFIG_ENV_SPI_CS		CONFIG_SPL_SPI_CS
-#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SPL_SPI_MAX_HZ
-#define CONFIG_ENV_SPI_MODE		CONFIG_SPL_SPI_MODE
-
 #if defined(CONFIG_SYS_BOOT_BRN)
 #define CONFIG_SYS_TEXT_BASE		0x80002000
 #define CONFIG_SKIP_LOWLEVEL_INIT
@@ -49,6 +38,17 @@
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_ENV_OFFSET		(384 * 1024)
+#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
+#elif defined(CONFIG_SYS_BOOT_NORSPL)
+#define CONFIG_SPL_TPL_OFFS		0x800
+#define CONFIG_SPL_TPL_SIZE		0x5000
+#define CONFIG_SPL_MC_TUNE_OFFS		0x5800
+#define CONFIG_SPL_U_BOOT_OFFS		0x6000
+#define CONFIG_SPL_U_BOOT_SIZE		0x32000
+
+#define CONFIG_ENV_IS_IN_FLASH
+#define CONFIG_ENV_OVERWRITE
+#define CONFIG_ENV_OFFSET		(256 * 1024)
 #define CONFIG_ENV_SECT_SIZE		(128 * 1024)
 #else
 #define CONFIG_ENV_IS_NOWHERE

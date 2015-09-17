@@ -5,7 +5,6 @@
  */
 
 #include <common.h>
-#include <spi.h>
 #include <asm/gpio.h>
 #include <asm/lantiq/eth.h>
 #include <asm/lantiq/chipid.h>
@@ -34,12 +33,9 @@
 
 static void gpio_init(void)
 {
-	/* SPI CS 0.4 to serial flash */
-	gpio_direction_output(10, 1);
-
 	/* Turn on the green power LED */
 	gpio_direction_output(GPIO_POWER_GREEN, 0);
-	gpio_set_value(GPIO_POWER_GREEN, 0);
+
 }
 
 int board_early_init_f(void)
@@ -89,7 +85,10 @@ int board_eth_init(bd_t * bis)
 	const enum ltq_gphy_clk clk = LTQ_GPHY_CLK_25MHZ_PLL0;
 	const ulong fw_addr = 0x80FF0000;
 
-	ltq_gphy_phy22f_a1x_load(fw_addr);
+	if (ltq_chip_version_get() == 1)
+		ltq_gphy_phy22f_a1x_load(fw_addr);
+	else
+		ltq_gphy_phy22f_a2x_load(fw_addr);
 
 	ltq_cgu_gphy_clk_src(clk);
 
@@ -97,37 +96,4 @@ int board_eth_init(bd_t * bis)
 	ltq_rcu_gphy_boot(1, fw_addr);
 
 	return ltq_eth_initialize(&eth_board_config);
-}
-
-int spi_cs_is_valid(unsigned int bus, unsigned int cs)
-{
-	if (bus)
-		return 0;
-
-	if (cs == 4)
-		return 1;
-
-	return 0;
-}
-
-void spi_cs_activate(struct spi_slave *slave)
-{
-	switch (slave->cs) {
-	case 4:
-		gpio_set_value(10, 0);
-		break;
-	default:
-		break;
-	}
-}
-
-void spi_cs_deactivate(struct spi_slave *slave)
-{
-	switch (slave->cs) {
-	case 4:
-		gpio_set_value(10, 1);
-		break;
-	default:
-		break;
-	}
 }
