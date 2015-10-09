@@ -234,6 +234,8 @@ int saveenv(void)
 int saveenv(void)
 {
 	int ret = 0;
+	u64 total;
+	/*
 	nand_erase_options_t nand_erase_options;
 
 	nand_erase_options.length = CONFIG_ENV_RANGE;
@@ -253,6 +255,13 @@ int saveenv(void)
 		puts("FAILED!\n");
 		return 1;
 	}
+*/
+    puts ("Writing to Nand... ");
+    total = CONFIG_ENV_RANGE;
+	ret = nand_write_partial(&nand_info[0], CONFIG_ENV_OFFSET, &total, (u_char*)env_ptr);
+    puts ("done\n");
+    return ret;
+
 
 	puts ("done\n");
 	return ret;
@@ -262,20 +271,25 @@ int saveenv(void)
 
 int readenv (size_t offset, u_char * buf)
 {
-	size_t end = offset + CONFIG_ENV_RANGE;
-	size_t amount_loaded = 0;
-	size_t blocksize, len;
+	u64 end = (u64)offset + CONFIG_ENV_RANGE;
+	u64 amount_loaded = 0;
+	u64 blocksize, len;
 
 	u_char *char_ptr;
 
+    struct nand_chip *chip=nand_info[0].priv;
+
+    chip->ops.mode=MTD_OOB_AUTO;
+
 	blocksize = nand_info[0].erasesize;
-	len = min(blocksize, CONFIG_ENV_SIZE);
+	len =(u64)min(blocksize, CONFIG_ENV_SIZE);
 
 	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
 		if (nand_block_isbad(&nand_info[0], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_loaded];
+			asm("sync");
 			if (nand_read(&nand_info[0], offset, &len, char_ptr))
 				return 1;
 			offset += blocksize;
@@ -356,11 +370,10 @@ void env_relocate_spec (void)
 {
 #if !defined(ENV_IS_EMBEDDED)
 	int ret;
-
 	ret = readenv(CONFIG_ENV_OFFSET, (u_char *) env_ptr);
 	if (ret)
 		return use_default();
-
+	
 	if (crc32(0, env_ptr->data, ENV_SIZE) != env_ptr->crc)
 		return use_default();
 #endif /* ! ENV_IS_EMBEDDED */

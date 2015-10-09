@@ -7,7 +7,7 @@
  * Added 16-bit nand support
  * (C) 2004 Texas Instruments
  */
-
+  
 #include <common.h>
 #include <linux/mtd/mtd.h>
 #include <command.h>
@@ -89,8 +89,15 @@ static inline int str2long(char *p, ulong *num)
 	return (*p != '\0' && *endptr == '\0') ? 1 : 0;
 }
 
+static inline int str2longlong(char *p, uint64_t *num)
+{
+   char *endptr;
+   *num = simple_strtoull(p, &endptr, 16);
+   return (*p != '\0' && *endptr == '\0') ? 1 : 0;
+}   
+
 static int
-arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, size_t *size)
+arg_off_size(int argc, char *argv[], nand_info_t *nand, uint64_t *off, uint64_t *size)
 {
 	int idx = nand_curr_device;
 #if defined(CONFIG_CMD_MTDPARTS)
@@ -124,7 +131,7 @@ arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, size_t *size
 #endif
 
 	if (argc >= 1) {
-		if (!(str2long(argv[0], off))) {
+		if (!(str2longlong(argv[0], off))) {
 			printf("'%s' is not a number\n", argv[0]);
 			return -1;
 		}
@@ -133,7 +140,7 @@ arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, size_t *size
 	}
 
 	if (argc >= 2) {
-		if (!(str2long(argv[1], (ulong *)size))) {
+		if (!(str2longlong(argv[1], size))) {
 			printf("'%s' is not a number\n", argv[1]);
 			return -1;
 		}
@@ -148,7 +155,7 @@ out:
 	if (*size == nand->size)
 		puts("whole chip\n");
 	else
-		printf("offset 0x%lx, size 0x%zx\n", *off, *size);
+		printf("offset 0x%llx, size 0x%llx\n", *off, *size);
 	return 0;
 }
 
@@ -207,8 +214,8 @@ static void nand_print_info(int idx)
 int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
 	int i, dev, ret = 0;
-	ulong addr, off;
-	size_t size;
+	uint64_t addr, off;
+	uint64_t size;
 	char *cmd, *s;
 	nand_info_t *nand;
 #ifdef CONFIG_SYS_NAND_QUIET
@@ -287,7 +294,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		printf("\nDevice %d bad blocks:\n", nand_curr_device);
 		for (off = 0; off < nand->size; off += nand->erasesize)
 			if (nand_block_isbad(nand, off))
-				printf("  %08lx\n", off);
+				printf(" 0x%llx\n", off);
 		return 0;
 	}
 
@@ -374,26 +381,28 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		printf("\nNAND %s: ", read ? "read" : "write");
 		if (arg_off_size(argc - 3, argv + 3, nand, &off, &size) != 0)
 			return 1;
-
 		s = strchr(cmd, '.');
 		if (!s || !strcmp(s, ".jffs2") ||
 		    !strcmp(s, ".e") || !strcmp(s, ".i")) {
 			if (read)
-				ret = nand_read_skip_bad(nand, off, &size,
-							 (u_char *)addr);
+				ret = nand_read_skip_bad(nand, off, &size,(u_char *)addr);
 			else
 				ret = nand_write_skip_bad(nand, off, &size,
 							  (u_char *)addr);
-		} else if (!strcmp(s, ".oob")) {
+		}else if(s != NULL && !strcmp(s, ".partial")){
+            ret = nand_write_partial(nand, off, &size, (u_char *)addr);
+            printf(" 0x%llx bytes %s: %s\n", size,
+               read ? "read" : "written", ret ? "ERROR" : "OK");
+          return ret == 0 ? 0 : 1;
+    }else if (!strcmp(s, ".oob")) {
 			/* out-of-band data */
 			mtd_oob_ops_t ops = {
 				.oobbuf = (u8 *)addr,
 				.ooblen = size,
 				.mode = MTD_OOB_RAW
 			};
-
 			if (read)
-				ret = nand->read_oob(nand, off, &ops);
+			    ret = nand->read_oob(nand, off, &ops);
 			else
 				ret = nand->write_oob(nand, off, &ops);
 		} else {
@@ -401,9 +410,10 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 			return 1;
 		}
 
-		printf(" %zu bytes %s: %s\n", size,
+		
+		printf(" 0x%llx bytes %s: %s\n", size,
 		       read ? "read" : "written", ret ? "ERROR" : "OK");
-
+        
 		return ret == 0 ? 0 : 1;
 	}
 
