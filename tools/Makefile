@@ -21,7 +21,7 @@
 # MA 02111-1307 USA
 #
 
-TOOLSUBDIRS =
+TOOLSUBDIRS = "lzma-4.65/LzmaUtil/"
 
 #
 # toolchains targeting win32 generate .exe files
@@ -191,6 +191,7 @@ $(obj)ncb$(SFX):	$(obj)ncb.o
 
 $(obj)ubsha1$(SFX):	$(obj)os_support.o $(obj)sha1.o $(obj)ubsha1.o
 	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+
 
 # Some of the tool objects need to be accessed from outside the tools directory
 $(obj)%.o: $(SRCTREE)/common/%.c
