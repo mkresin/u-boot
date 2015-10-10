@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #pad file to align with specific alignments
 #Revision history
 #30/4/2009 Author: Wu Qi Ming Qi-Ming.Wu@infineon.com
