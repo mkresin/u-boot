@@ -70,7 +70,7 @@ $(OBJS_SFDDR):
 				
 
 u-boot.lzimg: $(obj)u-boot.bin System.map
-		lzma e $(obj)u-boot.bin $(obj)u-boot.lzma
+		./tools/lzma e $(obj)u-boot.bin $(obj)u-boot.lzma
 		scripts_platform/pad2align.sh -n 16 u-boot.lzma
 		$(TOPDIR)/tools/mkimage -A mips -T firmware -C lzma \
 		-a 0x$(shell grep "T _start" $(TOPDIR)/System.map | awk '{ printf "%s", $$1 }') \
