@@ -3734,7 +3734,8 @@ clean:
 	       $(obj)tools/gdb/{astest,gdbcont,gdbsend}			  \
 	       $(obj)tools/gen_eth_addr    $(obj)tools/img2srec		  \
 	       $(obj)tools/mkimage	   $(obj)tools/mpc86x_clk	  \
-	       $(obj)tools/ncb		   $(obj)tools/ubsha1
+	       $(obj)tools/ncb		   $(obj)tools/ubsha1		  \
+	       $(obj)tools/lzma
 	@rm -f $(obj)board/cray/L1/{bootscript.c,bootscript.image}	  \
 	       $(obj)board/netstar/{eeprom,crcek,crcit,*.srec,*.bin}	  \
 	       $(obj)board/trab/trab_fkt   $(obj)board/voiceblue/eeprom   \
