@@ -1,4 +1,9 @@
-#!/usr/bin/perl
+#!/usr/bin/perl 
+
+#use strict;
+#use Cwd;
+#use Env;
+
 my $aline;
 my $lineid;
 my $length;
@@ -15,54 +20,49 @@ my $holder="";
 my $loadaddr;
 
 if(@ARGV < 2){
-	print "\n not enough arguments";
-	print "\n Syntax: ./gct input output\n";
+	die("\n Syntax: ./program_SDRAM input1(memory setup) input2(*\.srec) output\n");
 }
 
-open(INFILE1, "<$ARGV[0]") || die("\ninput open fail\n");
-open(INFILE2, "<$ARGV[1]") || die("\ninput open fail\n");
+open(INFILE1, "<$ARGV[0]") || die("\ninput1 open fail\n");
+open(INFILE2, "<$ARGV[1]") || die("\ninput2 open fail\n");
 open(OUTFILE, ">$ARGV[2]") || die("\nOutput file open fail\n");
 
 $i=0;
 while ($line = <INFILE1>){
-            if($line=~/\w/){
-	     if($line!~/[;#\*]/){
-                  if($i eq 0){
-		  printf OUTFILE ("33333333");
-		  }
-		  chomp($line);
-		  $line=~s/\t//;
-		  @array=split(/ +/,$line);
-                  $j=0;
-		  while(@array[$j]!~/\w/)
-		  {
-                    $j=$j+1;
+	if($line=~/\w/){
+		if($line!~/[;#\*]/){
+			if($i eq 0){
+				printf OUTFILE ("33333333");
+			}
+			chomp($line);
+			$line=~s/\t//;
+			@array=split(/ +/,$line);
+			$j=0;
+			while(@array[$j]!~/\w/){
+				$j=$j+1;
+			}
+			$addr=@array[$j];
+			$regval=@array[$j+1];
+			$addr=~s/0x//;
+			$regval=~s/0x//;
+			printf OUTFILE ("%08x%08x",hex($addr),hex($regval));
+			$i=$i+1;
+			if($i eq 8){
+				$i=0;
+				printf OUTFILE ("\n");
+			}
+		}
+	}
+}
 
-		  }
-		  $addr=@array[$j];
-	          $regval=@array[$j+1];
-                  $addr=~s/0x//;
-                  $regval=~s/0x//;
-		  printf OUTFILE ("%08x%08x",hex($addr),hex($regval));
-                  $i=$i+1;
-		  if($i eq 8)
-		  {
-                      $i=0;
-		      printf OUTFILE ("\n");
-		  }
+while($i lt 8 && $i gt 0){
+	printf OUTFILE "00"x8;
+	$i=$i+1;
+}
 
-               }
-             }
-
-	    }
-
-        while($i lt 8 && $i gt 0){
-                   printf OUTFILE "00"x8;
-		   $i=$i+1;
-		   }
-        if($i eq 8){
+if($i eq 8){
 	printf OUTFILE ("\n");
-        }
+}
 
 while($aline=<INFILE2>){
 	$aline=uc($aline);
@@ -76,13 +76,13 @@ while($aline=<INFILE2>){
 
 	while($length>0){
 		if($firstime==1){
-				$addstr = sprintf("%x", $address);
-				$addstr = "0"x(8-length($addstr)).$addstr;
-				print OUTFILE $addstr;
-				addchsum($addstr);
-				$firstime=0;
-				$currentaddr=$address;
-				$loadaddr = $addstr;
+			$addstr = sprintf("%x", $address);
+			$addstr = "0"x(8-length($addstr)).$addstr;
+			print OUTFILE $addstr;
+			addchsum($addstr);
+			$firstime=0;
+			$currentaddr=$address;
+			$loadaddr = $addstr;
 		}
 		else{
 			if($count==64){
@@ -92,20 +92,29 @@ while($aline=<INFILE2>){
 				addchsum($addstr);
 				$count=0;
 			}
+			#printf("*** %x != %x\n", $address, $currentaddr) if $address != $currentaddr;
 		}
-		while($count<64){
-		        $bytes[$i]=~tr/ABCDEF/abcdef/;
-			print OUTFILE "$bytes[$i]";
-			addchsum($bytes[$i]);
-			$i++;
+		if($currentaddr < $address) {
+			print OUTFILE "00";
+			addchsum("00");
 			$count++;
-			$length--;
-			last if($length==0);
+			$currentaddr++;
+		}
+		else {
+			while($count<64){
+				$bytes[$i]=~tr/ABCDEF/abcdef/;
+				print OUTFILE "$bytes[$i]";
+				addchsum($bytes[$i]);
+				$i++;
+				$count++;
+				$currentaddr++;
+				$length--;
+				last if($length==0);
+			}
 		}
 		if($count==64){
 			print OUTFILE "\n";
 			#print OUTFILE "\r";
-			$currentaddr+=64;
 		}
 	}
 }
@@ -153,5 +162,4 @@ sub addchsum{
 	}
 }
 #END
-
 
