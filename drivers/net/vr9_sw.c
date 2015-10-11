@@ -734,7 +734,8 @@ static void vr9_sw_chip_init()
 	  asm("sync");
 	  fw_addr=0xa0200000;
 #ifdef CONFIG_VR9_GPHY_FW_EMBEDDED	  
-      fw_src_addr = CONFIG_VR9_GPHY_FW_ADDR;
+      #include "../../board/vr9/gphy_firmware.c";
+      fw_src_addr = &__gphy_firmware;
 
 	  //memcpy(fw_addr, CONFIG_VR9_GPHY_FW_ADDR, 65536); 
 #endif	 
