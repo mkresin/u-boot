@@ -473,8 +473,6 @@ static cmd_tbl_t cmd_bootm_sub[] = {
 	U_BOOT_CMD_MKENT(go, 0, 1, (void *)BOOTM_STATE_OS_GO, "", ""),
 };
 
-#if 0
-
 int do_bootm_subcommand (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	int ret = 0;
@@ -574,147 +572,6 @@ int do_bootm_subcommand (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return ret;
 }
 
-/*******************************************************************/
-/* bootm - boot application image from image in memory */
-/*******************************************************************/
-
-int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	ulong		iflag;
-	ulong		load_end = 0;
-	int		ret;
-	boot_os_fn	*boot_fn;
-#ifndef CONFIG_RELOC_FIXUP_WORKS
-	static int relocated = 0;
-
-	/* relocate boot function table */
-	if (!relocated) {
-		int i;
-		for (i = 0; i < ARRAY_SIZE(boot_os); i++)
-			if (boot_os[i] != NULL)
-				boot_os[i] += gd->reloc_off;
-		relocated = 1;
-	}
-#endif
-
-	/* determine if we have a sub command */
-	if (argc > 1) {
-		char *endp;
-
-		simple_strtoul(argv[1], &endp, 16);
-		/* endp pointing to NULL means that argv[1] was just a
-		 * valid number, pass it along to the normal bootm processing
-		 *
-		 * If endp is ':' or '#' assume a FIT identifier so pass
-		 * along for normal processing.
-		 *
-		 * Right now we assume the first arg should never be '-'
-		 */
-		if ((*endp != 0) && (*endp != ':') && (*endp != '#'))
-			return do_bootm_subcommand(cmdtp, flag, argc, argv);
-	}
-
-	if (bootm_start(cmdtp, flag, argc, argv))
-		return 1;
-
-	/*
-	 * We have reached the point of no return: we are going to
-	 * overwrite all exception vector code, so we cannot easily
-	 * recover from any failures any more...
-	 */
-	iflag = disable_interrupts();
-
-#if defined(CONFIG_CMD_USB)
-	/*
-	 * turn off USB to prevent the host controller from writing to the
-	 * SDRAM while Linux is booting. This could happen (at least for OHCI
-	 * controller), because the HCCA (Host Controller Communication Area)
-	 * lies within the SDRAM and the host controller writes continously to
-	 * this area (as busmaster!). The HccaFrameNumber is for example
-	 * updated every 1 ms within the HCCA structure in SDRAM! For more
-	 * details see the OpenHCI specification.
-	 */
-	usb_stop();
-#endif
-
-#ifdef CONFIG_AMIGAONEG3SE
-	/*
-	 * We've possible left the caches enabled during
-	 * bios emulation, so turn them off again
-	 */
-	icache_disable();
-	dcache_disable();
-#endif
-
-	ret = bootm_load_os(images.os, &load_end, 1);
-
-	if (ret < 0) {
-		if (ret == BOOTM_ERR_RESET)
-			do_reset (cmdtp, flag, argc, argv);
-		if (ret == BOOTM_ERR_OVERLAP) {
-			if (images.legacy_hdr_valid) {
-				if (image_get_type (&images.legacy_hdr_os_copy) == IH_TYPE_MULTI)
-					puts ("WARNING: legacy format multi component "
-						"image overwritten\n");
-			} else {
-				puts ("ERROR: new format image overwritten - "
-					"must RESET the board to recover\n");
-				show_boot_progress (-113);
-				do_reset (cmdtp, flag, argc, argv);
-			}
-		}
-		if (ret == BOOTM_ERR_UNIMPLEMENTED) {
-			if (iflag)
-				enable_interrupts();
-			show_boot_progress (-7);
-			return 1;
-		}
-	}
-
-	lmb_reserve(&images.lmb, images.os.load, (load_end - images.os.load));
-
-	if (images.os.type == IH_TYPE_STANDALONE) {
-		if (iflag)
-			enable_interrupts();
-		/* This may return when 'autostart' is 'no' */
-		bootm_start_standalone(iflag, argc, argv);
-		return 0;
-	}
-
-	show_boot_progress (8);
-
-#ifdef CONFIG_SILENT_CONSOLE
-	if (images.os.os == IH_OS_LINUX)
-		fixup_silent_linux();
-#endif
-
-	boot_fn = boot_os[images.os.os];
-	printf("os is %d, fun is %x, %x\n", images.os.os, 
-		(void *)boot_fn, (void *)do_bootm_linux);
-
-	if (boot_fn == NULL) {
-		if (iflag)
-			enable_interrupts();
-		printf ("ERROR: booting os '%s' (%d) is not supported\n",
-			genimg_get_os_name(images.os.os), images.os.os);
-		show_boot_progress (-8);
-		return 1;
-	}
-
-	arch_preboot_os();
-
-	boot_fn(0, argc, argv, &images);
-
-	show_boot_progress (-9);
-#ifdef DEBUG
-	puts ("\n## Control returned to monitor - resetting...\n");
-#endif
-	do_reset (cmdtp, flag, argc, argv);
-
-	return 1;
-}
-#else
-
 /* added by yangxv for kernel tag, 2011.10.10 */
 
 #define TAG_LEN         512
@@ -739,6 +596,9 @@ unsigned int get_kernel_len()
 	return (*pKernelLen + TAG_LEN);
 }
 
+/*******************************************************************/
+/* bootm - boot application image from image in memory */
+/*******************************************************************/
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong		iflag;
@@ -793,8 +653,6 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	icache_disable();
 	dcache_disable();
 #endif
-
-//	ret = bootm_load_os(images.os, &load_end, 1);
 
 	printf ("	Uncompressing ... ");
 
@@ -862,7 +720,6 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (images.os.os == IH_OS_LINUX)
 		fixup_silent_linux();
 #endif
-	//boot_fn = boot_os[images.os.os];
 	boot_fn = do_bootm_linux;
 
 #ifdef DEBUG
@@ -892,8 +749,6 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	return 1;
 }
-
-#endif
 
 /**
  * image_get_kernel - verify legacy format kernel image

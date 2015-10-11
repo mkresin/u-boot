@@ -36,7 +36,6 @@ config BOOT_FROM_NOR
 
 config BOOT_FROM_SPI
     bool "SPI Flash"
-#    select ENV_IS_IN_SPI_FLASH
     select SPI_FLASH
     help
     Boots from SPI flash.
