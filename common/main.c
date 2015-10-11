@@ -242,12 +242,21 @@ static __inline__ int abortboot(int bootdelay)
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
+				/* changed by yangxv, only accept 't', 2012,3 */
+				if (getc() != 0x74)
+				{
+					continue;
+				}
+				/* end added */
+
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				(void) getc();  /* consume input	*/
+				/* deleted by yangxv, consumed already, 2012,3 */
+				//(void) getc();  /* consume input	*/
+				/* end deleted */
 # endif
 				break;
 			}
@@ -403,6 +412,18 @@ void main_loop (void)
 # endif
 
 # ifndef CONFIG_SYS_HUSH_PARSER
+		/* added by yangxv, 2012.3 */
+		{
+			char buf[128] = {0};
+
+			run_command("sf probe 3", 0);
+
+			sprintf(buf, "sf read 0x80800000 0x20000 0x%x", get_kernel_len());
+			//printf("buf is %s\n", buf);
+			run_command(buf, 0);
+		}
+		/* end added */
+
 		run_command (s, 0);
 # else
 		parse_string_outer(s, FLAG_PARSE_SEMICOLON |
@@ -479,7 +500,9 @@ void main_loop (void)
 		else
 			rc = run_command (lastcommand, flag);
 
-		if (rc <= 0) {
+		/* no need remember last command, delete by yangxv, 2012.04 */
+		//if (rc <= 0) 
+		{
 			/* invalid command or not repeatable, forget it */
 			lastcommand[0] = 0;
 		}

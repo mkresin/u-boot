@@ -67,6 +67,13 @@ int saveenv(void)
 		return 1;
 	}
 	
+	/* added by yangxv, 2012.03 */
+	puts("Erase SPI flash...");
+	ret = spi_flash_erase(env_flash, CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE);
+	if (ret)
+		goto done;
+	/* end added */
+	
 	puts("Writing to SPI flash...");
 	ret = spi_flash_write(env_flash, CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE, env_ptr);
 	if (ret)

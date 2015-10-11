@@ -473,6 +473,8 @@ static cmd_tbl_t cmd_bootm_sub[] = {
 	U_BOOT_CMD_MKENT(go, 0, 1, (void *)BOOTM_STATE_OS_GO, "", ""),
 };
 
+#if 0
+
 int do_bootm_subcommand (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	int ret = 0;
@@ -687,6 +689,8 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #endif
 
 	boot_fn = boot_os[images.os.os];
+	printf("os is %d, fun is %x, %x\n", images.os.os, 
+		(void *)boot_fn, (void *)do_bootm_linux);
 
 	if (boot_fn == NULL) {
 		if (iflag)
@@ -709,6 +713,187 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	return 1;
 }
+#else
+
+/* added by yangxv for kernel tag, 2011.10.10 */
+
+#define TAG_LEN         512
+
+unsigned long g_kernel_tag_start;
+
+/* end added */
+
+
+unsigned int get_kernel_len()
+{
+	char buf[128] = {0};
+	unsigned long *pKernelLen = NULL;
+
+	sprintf(buf, "sf read 0x%x 0x20000 0x%x", load_addr, TAG_LEN);
+	//printf("buf is %s\n", buf);
+	run_command(buf, 0);
+
+	g_kernel_tag_start = load_addr;
+	pKernelLen = g_kernel_tag_start + 0x78;
+
+	return (*pKernelLen + TAG_LEN);
+}
+
+int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	ulong		iflag;
+	ulong		load_end = 0;
+	int		ret;
+	boot_os_fn	*boot_fn;
+	uint unc_len = CONFIG_SYS_BOOTM_LEN;
+	unsigned long *pKernelLen = NULL;
+
+	g_kernel_tag_start = load_addr;
+	pKernelLen = g_kernel_tag_start + 0x78;
+
+	images.os.start = load_addr;
+	images.os.end = images.os.start + *pKernelLen + TAG_LEN;
+
+	images.os.image_start = images.os.start + TAG_LEN;
+	images.os.image_len = *pKernelLen;
+
+	images.os.load = 0x80002000;
+
+	images.ep = 0x80002000;
+		
+	images.os.comp = IH_COMP_LZMA;
+	images.os.type = IH_TYPE_KERNEL;
+	images.os.os = IH_OS_LINUX;
+
+	images.rd_start = 0;
+	images.rd_end = 0;
+
+
+	
+#ifdef DEBUG
+	printf("%x, %x, %x, %x\n%x\n %d, %d, %d\n", images.os.start, images.os.end, 
+		images.os.image_start, images.os.image_len, 
+		images.os.load, 
+		images.os.comp, images.os.type, images.os.os);
+#endif
+
+	/*
+	 * We have reached the point of no return: we are going to
+	 * overwrite all exception vector code, so we cannot easily
+	 * recover from any failures any more...
+	 */
+	iflag = disable_interrupts();
+
+
+#ifdef CONFIG_AMIGAONEG3SE
+	/*
+	 * We've possible left the caches enabled during
+	 * bios emulation, so turn them off again
+	 */
+	icache_disable();
+	dcache_disable();
+#endif
+
+//	ret = bootm_load_os(images.os, &load_end, 1);
+
+	printf ("	Uncompressing ... ");
+
+#ifdef DEBUG	
+	printf("start %x, %x, %x, %x\n", images.os.load, unc_len,
+		images.os.image_start, images.os.image_len);
+#endif
+
+	ret = lzmaBuffToBuffDecompress(
+		(unsigned char *)images.os.load, &unc_len,
+		(unsigned char *)images.os.image_start, images.os.image_len);
+	
+	if (ret != SZ_OK) {
+		printf ("LZMA: uncompress or overwrite error %d "
+			"- must RESET board to recover\n", ret);
+		show_boot_progress (-6);
+		return BOOTM_ERR_RESET;
+	}
+	
+	load_end = images.os.load + unc_len;
+
+#ifdef DEBUG	
+	printf("after %x, %x, %x, %x\n", images.os.load, unc_len,
+		images.os.image_start, images.os.image_len);
+
+	printf("   kernel loaded at 0x%08lx, end = 0x%08lx\n", images.os.load, load_end);
+#endif
+
+	if (ret < 0) {
+		if (ret == BOOTM_ERR_RESET)
+			do_reset (cmdtp, flag, argc, argv);
+		if (ret == BOOTM_ERR_OVERLAP) {
+			if (images.legacy_hdr_valid) {
+				if (image_get_type (&images.legacy_hdr_os_copy) == IH_TYPE_MULTI)
+					puts ("WARNING: legacy format multi component "
+						"image overwritten\n");
+			} else {
+				puts ("ERROR: new format image overwritten - "
+					"must RESET the board to recover\n");
+				show_boot_progress (-113);
+				do_reset (cmdtp, flag, argc, argv);
+			}
+		}
+		if (ret == BOOTM_ERR_UNIMPLEMENTED) {
+			if (iflag)
+				enable_interrupts();
+			show_boot_progress (-7);
+			return 1;
+		}
+	}
+
+	lmb_reserve(&images.lmb, images.os.load, (load_end - images.os.load));
+
+	if (images.os.type == IH_TYPE_STANDALONE) {
+		if (iflag)
+			enable_interrupts();
+		/* This may return when 'autostart' is 'no' */
+		bootm_start_standalone(iflag, argc, argv);
+		return 0;
+	}
+
+	show_boot_progress (8);
+
+#ifdef CONFIG_SILENT_CONSOLE
+	if (images.os.os == IH_OS_LINUX)
+		fixup_silent_linux();
+#endif
+	//boot_fn = boot_os[images.os.os];
+	boot_fn = do_bootm_linux;
+
+#ifdef DEBUG
+	printf("os is %d, fun is %x, %x\n", images.os.os, 
+		(void *)boot_fn, (void *)do_bootm_linux);
+#endif
+
+
+	if (boot_fn == NULL) {
+		if (iflag)
+			enable_interrupts();
+		printf ("ERROR: booting os '%s' (%d) is not supported\n",
+			genimg_get_os_name(images.os.os), images.os.os);
+		show_boot_progress (-8);
+		return 1;
+	}
+
+	arch_preboot_os();
+
+	boot_fn(0, argc, argv, &images);
+
+	show_boot_progress (-9);
+#ifdef DEBUG
+	puts ("\n## Control returned to monitor - resetting...\n");
+#endif
+	do_reset (cmdtp, flag, argc, argv);
+
+	return 1;
+}
+
+#endif
 
 /**
  * image_get_kernel - verify legacy format kernel image

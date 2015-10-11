@@ -36,7 +36,7 @@ config BOOT_FROM_NOR
 
 config BOOT_FROM_SPI
     bool "SPI Flash"
-    select ENV_IS_IN_SPI_FLASH
+#    select ENV_IS_IN_SPI_FLASH
     select SPI_FLASH
     help
     Boots from SPI flash.
@@ -67,17 +67,18 @@ config BOOT_WITH_NO_FLASH
 endchoice
 
 config ENV_IS_NOWHERE
-    bool 
+    bool "ENV IS NOWEHERE"
 	default n
 
 config ENV_IS_IN_FLASH
     bool
 
 config ENV_IS_IN_SPI_FLASH
-    bool
+    bool	"ENV IS IN SPI FLASH"
+	default n
 
 config ENV_IS_IN_NAND
-    bool
+    bool "ENV IS IN NAND"
 	default y
 	depends on BOOT_FROM_NAND && !ENV_IS_NOWHERE
 

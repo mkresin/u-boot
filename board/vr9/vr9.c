@@ -430,10 +430,17 @@ void save_ddr_param(void)
 	 memcpy ((u8*)(buffer+4),(u8*)0xBF4012C0,4);
 	 ecc=(*(u32*)0xBF401270)^(*(u32*)0xBF401280)^(*(u32*)0xBF4012B0)^(*(u32*)0xBF4012C0);
 	 memcpy ((u8*)(buffer+5),&ecc,4);
- 
+
+#if 1
+ 	//printf("addr is %x\n", IFX_CFG_FLASH_DDR_CFG_START_ADDR);
+	/* erase flash first, added by yangxv, 2012.4 */
+	{
+		spi_flash_erase(flash_spi, erase_addr1, 0x10000);
+ 	}
+	/* end added */
 	 spi_flash_write(flash_spi, erase_addr1, 24, (char *)buffer);   
 	 printf("saved ddr param in flash!\n");    
-	    
+#endif
    return;
 	 return; 
 }

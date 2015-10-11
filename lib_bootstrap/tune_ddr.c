@@ -1,8 +1,9 @@
 /*****************************************************************************
  * CPE Chip Rev1 DDR TUNING
- * Support : Danube, ARX & VRX Platform
+ * Support : Danube, ARX, VRX & HNX Platform
  *
  * IFAP DC COM SD
+ * 10June2011	Andrei Toma Change rev to 03.d after adding support for HN1
  *****************************************************************************/
 #include <config.h>
 #include <common.h>
@@ -18,6 +19,9 @@
 #define VRX_CHIP
 #elif defined(CONFIG_LANTIQ_UBOOT_ar10)
 #define VRX_CHIP
+#elif defined(CONFIG_LANTIQ_UBOOT_hn1)
+#include <asm/hn1.h>
+#define HNX_CHIP
 #endif
 
 #define asc_puts serial_puts
@@ -27,13 +31,6 @@ u8 mode;
 u8 cur_state=0;
 u32 ddrsize,chipid;
 
-/* Bootstrap modules */
-//#include "ssc.h"
-//#include "sflash.h"
-//#include "nand.h"
-//#include "test.h"
-//#include "eeprom.h"
-//#include "iccp.h"
 
 //;boot_data bootrom;
 #define DEBUGMODE 0         // debug mode will display more info of auto-tuning result
@@ -73,34 +70,71 @@ u32 ddrsize,chipid;
 #endif
 
 
-#ifdef VRX_CHIP // VRX CHIP
-#define READMIN 0
-#define READMAX 0x3f
-#define READMIN_Q 0x15
-#define READMAX_Q 0x2b
-#define WRITEDQS_Q 0x55
-#define WRITEMIN 0x40
-#define WRITEMAX 0x7f
-#define MC_START     0xbf401070
-#define REG01   0xBE22FF10
-#define REG02   0xBE22FF14
-#define REG03   0xBE22FF18
-#define REG04   0xBE22FF1C
-#define STATUS  0xBE22FF20
+#if defined(VRX_CHIP) || defined(HNX_CHIP) // VRX or HNX CHIPs
+  #ifdef CONFIG_LANTIQ_UBOOT_ar10
+    #define READMIN 		0
+    #define READMAX 		0x3f
+    #define READMIN_Q 		0x15
+    #define READMAX_Q 		0x2b
+    #define WRITEDQS_Q 		0x1f
+    #define WRITEMIN 		0x00
+    #define WRITEMAX 		0x3f
+    #define MC_START 		0xbf801000 //DDR_CCR00  start bit address
+    #define REG01   		0xBE1A7F10 //PPE SB buffer address 
+    #define REG02   		0xBE1A7F14 //PPE SB buffer address
+    #define REG03   		0xBE1A7F18 //PPE SB buffer address
+    #define REG04   		0xBE1A7F1C //PPE SB buffer address
+    #define STATUS  		0xBE1A7F20 //PPE SB buffer address
+  #else
+    #define READMIN 0
+    #define READMAX 0x3f
+    #define READMIN_Q 0x15
+    #define READMAX_Q 0x2b
+    #define WRITEDQS_Q 0x55
+    #define WRITEMIN 0x40
+    #define WRITEMAX 0x7f
+    #define MC_START     0xbf401070
+    #if defined(HNX_CHIP)
+      #define REG01   0xBF28FF10
+      #define REG02   0xBF28FF14
+      #define REG03   0xBF28FF18
+      #define REG04   0xBF28FF1C
+      #define STATUS  0xBF28FF20
+    #else
+      #define REG01   0xBE22FF10
+      #define REG02   0xBE22FF14
+      #define REG03   0xBE22FF18
+      #define REG04   0xBE22FF1C
+      #define STATUS  0xBE22FF20
+	#endif
+  #endif
 #endif
 
-//#define REG32(addr) (*(volatile u32*)(addr))
-//#define REG16(addr) (*(volatile u16*)(addr))
-//#define REG8(addr) (*(volatile u8*)(addr))
 
-/* VRX Memory controller register for data-eye tuning */
-#define MC_RD_SLICE0    0xBF401270
-#define MC_RD_SLICE1    0xBF401280
-#define MC_WR_SLICE0    0xBF4012B0
-#define MC_WR_SLICE1    0xBF4012C0
-#define MC_DLL_SLICE0   0xBF4012F0
-#define MC_DLL_SLICE1   0xBF401300
-#define MC_INT_STAT     0xBF401160
+
+
+#ifdef CONFIG_LANTIQ_UBOOT_ar10
+  #define MC_RD_SLICE0  	0xBF801460     // RD DATA SLICE#0
+	#define MC_RD_SLICE1  	0xBF801480     // RD DATA SLICE#1
+	#define MC_WR_SLICE0  	0xBF801470     // WR DATA SLICE#0
+	#define MC_WR_SLICE1  	0xBF801490     // WR DATA SLICE#1
+	#define MC_DLL_SLICE0 	0xBF8014B0     // DLL LOCKED SLICE#0
+	#define MC_DLL_SLICE1 	0xBF8014E0     // DLL LOCKED SLICE#1
+	#define MC_INT_STAT     0xBF801250
+#else
+  /* VRX Memory controller register for data-eye tuning */
+  #define MC_RD_SLICE0    0xBF401270
+  #define MC_RD_SLICE1    0xBF401280
+  #define MC_WR_SLICE0    0xBF4012B0
+  #define MC_WR_SLICE1    0xBF4012C0
+  #define MC_DLL_SLICE0   0xBF4012F0
+  #define MC_DLL_SLICE1   0xBF401300
+  #define MC_INT_STAT     0xBF401160
+#endif
+
+  
+
+
 
 /* ARX & Danube Memory controller register for data-eye tuning */
 #define MC_STAT  0xBF800070     // DLL lock status
@@ -283,7 +317,7 @@ void print_state(char c)
 
 void debug_print(char* s)
 {
-#if DEBUG
+#ifdef DEBUG
 	asc_puts(s);
 #else
 	 //u32 i;
@@ -400,7 +434,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 REG16(TESTADDR_UC+(ddrsize>>1)+(j<<16)+k)=~w_pattern[l];
             }
         }
-    	//print_state('d');
+        asm("sync");
+	   //print_state('d');
         for(j=0;j<4;j++)
         {
             for(k=0;k<0x40;k=k+2)
@@ -415,6 +450,7 @@ u32 sdramtest(u8 masktype, u8 mode)
             }
         }
 
+       asm("sync");
     // Test# 3 8bit Uncache Access
     	//print_state('e');
         for(j=0;j<4;j++)
@@ -426,6 +462,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 REG8(TESTADDR_UC+(ddrsize>>1)+(j<<16)+k)=~b_pattern[l];
             }
         }
+
+		asm("sync");
     	//print_state('f');
         for(j=0;j<4;j++)
         {
@@ -440,7 +478,7 @@ u32 sdramtest(u8 masktype, u8 mode)
                     return(1);
             }
         }
-
+        asm("sync");
     // Test# 4 32bit Cache Access Random Pattern (short)
     	//print_state('g');
         for(j=0;j<8;j++)
@@ -452,6 +490,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 REG32(TESTADDR+(ddrsize>>1)+(j<<16)+k)=~d_pattern[l];
             }
         }
+
+		asm("sync");
     	//print_state('h');
         for(j=0;j<8;j++)
         {
@@ -467,6 +507,7 @@ u32 sdramtest(u8 masktype, u8 mode)
             }
         }
 
+        asm("sync");
     // Test# 5 32bit Cache Access Checker Pattern (short)
         pattern=0x55555555;
     	//print_state('i');
@@ -478,7 +519,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 REG32(TESTADDR+(ddrsize>>1)+(j<<16)+k)=~pattern;
             }
         }
-    	//print_state('j');
+    	asm("sync");
+		//print_state('j');
         for(j=0;j<8;j++)
         {
             for(k=0;k<0x400;k=k+4)
@@ -492,6 +534,7 @@ u32 sdramtest(u8 masktype, u8 mode)
             }
         }
 
+         asm("sync");
     // Test# 6 32bit Cache Access Moving 0 & 1 Pattern
     	//print_state('k');
         for(j=0;j<8;j++)
@@ -505,6 +548,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 if(pattern==0) pattern=0x10001;
             }
         }
+
+		asm("sync");
     	//print_state('l');
         for(j=0;j<8;j++)
         {
@@ -522,6 +567,7 @@ u32 sdramtest(u8 masktype, u8 mode)
             }
         }
 
+        asm("sync");
     // Test# 7 32bit Cache Access Random Pattern (long)
     	//print_state('m');
         for(j=0;j<8;j++)
@@ -533,6 +579,8 @@ u32 sdramtest(u8 masktype, u8 mode)
                 REG32(TESTADDR+(ddrsize>>1)+(j<<16)+k)=~d_pattern[l];
             }
         }
+
+		asm("sync");
     	//print_state('n');
         for(j=0;j<8;j++)
         {
@@ -564,7 +612,7 @@ void tune_ddr(void)
 	u32 l,u,k,i,j;
 	u16 pass=0;
 	u8 test_l[128], test_u[128];
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
     u32 write_u;
 #endif
 
@@ -588,7 +636,7 @@ void tune_ddr(void)
 #if 0 // asc_init not needed to be done by u-boot
 	asc_init();
 #endif
-	asc_puts("DDR autotuning Rev 0.3c\n");
+	asc_puts("\nDDR autotuning Rev 0.3d\n");
 #if 0 // Chip ID detection not required
 	//print_state('0');
     switch(chipid & 0x0fffffff)
@@ -615,7 +663,37 @@ void tune_ddr(void)
 			 break;
 	}
 #endif
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+   #ifdef CONFIG_LANTIQ_UBOOT_ar10  //AR10 CHIP
+   	ddrsize = ddrsize << 1;
+		ddrsize = ddrsize >> ((REG32(0xBF8011F0)>>24)&0x7) ; 	//row address bits
+		//added by Prabir
+		//Row Address[26:24]; "000"=15, "001"=14, "010"=13, "011"=12, "100"=11 , "101"=10
+		ddrsize = ddrsize >> ((REG32(0xBF801200))&0x7) ; 	//Column address bits  
+		//added by Prabir 
+		//Col Address[2:0]; "000"=12, "001"=11, "010"=10, "011"=9, 100=8;
+		//Bank Address
+		ddrsize = ddrsize >> ((~(REG32(0xBF8011f0)>16))&0x1) ;
+		if(REG32(0xbf801230)&0x100) ddrsize = ddrsize >> 1;
+
+		switch ((REG32(0xBF801230))&0xf)
+		{
+		   case 1:
+		   		k=0;// DDR_CS0 active 
+		   		break;
+   		   case 3:
+   		   		k=1; //DDR_CS0 and DDR_CS1  are active  
+   		   		break;
+           	   case 0xf:
+           			k=2; //DDR_CS0 ,DDR_CS1 ,DDR_CS2 and DDR_CS3 are active
+           			break;
+   		   default:
+   		        	asc_puts("Chip select selection not define correctly, EXIT\n");
+   		        	goto end;
+   		        	break;
+		}
+	#else
+  
     ddrsize = ddrsize << 1;
 	ddrsize = ddrsize >> ((REG32(0xBF4010B0)&0x7)) ;
     //Row Address; 0=14, 1=13, 2=12, 3=11, 4=10
@@ -635,7 +713,8 @@ void tune_ddr(void)
    		        asc_puts("Wrong Chip select, EXIT\n");
    		        goto end;
    		        break;
-	}
+	 }
+	 #endif
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
 	ddrsize = ddrsize >> (((REG32(0xBF801130)>>8)&0x7)-2) ;
@@ -706,6 +785,15 @@ void tune_ddr(void)
 #endif
 	asc_puts("DDR size from 0xa0000000 - 0x"); print_u32(0xa0000000+(ddrsize-1));asc_putc('\n');
 	//asc_puts("DDR DLL lock element = "); print_u32((REG32(0xbf801150)&0x7f));asc_putc('\n');
+    #ifdef CONFIG_DEBUG
+	asc_puts("DDR tuning magic values:\n");
+	asc_puts("STATUS Addr="); print_u32(STATUS); asc_puts(" Val="); print_u32(REG32(STATUS)); asc_puts(" \n");
+    asc_puts("REG01 Addr="); print_u32(REG01); asc_puts(" Val="); print_u32(REG32(REG01)); asc_puts(" \n");
+    asc_puts("REG02 Addr="); print_u32(REG02); asc_puts(" Val="); print_u32(REG32(REG02)); asc_puts(" \n");
+    asc_puts("REG03 Addr="); print_u32(REG03); asc_puts(" Val="); print_u32(REG32(REG03)); asc_puts(" \n");
+    asc_puts("REG04 Addr="); print_u32(REG04); asc_puts(" Val="); print_u32(REG32(REG04)); asc_puts(" \n");
+    #endif
+
   init_pattern();
   if(REG32(STATUS)==0x0)
   {
@@ -755,9 +843,9 @@ void tune_ddr(void)
     	//print_state('1');
     	asm("sync");
         REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-        REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xff00ff)| ((WRITEDQS_Q+j)<<8);
-        REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xff00ff)| ((WRITEDQS_Q+j)<<8);
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+        REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xffff00ff)| ((WRITEDQS_Q+j)<<8);
+        REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xffff00ff)| ((WRITEDQS_Q+j)<<8);
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
         REG32(MC_DC15) = (REG32(MC_DC15) & ~0xff) | (WRITEDQS_Q+j);
@@ -767,11 +855,17 @@ void tune_ddr(void)
     	    //print_state('2');
     	    asm("sync");
             REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-            REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xff00ff)| k<<8;
-            REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xff00ff)| k<<8;
-            REG32(MC_START) = 0x1010100;
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+            REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xffff00ff)| k<<8;
+            REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xffff00ff)| k<<8;
+            
+       #ifdef CONFIG_LANTIQ_UBOOT_ar10
+            REG32(MC_START) = 0x401;
+            while(((REG32(MC_INT_STAT)&0x4)!=0x4) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+       #else  
+            REG32(MC_START) = 0x1010100;      
             while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+       #endif
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
             REG32(MC_DC22) = (REG32(MC_DC22) & (~((u32)0xffff))) | k | k<<0x8;
@@ -807,14 +901,20 @@ void tune_ddr(void)
         }
     }
     if( max_l > min_l)
+    {
         readq_l = (min_l+max_l)>>1;
+        //asc_puts("\nStep1: readq_l = "); print_u32(readq_l);
+    }
     else
     {
         asc_puts("Can't determine a suitable read DQS delay for slice 0!\n");
         goto end;
     }
     if( max_u > min_u)
+    {
         readq_u = (min_u+max_u)>>1;
+        //asc_puts("\nStep1: readq_u = "); print_u32(readq_u); asc_puts("\n");
+    }
     else
     {
         asc_puts("Can't determine a suitable read DQS delay for slice 1!\n");
@@ -824,8 +924,9 @@ void tune_ddr(void)
 
 /*-----------------End of Quick Test to determine Read DQS-------------------------------*/
 /*---------------------------------------------------------------------------------------*/
-
-   //__udelay(50);
+   asm("sync");
+   __udelay(50);
+   asm("sync");
 
 /*---------------------------------------------------------------------------------------*/
 /*------------------------ Start of Write Data Eye Tuning -------------------------------*/
@@ -843,14 +944,14 @@ void tune_ddr(void)
     min_u = WRITEMAX;
     max_u = WRITEMIN;
 
-	for(k=0;k<0x1fff;k++);
+	//for(k=0;k<0x1fff;k++);
  	print_state();
     asm("sync");
 
     REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-    REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xff00ff)| readq_l<<8;
-    REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xff00ff)| readq_u<<8;
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+    REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xffff00ff)| readq_l<<8;
+    REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xffff00ff)| readq_u<<8;
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
     REG32(MC_DC22) = (REG32(MC_DC22) & (~((u32)0xffff))) | readq_u | readq_u <<0x8;
@@ -860,14 +961,19 @@ void tune_ddr(void)
     {
         asm("sync");
         REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-        REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xff00ff)| k<<8;
-        REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xff00ff)| k<<8;
-
-        REG32(MC_START) = 0x1010100;
-        while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+        REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xffff00ff)| k<<8;
+        REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xffff00ff)| k<<8;
+        
+        #ifdef CONFIG_LANTIQ_UBOOT_ar10
+           REG32(MC_START) = 0x401;
+           while(((REG32(MC_INT_STAT)&0x4)!=0x4) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+        #else
+           REG32(MC_START) = 0x1010100;
+           while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+        #endif
         asm("sync");
-
+        __udelay(5);
         l=0; u=0;
         if(sdramtest(0,0)==0)
         {
@@ -915,7 +1021,7 @@ void tune_ddr(void)
 #endif
     }
 #if DEBUGMODE
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
     asc_puts("\n Show slice 0 write setting\n");
     for(k=WRITEMIN; k< WRITEMAX+1; k++)
     {
@@ -956,7 +1062,7 @@ void tune_ddr(void)
         asc_puts("Can't determine a suitable write DQS delay for slice 0!\n");
         goto end;
     }
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
     if( max_u > min_u)
         write_u = (min_u+max_u)>>1;
     else
@@ -969,7 +1075,9 @@ void tune_ddr(void)
 	REG32(STATUS)=0x11;
 /*------------------------ End of Write Data Eye Tuning ---------------------------------*/
 /*---------------------------------------------------------------------------------------*/
-   //__udelay(50);
+   asm("sync");
+   __udelay(50);
+   asm("sync");
 
 /*---------------------------------------------------------------------------------------*/
 /*------------------------ Start of Read Data Eye Tuning --------------------------------*/
@@ -989,9 +1097,9 @@ void tune_ddr(void)
     asm("sync");
 
     REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-    REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xff00ff)| write_l<<8;
-    REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xff00ff)| write_u<<8;
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+    REG32(MC_WR_SLICE0) = (REG32(MC_WR_SLICE0)&0xffff00ff)| write_l<<8;
+    REG32(MC_WR_SLICE1) = (REG32(MC_WR_SLICE1)&0xffff00ff)| write_u<<8;
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
     REG32(MC_DC15) = (REG32(MC_DC15) & ~0xff) | (write_l);
@@ -1000,11 +1108,24 @@ void tune_ddr(void)
     {
         //print_state('B');
         REG32(MC_START) = 0;
-#ifdef  VRX_CHIP
-        REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xff00ff)| k<<8;
-        REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xff00ff)| k<<8;
-        REG32(MC_START) = 0x1010100;
-        while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
+        REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xffff00ff)| k<<8;
+        REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xffff00ff)| k<<8;
+        
+        #ifdef CONFIG_LANTIQ_UBOOT_ar10
+          REG32(MC_START) = 0x401;
+          while(((REG32(MC_INT_STAT)&0x4)!=0x4) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+        #else
+          REG32(MC_START) = 0x1010100;
+          i=0;
+		  while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000) || (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0))
+		  {
+			 __udelay(1);
+			 i++;
+			 if(i>100){ asc_puts("timeout\n"); continue;}
+
+		  }
+		#endif 
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
         REG32(MC_DC22) = (REG32(MC_DC22) & (~((u32)0xffff))) | k | k<<0x8;
@@ -1084,17 +1205,20 @@ void tune_ddr(void)
 
     asm("sync");
     REG32(MC_START) = 0;
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
 	asc_puts("\nRead DQS Delay Slice0:"); print_u32(read_l); asc_putc('\n');
 	asc_puts("Read DQS Delay Slice1:"); print_u32(read_u); asc_putc('\n');
 	asc_puts("Write DQS Delay Slice0:"); print_u32(write_l); asc_putc('\n');
 	asc_puts("Write DQS Delay Slice1:"); print_u32(write_u); asc_putc('\n');
-    REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xff00ff)| read_l<<8;
-    REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xff00ff)| read_u<<8;
-    REG32(MC_START) = 0x1010100;
-
+    REG32(MC_RD_SLICE0) = (REG32(MC_RD_SLICE0)&0xffff00ff)| read_l<<8;
+    REG32(MC_RD_SLICE1) = (REG32(MC_RD_SLICE1)&0xffff00ff)| read_u<<8;
+          #ifdef CONFIG_LANTIQ_UBOOT_ar10
+            REG32(MC_START) = 0x401;
+            while(((REG32(MC_INT_STAT)&0x4)!=0x4)|| (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
+          #else
+            REG32(MC_START) = 0x1010100;
             while(((REG32(MC_INT_STAT)&0x4000000)!=0x4000000)|| (((REG32(MC_DLL_SLICE0)&0x1)&(REG32(MC_DLL_SLICE1)&0x1))==0));
-
+		  #endif 
 #endif
 #if defined(ARX_CHIP) || defined(DANUBE_CHIP)
 /* TODO print*/
@@ -1126,7 +1250,7 @@ end:
 	while(1);
 	//asc_getc();
 store_para:
-#ifdef VRX_CHIP
+#if defined(VRX_CHIP) || defined(HNX_CHIP)
 	REG32(REG01) = REG32(MC_RD_SLICE0);
 	REG32(REG02) = REG32(MC_RD_SLICE1);
 	REG32(REG03) = REG32(MC_WR_SLICE0);

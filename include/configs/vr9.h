@@ -248,9 +248,17 @@
 #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
 #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0xb000ffff
 #elif defined(CONFIG_BOOT_FROM_SPI)
+/* changed by yangxv, 2012.4 */
+#if 0
 #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0000FFE8
 #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
 #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0000ffff
+#endif
+#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x007E0000
+#define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x007EFFFF
+/* end added */
+
 #define CONFIG_ENV_SECT_SIZE 0x1000
 #else /*CONFIG_BOOT_FRON_NAND*/
 #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x00003fe8

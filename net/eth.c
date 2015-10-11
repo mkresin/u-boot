@@ -41,6 +41,30 @@ void eth_parse_enetaddr(const char *addr, uchar *enetaddr)
 int eth_getenv_enetaddr(char *name, uchar *enetaddr)
 {
 	eth_parse_enetaddr(getenv(name), enetaddr);
+
+	/* added by yangxv for get mac form flash, 2012.4 */
+	if (!strcmp("ethaddr", name))
+	{
+		unsigned char zero[6]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+		unsigned char def_mac[6] = {0x00, 0x00, 0xa0, 0xbb, 0xcc, 0xff};
+		unsigned char *pmac = 0x80800000;
+		
+		run_command("sf probe 3", 0);
+		run_command("sf read 0x80800000 0x7DF100 0x6", 0);
+		
+		if (0 == memcmp(pmac, zero, 6))
+		{
+			memcpy(pmac, def_mac, 6);
+		}
+	
+		memcpy(enetaddr, pmac, 6);
+
+		//printf("MAC: %02x-%02x-%02x-%02x-%02x-%02x\n", 
+		//	enetaddr[0], enetaddr[1], enetaddr[2], enetaddr[3], enetaddr[4], enetaddr[5]);
+
+	}
+	/* end added */
+
 	return is_valid_ether_addr(enetaddr);
 }
 

@@ -28,6 +28,8 @@
 #define WINBOND_ID_W25X32		0x3016
 #define WINBOND_ID_W25X64		0x3017
 
+#define WINBOND_ID_W25Q64		0x4017	/* added by yangxv, 2011.03 */
+
 #define WINBOND_SR_WIP		(1 << 0)	/* Write-in-Progress */
 
 struct winbond_spi_flash_params {
@@ -77,6 +79,16 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 		.nr_blocks		= 128,
 		.name			= "W25X64",
 	},
+	/* added by yangxv, 2011.03 */
+	{
+		.id 		= WINBOND_ID_W25Q64,
+		.l2_page_size		= 8,
+		.pages_per_sector	= 16,
+		.sectors_per_block	= 16,
+		.nr_blocks		= 128,
+		.name			= "W25Q64",
+	},
+	/* end added */
 };
 
 static int winbond_wait_ready(struct spi_flash *flash, unsigned long timeout)
@@ -167,6 +179,8 @@ static int winbond_write(struct spi_flash *flash,
 	int ret;
 	u8 cmd[4];
 
+	int count = 0;
+
 	page_shift = stm->params->l2_page_size;
 	page_size = (1 << page_shift);
 	page_addr = offset / page_size;
@@ -178,8 +192,17 @@ static int winbond_write(struct spi_flash *flash,
 		return ret;
 	}
 
+	printf("\n");
 	for (actual = 0; actual < len; actual += chunk_len) {
 		chunk_len = min(len - actual, page_size - byte_addr);
+
+		count++;
+		/* Page Program */
+		if (256 == count)
+		{
+			printf(".");
+			count = 0;
+		}
 
 		cmd[0] = CMD_W25_PP;
 		cmd[1] = page_addr >> (16 - page_shift);
@@ -214,6 +237,8 @@ static int winbond_write(struct spi_flash *flash,
 
 	debug("SF: Winbond: Successfully programmed %u bytes @ 0x%x\n",
 			len, offset);
+	printf("\nSuccessfully programmed %u bytes @ 0x%x\n",
+			len, offset);
 	ret = 0;
 
 out:
@@ -229,6 +254,8 @@ int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 	size_t actual;
 	int ret;
 	u8 cmd[4];
+
+	int count = 0;
 
 	/*
 	 * This function currently uses sector erase only.
@@ -253,10 +280,19 @@ int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 		return ret;
 	}
 
+	printf("\n");
 	for (actual = 0; actual < len; actual++) {
 		winbond_build_address(stm, &cmd[1], offset + actual * sector_size);
-		printf("Erase: %02x %02x %02x %02x\n",
+		debug("Erase: %02x %02x %02x %02x\n",
 				cmd[0], cmd[1], cmd[2], cmd[3]);
+
+		count++;
+		/* 4K Erase */
+		if (16 == count)
+		{
+			printf(".");
+			count = 0;
+		}
 
 		ret = spi_flash_cmd(flash->spi, CMD_W25_WREN, NULL, 0);
 		if (ret < 0) {
@@ -278,6 +314,8 @@ int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 	}
 
 	debug("SF: Winbond: Successfully erased %u bytes @ 0x%x\n",
+			len * sector_size, offset);
+	printf("\nSuccessfully erased %u bytes @ 0x%x\n",
 			len * sector_size, offset);
 	ret = 0;
 

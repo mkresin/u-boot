@@ -79,6 +79,7 @@ static int rootfs_programming=0;
 int program_img(ulong srcAddr,int srcLen,ulong destAddr)
 {
 	upgrade_debug_printf("program_img : the srcAddr is 0x%08lx, length is %d while destAddr is 0x%08lx\n",srcAddr,srcLen,destAddr);
+	printf("program_img : the srcAddr is 0x%08lx, length is %d while destAddr is 0x%08lx\n",srcAddr,srcLen,destAddr);
 #if (!defined(CONFIG_BOOT_FROM_NAND) && (defined(CONFIG_BOOT_FROM_NOR) || defined(BUILD_FROM_IFX_UTILITIES))) 
 	flash_sect_protect(0,destAddr,destAddr + srcLen-1);
 	upgrade_debug_printf("Erase Flash from 0x%08lx to 0x%08lx\n", destAddr, destAddr + srcLen-1);
@@ -100,12 +101,26 @@ int program_img(ulong srcAddr,int srcLen,ulong destAddr)
 	flash_sect_protect(1,destAddr,destAddr + srcLen-1);
 #elif defined(CONFIG_BOOT_FROM_SPI)
 	//puts ("Writing to Serial Flash... ");
+	printf("Writing to Serial Flash... ");
 	flash_spi = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
 			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
 	if (!flash_spi){
 		  printf("probe fails!\n");
 		  return 1;
 	}		
+
+	/* added by yangxv, 2012.03 */
+	puts("Erase SPI flash...");
+#define ROUND 0x10000
+
+    if (srcLen & (ROUND-1)) { 
+        srcLen += ROUND - (srcLen & (ROUND-1)); 
+    }
+	printf("Change src to %x\n", srcLen);
+
+	spi_flash_erase(flash_spi, destAddr, srcLen);
+	/* end added */
+
 	spi_flash_write(flash_spi, destAddr, srcLen, (uchar *)srcAddr);
 	/*
 	if(eeprom_write (NULL, destAddr, (uchar *)srcAddr, srcLen)) {
@@ -114,6 +129,7 @@ int program_img(ulong srcAddr,int srcLen,ulong destAddr)
 	}
 	*/
 	//puts ("done\n");
+	printf("done\n");
 #elif defined(CONFIG_BOOT_FROM_NAND)
  #if !defined(BUILD_FROM_IFX_UTILITIES)
   if(rootfs_programming)
@@ -246,7 +262,7 @@ int FindNPImgLoc(ulong img_addr,ulong *nextStartAddr,ulong *preEndAddr)
 		if(Img_startAddr[i] + Img_size[i] < img_addr && Img_startAddr[i] + Img_size[i] > *preEndAddr)
 			*preEndAddr = Img_startAddr[i] + Img_size[i];
 	}
-	//printf("For img_addr 0x%08lx, nextStartAddr 0x%08lx and preEndAddr 0x%08lx\n",img_addr,*nextStartAddr,*preEndAddr);
+	printf("For img_addr 0x%08lx, nextStartAddr 0x%08lx and preEndAddr 0x%08lx\n",img_addr,*nextStartAddr,*preEndAddr);
 	return 0;
 }
 
@@ -324,6 +340,16 @@ int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, 
 	} else {
 		printf("The expansion direction [%d] is invalid\n",dir);
 		return 1;
+	}
+
+	printf("Image type is %d\n", pimg_header->ih_type);
+	if(pimg_header->ih_type == IH_TYPE_KERNEL)
+	{
+		img_addr = 0x000a0000;
+	}
+	else if (pimg_header->ih_type == IH_TYPE_FILESYSTEM)
+	{
+		img_addr = 0x002a0000;
 	}
 	if (srcData_Copy) {
 		if (program_img((ulong)srcData_Copy,srcLen+sizeof(struct conf_header),img_addr)) {
