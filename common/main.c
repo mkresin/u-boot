@@ -242,21 +242,12 @@ static __inline__ int abortboot(int bootdelay)
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
-				/* changed by yangxv, only accept 't', 2012,3 */
-				if (getc() != 0x74)
-				{
-					continue;
-				}
-				/* end added */
-
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				/* deleted by yangxv, consumed already, 2012,3 */
-				//(void) getc();  /* consume input	*/
-				/* end deleted */
+				(void) getc();  /* consume input	*/
 # endif
 				break;
 			}
