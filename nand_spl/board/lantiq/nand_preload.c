@@ -53,8 +53,7 @@ static void read_page(u32 page_addr, u32 dest_addr)
    while(!NAND_READY){}
 }
 
-#define FILE_SIZE 0x4000
-//#define STARTING_ADDRESS 0xbe1a0200
+#define FILE_SIZE CONFIG_NAND_SPL_BLOCK_SIZE
 #define STARTING_ADDRESS CONFIG_NAND_PRELOAD_TEXT_BASE+0x200
 
 void nand_init(void)

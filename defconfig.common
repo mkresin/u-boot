@@ -1,0 +1,198 @@
+#
+# Automatically generated make config: don't edit
+# Linux kernel version: 2.6.27.8
+# Wed Nov  2 12:01:00 2011
+#
+CONFIG_IFX_UBOOT_OPTIMIZED=y
+CONFIG_CONFIG_REMOVE_GZIP=y
+CONFIG_CONFIG_IFX_MIPS=y
+CONFIG_CROSS_COMPILE_UCLIBC=y
+CONFIG_LANTIQ_UART=y
+
+#
+# Build Options
+#
+
+# CONFIG_OS_GZIP is not set
+CONFIG_OS_LZMA=y
+# CONFIG_OS_LZO is not set
+# CONFIG_OS_BZIP2 is not set
+
+# CONFIG_LTQ_IMAGE_EXTRA_CHECKS is not set
+# CONFIG_AUTOBOOT_KEYED is not set
+CONFIG_SILENT_CONSOLE=y
+# CONFIG_SUPPRESS_KERNEL_OUTPUT is not set
+CONFIG_CMD_UBI=y
+CONFIG_UBI_WL_THRESHOLD=4096
+# CONFIG_CMD_UBIFS is not set
+CONFIG_CMD_MTDPARTS=y
+CONFIG_MTD_PARTITIONS=y
+CONFIG_MTD_DEVICE=y
+CONFIG_RAM_TEXT_BASE=0xA0400000
+# CONFIG_IFX_IMAGE_EXTRA_CHECKS is not set
+
+#
+# Board Settings
+#
+
+# we set CONFIG_IFX_MEMORY_SIZE to 3MB less than total memory size 
+# so that the klog data, dsl firmware and wireless firmware will not
+# be overwritten by u-boot
+CONFIG_IFX_MEMORY_SIZE=125
+CONFIG_BAUDRATE=115200
+CONFIG_NOR_FLASH=n
+CONFIG_FLASH_CFI_DRIVER=n
+CONFIG_SYS_FLASH_CFI=n
+# CONFIG_FLASH_CFI_MTD is not set
+# CONFIG_NOR_FLASH_8M is not set
+# CONFIG_NOR_FLASH_4M is not set
+# CONFIG_NOR_FLASH_2M is not set
+# CONFIG_NOR_FLASH_AUTO is not set
+# CONFIG_SPI_FLASH is not set
+# CONFIG_SPI_FLASH_16M is not set
+# CONFIG_SPI_FLASH_8M is not set
+# CONFIG_SPI_FLASH_4M is not set
+# CONFIG_SPI_FLASH_2M is not set
+# CONFIG_SPI_FLASH_1M is not set
+# CONFIG_SPI_FLASH_ATMEL is not set
+# CONFIG_SPI_FLASH_STMICRO is not set
+# CONFIG_SPI_FLASH_SST is not set
+# CONFIG_SPI_FLASH_SPANSION is not set
+# CONFIG_SPI_FLASH_MXIC is not set
+# CONFIG_LANTIQ_SPI is not set
+# CONFIG_SF_DEFAULT_SPEED=1000000
+CONFIG_SF_DEFAULT_MODE=0
+# CONFIG_SPI_EEPROM is not set
+CONFIG_NAND_FLASH=y
+CONFIG_NAND_ECC_SOFT=y
+# CONFIG_NAND_ECC_HW_HAMMING is not set
+# CONFIG_NAND_ECC_HW_REED_SOLOMON is not set
+# CONFIG_NAND_BBT_SCAN is not set
+CONFIG_NAND_LANTIQ=y
+# CONFIG_FIRMWARE_IN_ROOTFS is not set
+# CONFIG_OVERLAY is not set
+CONFIG_TUNE_DDR=y
+# CONFIG_DEBUG is not set
+
+#
+# Network Settings
+#
+CONFIG_IP_ADDRESS="192.168.1.1"
+CONFIG_SERVER_IP_ADDRESS="192.168.1.10"
+CONFIG_ETHERNET_ADDRESS="00:E0:92:00:01:40"
+CONFIG_ETHERNET_DEVICE="eth0"
+
+#
+# Environment Settings
+#
+# CONFIG_ENV_REDUND is not set
+# CONFIG_BUILD_ENV_BLOCK is not set
+CONFIG_ENV_OVERWRITE=y
+CONFIG_TFTP_LOAD_ADDRESS="0x80800000"
+CONFIG_BOOTDELAY=1
+CONFIG_UPDATE_BOOTLOADER="update_uboot;update gphyfirmware"
+CONFIG_UBI_INIT="setenv kernel_vol kernel;setenv rootfs_vol rootfs;setenv firmware_vol firmware;setenv kernel_id 0;setenv rootfs_id 1;setenv firmware_id 2;setenv rootfsname rootfs;ubi part system_sw"
+# CONFIG_DUAL_IMAGE is not set
+CONFIG_ROOT_PATH="/mnt/full_fs"
+CONFIG_CONSOLE="ttyS0"
+CONFIG_TFTPPATH=""
+CONFIG_ROOTFSMTD="/dev/mtdblock2"
+CONFIG_NFSARGS="setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath)"
+CONFIG_RAMARGS="setenv bootargs root=/dev/ram rw"
+CONFIG_FLASHARGS="setenv bootargs root=$(rootfsmtd) ro rootfstype=squashfs init=/etc/preinit"
+CONFIG_ADDIP="setenv bootargs $(bootargs) ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname):$(netdev):on"
+CONFIG_ADDMISC="setenv bootargs $(bootargs) console=$(console),$(baudrate) ethaddr=$(ethaddr) phym=$(phym) mem=$(mem) panic=1 mtdparts=$(mtdparts) vpe1_load_addr=0x81f00000 vpe1_mem=1M ethwan=$(ethwan)"
+CONFIG_BOOTFILE="openrg.img"
+CONFIG_U_BOOT="u-boot.lq"
+CONFIG_ROOTFS="rootfs.img"
+CONFIG_FIRMWARE="firmware.img"
+CONFIG_FULLIMAGE="fullimage.img"
+CONFIG_TOTALIMAGE="totalimage.img"
+# CONFIG_USE_DEFAULT_MTDPARTS is not set
+CONFIG_NET_RAM="tftp $(loadaddr) $(tftppath)$(bootfile); bootm"
+CONFIG_NET_FLASH="tftp $(loadaddr) $(tftppath)$(bootfile); run flashargs addip addmisc; bootm"
+CONFIG_FLASH_NFS="run nfsargs addip addmisc;bootm $(kernel_addr)"
+CONFIG_NET_NFS="tftp $(loadaddr) $(tftppath)$(bootfile);run nfsargs addip addmisc;bootm"
+CONFIG_FLASH_FLASH="run flashargs addip addmisc; bootm $(kernel_addr)"
+CONFIG_UPDATE_KERNEL="tftpboot $(loadaddr) $(tftppath)$(bootfile);upgrade $(loadaddr) $(filesize)"
+CONFIG_UPDATE_ROOTFS="tftpboot $(loadaddr) $(tftppath)$(rootfs); upgrade $(loadaddr) $(filesize)"
+CONFIG_UPDATE_FIRMWARE="tftpboot $(loadaddr) $(tftppath)$(firmware);upgrade $(loadaddr) $(filesize)"
+CONFIG_UPDATE_FULLIMAGE="tftpboot $(loadaddr) $(tftppath)$(fullimage);upgrade $(loadaddr) $(filesize)"
+CONFIG_UPDATE_TOTALIMAGE="tftpboot $(loadaddr) $(tftppath)$(totalimage);upgrade $(loadaddr) $(filesize)"
+CONFIG_BOOTCOMMAND="ubi part UBI; dualimage; bootm $(openrg_start)"
+CONFIG_MTDIDS="nand0=nand0"
+
+#
+# libs
+#
+# CONFIG_ADDR_MAP is not set
+# CONFIG_BZIP2 is not set
+# CONFIG_USB_TTY is not set
+CONFIG_GZIP=y
+# CONFIG_LMB is not set
+# CONFIG_MD5 is not set
+# CONFIG_SHA1 is not set
+# CONFIG_SHA256 is not set
+CONFIG_ZLIB=y
+CONFIG_RBTREE=y
+CONFIG_LZO=y
+CONFIG_LZMA=y
+
+#
+# Supported commands
+#
+# CONFIG_CMD_AUTOSCRIPT is not set
+# CONFIG_CMD_BDI is not set
+# CONFIG_CMD_BEDBUG is not set
+# CONFIG_CMD_BMP is not set
+# CONFIG_CMD_CACHE is not set
+# CONFIG_CMD_CONSOLE is not set
+# CONFIG_CMD_DATE is not set
+# CONFIG_CMD_SETGETDCR is not set
+# CONFIG_CMD_DIAG is not set
+# CONFIG_CMD_DOC is not set
+# CONFIG_CMD_DTT is not set
+# CONFIG_CMD_DISPLAY is not set
+CONFIG_CMD_ECHO=y
+# CONFIG_CMD_ELF is not set
+# CONFIG_CMD_EXT2 is not set
+# CONFIG_CMD_FAT is not set
+# CONFIG_CMD_FDC is not set
+# CONFIG_CMD_LIBFDT is not set
+# CONFIG_CMD_LOADB is not set
+# CONFIG_CMD_LOADS is not set
+# CONFIG_CMD_FDOS is not set
+CONFIG_CMD_FLASH=y
+# CONFIG_CMD_FPGA is not set
+# CONFIG_CMD_HTTPD is not set
+# CONFIG_CMD_I2C is not set
+# CONFIG_CMD_IDE is not set
+# CONFIG_CMD_IMMAP is not set
+# CONFIG_CMD_ITEST is not set
+# CONFIG_CMD_JFFS2 is not set
+# CONFIG_CMD_LOGBUFFER is not set
+CONFIG_CMD_MEMORY=y
+CONFIG_MII=y
+# CONFIG_CMD_MII is not set
+# CONFIG_PHY_GIGE is not set
+# CONFIG_CMD_MISC is not set
+# CONFIG_CMD_MMC is not set
+CONFIG_CMD_NAND=y
+CONFIG_CMD_NET=y
+# CONFIG_CMD_PCI is not set
+# CONFIG_CMD_PCMCIA is not set
+# CONFIG_CMD_PING is not set
+# CONFIG_CMD_PORTIO is not set
+# CONFIG_CMD_REGINFO is not set
+CONFIG_CMD_RUN=y
+CONFIG_CMD_SAVEENV=y
+CONFIG_CMD_SF=y
+# CONFIG_CMD_SCSI is not set
+# CONFIG_CMD_SPI is not set
+# CONFIG_CMD_UNIVERSE is not set
+CONFIG_CMD_UPGRADE=y
+# CONFIG_CMD_USB is not set
+# CONFIG_CMD_VFD is not set
+# CONFIG_CMD_KGDB is not set
+# CONFIG_CMD_LCD is not set
+# CONFIG_YAFFS2 is not set

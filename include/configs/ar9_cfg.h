@@ -64,7 +64,7 @@
   "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -91,10 +91,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0xB01FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0xB01FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0xB01FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0xB01FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0xB01FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0xB01FFFFF
 
@@ -111,7 +111,7 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
@@ -139,10 +139,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0xB03FFDFF
 
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0xB03FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0xB03FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME         "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR         0xB03FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE               0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR           0xB03FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                         0xB03FFFFF
 
@@ -160,8 +160,8 @@
         "data_block3=" IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block7=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=8\0"
 #else
 #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
@@ -170,8 +170,8 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=7\0"
 #endif
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -207,15 +207,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0xB07F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0xB07F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0xB07F2000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0xB07F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME	      	  "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	  	  0xB07F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		  	  0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR		  0xB07F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
 
@@ -240,7 +240,7 @@
   "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -272,10 +272,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0xB01FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0xB01FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0xB01FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0xB01FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0xB01FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0xB01FFFFF
 
@@ -294,7 +294,7 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
@@ -327,10 +327,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR               0xB0402DFF
 
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME         "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR         0xB03FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE               0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR           0xB03FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME         "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR         0xB03FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE               0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR           0xB03FFFFF
 
 
   #define IFX_CFG_FLASH_END_ADDR                         0xB03FFFFF
@@ -351,8 +351,8 @@
         "data_block4=" IFX_CFG_FLASH_OVERLAY_IMAGE_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block6=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block7=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block8=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block7=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block8=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=9\0"
 #else
 #define IFX_CFG_FLASH_DATA_BLOCKS_INFO                                  \
@@ -362,8 +362,8 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block7=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=8\0"
 #endif
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -404,15 +404,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0xB07F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0xB07F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0xB07F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0xB07F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0xB07F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0xB07F2000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0xB07F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME	      	  "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	  	  0xB07F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		  	  0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR		  0xB07F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                          0xB07FFFFF
 
@@ -461,7 +461,7 @@
   "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -488,10 +488,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0x001FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0x001FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0x001FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0x001FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0x001FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0x001FFFFF
 
@@ -508,8 +508,8 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=7\0"
         
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
@@ -536,15 +536,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x003F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x003F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x003F2000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x003F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME	          "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	          0x003F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		          0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR		  0x003F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                         0x003FFFFF
 
@@ -560,8 +560,8 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block6=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -588,15 +588,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x007F2000
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		      0x1000
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR	      0x007F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME	          "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	          0x007F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		      	  0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR	      	  0x007F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
 
@@ -621,7 +621,7 @@
   "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -653,10 +653,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0x001FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0x001FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0x001FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0x001FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0x001FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0x001FFFFF
 
@@ -675,8 +675,8 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block7=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=8\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
@@ -708,15 +708,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x003F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x003F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x003F2000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x003F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME	          "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	          0x003F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		          0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR		  0x003F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                         0x003FFFFF
 
@@ -734,8 +734,8 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
-        "data_block7=" IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME "\0"    \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
+        "data_block7=" IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME "\0"    \
         "total_db=8\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -767,15 +767,15 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007F0FFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007F1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x1000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007F1FFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007F1000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x1000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007F1FFF
   
-  #define IFX_CFG_FLASH_CALIBRATION_CFG_BLOCK_NAME	      "calibration"
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_START_ADDR	      0x007F2000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_SIZE		          0x1000
-	#define IFX_CFG_FLASH_CALIBRATION_CFG_END_ADDR		      0x007F2FFF  
+  #define IFX_CFG_FLASH_WLAN_CFG_BLOCK_NAME		  "wlanconfig"
+  #define IFX_CFG_FLASH_WLAN_CFG_START_ADDR	      	  0x007F2000
+  #define IFX_CFG_FLASH_WLAN_CFG_SIZE		      	  0x2000
+  #define IFX_CFG_FLASH_WLAN_CFG_END_ADDR	      	  0x007F3FFF  
 
   #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
 
@@ -832,7 +832,7 @@
   "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -859,10 +859,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0x001FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0x001FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0x001FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0x001FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0x001FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0x001FFFFF
 
@@ -879,7 +879,7 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
         
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME           "uboot"
@@ -906,10 +906,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x003FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x003FF3FF
 
   #define IFX_CFG_FLASH_END_ADDR                          0x003FFFFF
 
@@ -925,7 +925,7 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -952,10 +952,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
 
    #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
    
@@ -975,7 +975,7 @@
         "data_block2=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1005,11 +1005,11 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x01EF3FFF
   #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock4"
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x01ef4000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x4000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x01EF7FFF
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock5"
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x01ef4000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x4000
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x01EF7FFF
+  #define IFX_CFG_FLASH_DECT_CFG_MTDBLOCK_NAME       "/dev/mtdblock5"
 
   #define IFX_CFG_FLASH_END_ADDR                         0x01FFFFFF
      
@@ -1029,7 +1029,7 @@
         "data_block2=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1059,11 +1059,11 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x07040FFF
   #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock4"
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x07080000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x0708003FF
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock5"
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x07080000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x0708003FF
+  #define IFX_CFG_FLASH_DECT_CFG_MTDBLOCK_NAME       "/dev/mtdblock5"
 
   #define IFX_CFG_FLASH_END_ADDR                         0x07FFFFFF
 
@@ -1079,7 +1079,7 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1106,10 +1106,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
 
   #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
 
@@ -1125,7 +1125,7 @@
         "data_block2=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block3=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block4=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block5=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block5=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=6\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1152,10 +1152,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
 
   #define IFX_CFG_FLASH_END_ADDR                         0x007FFFFF
 #endif
@@ -1176,7 +1176,7 @@
   "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0" \
   "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"   \
   "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"    \
-  "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"  \
+  "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"  \
   "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME          "uboot"
@@ -1208,10 +1208,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                  0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR              0x001FFDFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME        "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR        0x001FFE00
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE              0x0200
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR          0x001FFFFF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME        "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR        0x001FFE00
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE              0x0200
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR          0x001FFFFF
 
   #define IFX_CFG_FLASH_END_ADDR                        0x001FFFFF
 
@@ -1230,7 +1230,7 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "data_block7=" IFX_CFG_FLASH_DDR_CFG_BLOCK_NAME "\0"            \
         "total_db=8\0"
 
@@ -1263,10 +1263,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x003FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x003FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x003FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x003FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x003FF3FF
   
   #define IFX_CFG_FLASH_DDR_CFG_BLOCK_NAME                "ddrconfig"
   #define IFX_CFG_FLASH_DDR_CFG_START_ADDR                0x003FF400
@@ -1289,7 +1289,7 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1321,10 +1321,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
   
   #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
 
@@ -1346,7 +1346,7 @@
         "data_block3=" IFX_CFG_FLASH_ROOTFS_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1381,11 +1381,11 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x07040FFF
   #define IFX_CFG_FLASH_UBOOT_CFG_MTDBLOCK_NAME           "/dev/mtdblock5"
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x07080000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x0708003FF
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_MTDBLOCK_NAME       "/dev/mtdblock6"
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x07080000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x0708003FF
+  #define IFX_CFG_FLASH_DECT_CFG_MTDBLOCK_NAME       "/dev/mtdblock6"
 
   #define IFX_CFG_FLASH_END_ADDR                          0x07FFFFFF
 
@@ -1403,7 +1403,7 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1435,10 +1435,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
   
  
   #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF
@@ -1457,7 +1457,7 @@
         "data_block3=" IFX_CFG_FLASH_KERNEL_IMAGE_BLOCK_NAME "\0"       \
         "data_block4=" IFX_CFG_FLASH_SYSTEM_CFG_BLOCK_NAME "\0"         \
         "data_block5=" IFX_CFG_FLASH_UBOOT_CFG_BLOCK_NAME "\0"          \
-        "data_block6=" IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME "\0"      \
+        "data_block6=" IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME "\0"      \
         "total_db=7\0"
 
   #define IFX_CFG_FLASH_UBOOT_IMAGE_BLOCK_NAME            "uboot"
@@ -1489,10 +1489,10 @@
   #define IFX_CFG_FLASH_UBOOT_CFG_SIZE                    0x1000
   #define IFX_CFG_FLASH_UBOOT_CFG_END_ADDR                0x007FEFFF
 
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_BLOCK_NAME          "fwdiag"
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_START_ADDR          0x007FF000
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_SIZE                0x400
-  #define IFX_CFG_FLASH_FIRMWARE_DIAG_END_ADDR            0x007FF3FF
+  #define IFX_CFG_FLASH_DECT_CFG_BLOCK_NAME          "dectconfig"
+  #define IFX_CFG_FLASH_DECT_CFG_START_ADDR          0x007FF000
+  #define IFX_CFG_FLASH_DECT_CFG_SIZE                0x400
+  #define IFX_CFG_FLASH_DECT_CFG_END_ADDR            0x007FF3FF
   
  
   #define IFX_CFG_FLASH_END_ADDR                          0x007FFFFF

@@ -1,0 +1,13 @@
+# CONFIG_BOOT_FROM_NOR is not set
+CONFIG_BOOT_FROM_SPI=y
+# CONFIG_BOOT_FROM_NAND is not set
+# CONFIG_BOOT_FROM_ETHERNET is not set
+# CONFIG_BOOT_FROM_UART is not set
+# CONFIG_BOOT_WITH_NO_FLASH is not set
+CONFIG_ENV_IS_IN_SPI_FLASH=y
+CONFIG_BOOTSTRAP_TEXT_BASE=0xa0100000
+CONFIG_SFDDR_TEXT_BASE=0xbe220500
+CONFIG_VR9_GPHY_FW_ADDR=0xa0120000
+CONFIG_UPDATE_UBOOT="tftpboot $(loadaddr) $(tftppath)$(u-boot); sf probe 3; sf erase 0 0x40000; sf write $(loadaddr) 0 0x40000; reset"
+CONFIG_RESET_UBOOT_CONFIG="sf probe 3; sf erase $(f_ubootconfig_addr) $(f_ubootconfig_size)"
+CONFIG_RESET_DDR_CONFIG="sf probe 3; sf erase $(f_ddrconfig_addr) $(f_ddrconfig_size)"

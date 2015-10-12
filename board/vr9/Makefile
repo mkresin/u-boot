@@ -37,7 +37,6 @@ $(LIB):	$(obj).depend $(OBJS) $(SOBJS)
 
 
 sfddr: start_sfddr.o sfddr_board.o tune_ddr.o lowlevel_init.o
-sf_preload: start_sfpreload.o sfpreload.o
 
 tune_ddr.c:
 	@rm -f $@

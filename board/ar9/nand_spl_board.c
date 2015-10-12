@@ -125,7 +125,7 @@ void nand_spl_init(void)
   buffer[0] = 0;
 
   asm("sync");
-  nand_read_page((131072/CONFIG_NAND_PAGE_SIZE)-1,page_buf);
+  nand_read_page(((IFX_CFG_FLASH_DDR_CFG_END_ADDR+1)/CONFIG_NAND_PAGE_SIZE)-1,page_buf);
   asm("sync");
   
   for(i=0;i<6;i++){

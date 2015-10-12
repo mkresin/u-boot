@@ -29,9 +29,25 @@
 #include <config.h>
 #include <malloc.h>
 #include <net.h>
+#include <miiphy.h>
 #include <asm/addrspace.h>
 #include <asm/pinstrap.h>
 #include <asm/lq_dma.h>
+
+#ifdef CONFIG_BOOT_FROM_NAND
+#include <nand.h>
+#endif
+
+#ifdef CONFIG_BOOT_FROM_SPI
+#include <spi_flash.h>
+#endif
+
+
+
+#include <lzma/LzmaTypes.h>
+#include <lzma/LzmaDec.h>
+#include <lzma/LzmaTools.h>
+
 
 #define TX_CHAN_NO   1
 #define RX_CHAN_NO   0
@@ -53,9 +69,13 @@
 #define MDIO_WRITE_CMD  ((0 << 11)| (1 <<10))
 #define MDIO_READ_CMD  ((1 << 11) | (0<<10))
 
-extern int dcache_linesize_mips32(void);
-extern void dcache_writeback_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
-extern void dcache_hit_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
+extern void flush_dcache_range(unsigned long start, unsigned long stop);
+extern void clean_dcache_range(unsigned long start, unsigned long stop);
+extern void invalidate_dcache_range(unsigned long start, unsigned long stop);
+extern void flush_dcache(void);
+extern void invalidate_dcache(void);
+extern void invalidate_icache(void);
+
 extern void mdelay (unsigned long msec);
 
 typedef struct
@@ -66,8 +86,8 @@ typedef struct
 }ar10_sw_port;
 
 
-static dma_rx_descriptor_t rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(8)));
-static dma_tx_descriptor_t tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(8)));
+static dma_rx_descriptor_t rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(32)));
+static dma_tx_descriptor_t tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(32)));
 static ar10_sw_port ar10_port[7];
 static int tx_num, rx_num;
 #if CONFIG_AR10_SW_PORT_2 | CONFIG_AR10_SW_PORT_3 | CONFIG_AR10_SW_PORT_4 | CONFIG_AR10_SW_PORT_5b 
@@ -80,20 +100,109 @@ int ar10_switch_recv(struct eth_device *dev);
 void ar10_switch_halt(struct eth_device *dev);
 static void ar10_sw_chip_init();
 static void ar10_dma_init(void);
+int xway_mii_read(char *devname, unsigned char addr,unsigned char reg, unsigned short *value);
+int xway_mii_write(char *devname, unsigned char addr,unsigned char reg, unsigned short value);
 
-u16 ar10_mdio_init()
+void config_mdio_gpio()
 {
-    *AR10_GPIO_P2_ALTSEL0 = *AR10_GPIO_P2_ALTSEL0 | (0xc00);
-    *AR10_GPIO_P2_ALTSEL1 = *AR10_GPIO_P2_ALTSEL1 & ~(0xc00);
-    *AR10_GPIO_P2_DIR = *AR10_GPIO_P2_DIR  | 0x800;
-    *AR10_GPIO_P2_OD = *AR10_GPIO_P2_OD | 0xc00;
+	  /*GPIO 42, MDIO used as output*/
+	  /*GPIO 43, MDC used as output */
+    *AR10_GPIO_P2_ALTSEL0 |= 0xc00;
+    *AR10_GPIO_P2_ALTSEL1 &= ~(0xc00);
+    *AR10_GPIO_P2_DIR     |= 0xc00;
+    *AR10_GPIO_P2_OD      |= 0xc00;
+#ifdef CONFIG_AR10_EXTERNAL_GPHY_INTERNAL    
+    /*do the following for external phy using internal 25Mhz clock*/
+	/*Since this piece of code won't affect the external phy using external 36Mhz crystal clock*/
+	/*So user can keep it for both senarios as default unless GPIO3 is used for other purposes*/
+	/*configure GPIO3, output 25Mhz clock*/
+	*AR10_GPIO_P0_DIR      |= 0x08;
+	*AR10_GPIO_P0_ALTSEL0  |= 0x08;
+	*AR10_GPIO_P0_ALTSEL1  &=~(0x08);
+	*AR10_GPIO_P0_OD       |= 0x08;
+
+    /*fixme, the address of DRV_STRENGTH_REG_0 is not consistant with the AR10 spec*/
+    REG32(0xbf2030b0) = 0x20;
+	/*******************************************/
+#endif	
 }
 	
-u16 ar10_mdio_read(u8 phyaddr, u8 phyreg)
+	
+void config_phy_led()
+{
+#if 0	 
+	  /*GPIO 5, EPHY0_LED0*/
+	  *AR10_GPIO_P0_DIR     |= 1<<5;
+	  *AR10_GPIO_P0_ALTSEL0 &=~(1<<5);
+    *AR10_GPIO_P0_ALTSEL1 |= 1<<5;
+    
+    /*GPIO 8, EPHY0_LED1*/
+	  *AR10_GPIO_P0_DIR     &= ~(1<<8);
+	  *AR10_GPIO_P0_ALTSEL0 |=1<<8;
+    *AR10_GPIO_P0_ALTSEL1 |=1<<8;
+    
+    /*GPIO 14, EPHY1_LED0*/
+	  *AR10_GPIO_P0_DIR     |= 1<<14;
+	  *AR10_GPIO_P0_ALTSEL0 |= 1<<14;
+    *AR10_GPIO_P0_ALTSEL1 |= 1<<14;
+    
+    /*GPIO 19, EPHY1_LED1*/
+	  *AR10_GPIO_P1_DIR     |= 1<<3;
+	  *AR10_GPIO_P1_ALTSEL0 |= 1<<3;
+    *AR10_GPIO_P1_ALTSEL1 |= 1<<3;
+#endif
+     u8 phyaddr[6]={0x0,0x01,0x02,0x03,0x04,0x05};
+     int i;
+
+     *AR10_GPIO_P0_DIR |= 0x070;
+     *AR10_GPIO_P0_ALTSEL0 |= 0x70;
+     *AR10_GPIO_P0_ALTSEL1 &= ~0x70;
+     *AR10_GPIO_P0_OD |= 0x70;
+
+	 *AR10_LED_CON1 = 0x81A001ff;
+	 *AR10_LED_CON0 = 0x3C000000;
+
+     for(i=0;i<6;i++)
+     {
+     /*For LED0    (SPEED/LINK INDICATION ONLY)*/
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x0;
+     xway_mii_write(NULL,phyaddr[i],0xd,0x1F);
+	 xway_mii_write(NULL,phyaddr[i],0xd,0x1F);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x1e2);
+     xway_mii_write(NULL,phyaddr[i],0xd,0x401f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x42);
+	 REG32(AR10_ETHSW_MDC_CFG_0)=0x3f;
+
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x0;
+     xway_mii_write(NULL,phyaddr[i],0xd,0x1F);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x1e3);
+     xway_mii_write(NULL,phyaddr[i],0xd,0x401f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x10);
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x3f;
+
+     /*For LED1 (DATA TRAFFIC INDICATION ONLY)*/
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x0;
+     xway_mii_write(NULL,phyaddr[i],0xd,0x1f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x1e4);
+     xway_mii_write(NULL,phyaddr[i],0xd,0x401f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x70);
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x3f;
+
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x0;
+     xway_mii_write(NULL,phyaddr[i],0xd,0x1f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x1e5);
+     xway_mii_write(NULL,phyaddr[i],0xd,0x401f);
+     xway_mii_write(NULL,phyaddr[i],0xe,0x03);
+     REG32(AR10_ETHSW_MDC_CFG_0)=0x3f;
+     }
+
+}	
+	
+int xway_mii_read(char *devname, unsigned char addr,unsigned char reg, unsigned short *value)
 {
         u16 i=0;
         while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000);
-        REG32(AR10_ETHSW_MDIO_CTRL) = MDIO_READ_CMD | (((u32)phyaddr)<<5) | ((u32) phyreg)|0x1000 ;
+        REG32(AR10_ETHSW_MDIO_CTRL) = MDIO_READ_CMD | (((u32)addr)<<5) | ((u32)reg)|0x1000 ;
         while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000)
         {
         	i++;
@@ -103,16 +212,17 @@ u16 ar10_mdio_read(u8 phyaddr, u8 phyreg)
         		  break;
         	}
         }
-        return((u16) (REG32(AR10_ETHSW_MDIO_READ)));
+        *value = (u16)(REG32(AR10_ETHSW_MDIO_READ));
+        return 0;
 }
 
-void ar10_mdio_write(u8 phyaddr, u8 phyreg, u16 data)
+int xway_mii_write(char *devname, unsigned char addr,unsigned char reg, unsigned short value)
 {
         u16 i=0;
         
-        REG32(AR10_ETHSW_MDIO_WRITE)= data;
+        REG32(AR10_ETHSW_MDIO_WRITE)= value;
         while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000);
-        REG32(AR10_ETHSW_MDIO_CTRL) =  MDIO_WRITE_CMD | (((u32)phyaddr)<<5) | ((u32) phyreg)|0x1000 ;
+        REG32(AR10_ETHSW_MDIO_CTRL) =  MDIO_WRITE_CMD | (((u32)addr)<<5) | ((u32)reg)|0x1000 ;
         while(REG32(AR10_ETHSW_MDIO_CTRL) & 0x1000)
         {
         	i++;
@@ -122,6 +232,7 @@ void ar10_mdio_write(u8 phyaddr, u8 phyreg, u16 data)
         		  break;
         	}
         }
+        return 0; 
 }
 					
 
@@ -164,7 +275,8 @@ int ar10_switch_init(struct eth_device *dev, bd_t * bis)
 
     *AR10_DMA_CS=RX_CHAN_NO;
     *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-    *AR10_DMA_CPOLL= 0x80000040;
+	  while(*AR10_DMA_CCTRL & 0x2);
+	  *AR10_DMA_CPOLL= 0x80000040;
     /*set descriptor base*/
     *AR10_DMA_CDBA=(u32)rx_des_ring & 0x0ffffff0;
     *AR10_DMA_CDLEN=NUM_RX_DESC;
@@ -173,12 +285,15 @@ int ar10_switch_init(struct eth_device *dev, bd_t * bis)
 
     *AR10_DMA_CS=TX_CHAN_NO;
     *AR10_DMA_CCTRL=0x2;/*fix me, need to reset this channel first?*/
-    *AR10_DMA_CPOLL= 0x80000040;
+    while(*AR10_DMA_CCTRL & 0x2);
+	*AR10_DMA_CPOLL= 0x80000040;
     *AR10_DMA_CDBA=(u32)tx_des_ring & 0x0ffffff0;
     *AR10_DMA_CDLEN=NUM_TX_DESC;
     *AR10_DMA_CIE = 0;
     *AR10_DMA_CCTRL=0x30100;
 
+
+    
 	for(i=0;i < NUM_RX_DESC; i++)
 	{
 		dma_rx_descriptor_t * rx_desc = KSEG1ADDR(&rx_des_ring[i]);
@@ -186,7 +301,8 @@ int ar10_switch_init(struct eth_device *dev, bd_t * bis)
 		rx_desc->status.field.OWN=1;
 		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */
 		rx_desc->DataPtr=(u32)NetRxPackets[i] & 0x0ffffff0;
-	}
+        invalidate_dcache_range((u32)&rx_des_ring[i],(u32)&rx_des_ring[i]+8);
+    }
 
 	for(i=0;i < NUM_TX_DESC; i++)
 	{
@@ -215,7 +331,6 @@ int ar10_switch_send(struct eth_device *dev, volatile void *packet,int length)
 
 	int                 	i;
 	int 		 	res = -1;
-    int datalen, cache_linesize;
 	dma_tx_descriptor_t * tx_desc= KSEG1ADDR(&tx_des_ring[tx_num]);
 
 	if (length <= 0)
@@ -244,9 +359,7 @@ int ar10_switch_send(struct eth_device *dev, volatile void *packet,int length)
 		tx_desc->status.field.DataLen = 60;
 	else
 		tx_desc->status.field.DataLen = (u32)length;
-        cache_linesize = dcache_linesize_mips32() ;
-	datalen = cache_linesize *((tx_desc->status.field.DataLen/cache_linesize)+1);
-        dcache_writeback_invalidate(datalen, cache_linesize, (u32)packet );
+	flush_dcache_range(packet,packet+tx_desc->status.field.DataLen);
 	asm("SYNC");
 
 	tx_desc->status.field.OWN=1;
@@ -268,7 +381,6 @@ int ar10_switch_recv(struct eth_device *dev)
 
 	int                    length  = 0;
 	dma_rx_descriptor_t * rx_desc;
-	int datalen, cache_linesize;
 	for (;;)
 	{
 	        rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
@@ -285,11 +397,8 @@ int ar10_switch_recv(struct eth_device *dev)
 		length = rx_desc->status.field.DataLen;
 		if (length)
 		{
-            cache_linesize = dcache_linesize_mips32() ;
-	        datalen = cache_linesize *((rx_desc->status.field.DataLen/cache_linesize)+1);
-            dcache_hit_invalidate(datalen, cache_linesize, (u32)NetRxPackets[rx_num] );
+			invalidate_dcache_range((u32)NetRxPackets[rx_num], (u32)NetRxPackets[rx_num]+rx_desc->status.field.DataLen);
 			NetReceive((void*)KSEG1ADDR(NetRxPackets[rx_num]), length - 4);
-			//serial_putc('*');
 		}
 		else
 		{
@@ -352,21 +461,8 @@ static void ar10_dma_init(void)
     __asm__("sync");
     //return;
 
-    
-   
-    
 }
 
-
-void config_mdio_gpio()
-{
-	  *AR10_GPIO_P2_ALTSEL0 = *AR10_GPIO_P2_ALTSEL0 | (0xc00);
-    *AR10_GPIO_P2_ALTSEL1 = *AR10_GPIO_P2_ALTSEL1 & ~(0xc00);
-    *AR10_GPIO_P2_DIR     |= 0xc00;
-    *AR10_GPIO_P2_OD      |= 0xc00;
-	
-	
-}
 
 void config_port()
 {
@@ -414,37 +510,193 @@ void config_port()
     return;
 }
 
+
+/***obtain lzma compressed gphy firmware from src address***/
+/** return value: 0 success, 1 fail*************************/
+int get_gphy_firmware(u32 dst, u32 src)
+{
+     int result = 1;
+     int srcLen;
+	 u8* load = (unsigned char*)0xa0140000;
+	 ulong unc_len = 0;
+	 u8* image_start = NULL;
+	 ulong image_len = 0;
+     image_header_t *pimg_header = NULL;
+	 int fw_version = 1; /*1->version 1; 2->version 2*/
+	 int fw_type = 0; /*0 FE, 1 GE*/
+
+     char* ep;
+
+    
+	 if (((ep = getenv("raw_gphy_fw")) != NULL) && (strcmp(ep, "yes") == 0)) {
+         memcpy(dst,src,65536);
+         result = 0;
+		 goto exit;
+	 }
+
+     pimg_header = (image_header_t *)src;	
+     while(1){ 
+	    if(pimg_header->ih_magic != IH_MAGIC){
+              printf("bad image magic number\n");
+              result = 1;
+              break;
+
+	     }
+	 switch(pimg_header->ih_type){
+	   case IH_TYPE_MULTI:
+         image_start = (u8*)pimg_header+sizeof(image_header_t)+8;
+	     image_len = pimg_header->ih_size; 
+
+	     if(lzmaBuffToBuffDecompress(load, &unc_len,image_start, image_len)){
+			 printf("gphy image name incorrect...\n");
+		     result = 1;
+		     goto exit;
+		     }
+		  pimg_header = (image_header_t *)load;  
+	    break;
+      
+	   case IH_TYPE_FIRMWARE:
+		  if(strncmp(pimg_header->ih_name, "VR9 V1.2 GPHY GE", sizeof(pimg_header->ih_name)) == 0){
+		          fw_type = 1;
+		  }else if(strncmp(pimg_header->ih_name, "VR9 V1.2 GPHY FE", sizeof(pimg_header->ih_name)) == 0){
+		          fw_type = 0;
+		  }
+    
+#ifdef CONFIG_AR10_SW_PORT2_GMII
+               if(fw_type == 1){    
+                    image_start = (u8*)pimg_header+sizeof(image_header_t);
+					image_len = pimg_header->ih_size;
+					memcpy((u8*)dst, image_start, image_len);
+					result = 0;
+					goto exit;
+			   }
+#elif CONFIG_AR10_SW_PORT2_MII
+          if(fw_type == 0){
+                    image_start = (u8*)pimg_header+sizeof(image_header_t);
+					image_len = pimg_header->ih_size;
+				    memcpy((u8*)dst, image_start, image_len);		
+					result = 0;
+					goto exit;
+			   }
+#endif
+      pimg_header = (u8*)pimg_header+sizeof(image_header_t)+(pimg_header->ih_size);
+	      break;
+		 
+	  }
+	 }
+    	
+exit:	 
+     return result;
+}
+
 static void ar10_sw_chip_init()
 {
-      int i,num,port;
-	  u32 fw_addr,gphy_reset_value; 
+    int i,num,port;
+	  u32 fw_addr,gphy_reset_value,fw_src_addr; 
 	  u8 interface_mode;
-   	
-	  asm("sync");
-    /*turn on ephy, switch and dma in PMU*/
-    *AR10_PMU_PWDCR &= ~(BSP_PMU_DMA| BSP_PMU_AHBS| BSP_PMU_GPHY );
-     udelay(20);
+   	unsigned short mdio_value;
+	       
+/**************************************************/
+/***********configure phy now**********************/
+/**************************************************/
+     /*gpio configuration for exteranl phy*/
+     /*for external phy, this is all that needs to be done*/
+     config_mdio_gpio(); 
     
-    *AR10_PMU_PWDCR &= 0xEFFFFFFF;
-    udelay(20);
+    
+    /*****************************/
+    /*initialize internal phy now*/
+    /*****************************/ 
+     
+    /*reset ephy*/
+	 *AR10_RCU_RST_REQ = 0xb0000021;
+     mdelay(100);
 
-	  // Reset PPE Dplus Master / Slave
-    REG32(PPE32_SRST) &= ~(1<<4); //
-    REG32(PPE32_SRST) &= ~(1<<10); //
-    udelay(20);
+	/*configure clock for internal phy*/
+     REG32(AR10_CGU_IF_CLK) &= ~(0x0000001c);
 
-    REG32(AR10_RCU_RST_REQ) |= (0xB0200100) ;  /*GPHY (31),Switch(21) and PPE(8) */
-    REG32(AR10_RCU_RST_REQ2) |= (0x06000000) ;  /*GPHY (31),Switch(21) and PPE(8) */
-    udelay(20);
+#ifdef CONFIG_AR10_GPHY_CLK_25M     
+	 REG32(AR10_CGU_IF_CLK) |=  (0x00000008);
+     /*configure boot option for internal phy, enable FE/GE capability*/
 
-    // Release Reset PPE Dplus Master / Slave
-    REG32(PPE32_SRST) |= (1<<4);
-    REG32(PPE32_SRST) |= (1<<10);
-    udelay(20);
+     *AR10_EPHY0_CFG = 0x1fe70000;
+     *AR10_EPHY1_CFG = 0x1fe70000;
+     *AR10_EPHY2_CFG = 0x1fe70000;
+	 printf("internal phy using 25Mhz clock\n");
+	
+#else /*36Mhz*/
+     REG32(AR10_CGU_IF_CLK) |=  (0x00000004);
+     *AR10_EPHY0_CFG = 0x1fdb20c5;
+	 *AR10_EPHY1_CFG = 0x1fdb20c5;
+	 *AR10_EPHY2_CFG = 0x1fdb20c5;
+	 printf("internal phy using 36Mhz clock\n");
+#endif
 
-    REG32(AR10_RCU_RST_REQ) &= ~(0xB<< 28) ;  /*GPHY (31),GPHY (29) */
-    udelay(20);
+     mdelay(1);
+     asm("sync");
+     
 
+     /*set gphy firmware address*/
+     fw_addr=0xa0200000;
+     asm("sync");
+#ifdef CONFIG_AR10_GPHY_FW_EMBEDDED	  
+      fw_src_addr = CONFIG_AR10_GPHY_FW_ADDR;
+#endif	 
+#ifdef CONFIG_AR10_EXTERN_GPHY_FW_ADDR
+ #ifdef CONFIG_BOOT_FROM_NAND
+      {
+	     nand_info_t *nand = &nand_info[0];
+	     u64 size=65536;
+	     fw_src_addr = 0xa0120000;
+       nand_read_skip_bad(nand, (getenv("gphy_fw_addr")?simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16):CONFIG_AR10_EXTERN_GPHY_FW_ADDR), &size,(u_char *)fw_src_addr);
+      }
+ #else /*CONFIG_BOOT_FROM_SPI*/
+      {
+        static struct spi_flash *flash;
+		  fw_src_addr = 0xa0110000;
+	    flash = spi_flash_probe(0, CONFIG_ENV_SPI_CS,
+			             CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
+	    spi_flash_read(flash, (getenv("gphy_fw_addr")?simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16):CONFIG_AR10_EXTERN_GPHY_FW_ADDR), 65536, (void*)fw_src_addr);					 
+
+	  }
+ #endif 
+#endif
+
+     asm("sync");
+     if(get_gphy_firmware(fw_addr,fw_src_addr)){
+	           printf("cannnot find gphy firmware!\n");
+	    }
+
+     asm("sync");
+     /* step - 1 */
+     /* program fw base address */
+     REG32(AR10_RCU_GFS_ADD0) = 0x200000;  
+     REG32(AR10_RCU_GFS_ADD1) = 0x200000;  
+     REG32(AR10_RCU_GFS_ADD2) = 0x200000;
+     
+         
+     /* step - 2 */
+     // Bring GPHY-0/GFS-0 GPHY-1/GFS-1 out of reset
+     REG32(AR10_RCU_RST_REQ) &= 0x4FFFFFFE; // 31st,29th, 28th bit for gphy rst
+     /*wait till two GPHYs/GFSs are out of reset*/
+     while( *AR10_RCU_RST_STAT & 0x50002000 );
+    
+	    mdelay(100);
+   	 //while (!(*AR10_ICU_IM3_ISR & 0x40060000));
+      /* step - 3 */
+
+      /*Enable clocks to the module*/
+      REG32(AR10_PMU_CLKGCR1_A) |= 0xE0000000;
+
+      config_phy_led();
+
+#ifdef CONFIG_CMD_MII
+      miiphy_register("AR10 SWITCH", xway_mii_read, xway_mii_write);
+#endif
+
+/**************************************/
+/*end of phy configuration*************/
+/**************************************/
 
     
 	  /*Turn on switch macro*/  
@@ -491,11 +743,28 @@ static void ar10_sw_chip_init()
      }
     }
      REG32(AR10_ETHSW_PMAC_HD_CTL) |= (1<<2);
-   
-        asm("sync");  
-        
-          
-	  ar10_dma_init();
+     
+	 /*Force clk stop capability*/
+
+     REG32(AR10_ETHSW_ANEG_EEE_0) = 0x0C;
+     REG32(AR10_ETHSW_ANEG_EEE_1) = 0x0C;
+     REG32(AR10_ETHSW_ANEG_EEE_2) = 0x0C;
+     REG32(AR10_ETHSW_ANEG_EEE_3) = 0x0C;
+     REG32(AR10_ETHSW_ANEG_EEE_4) = 0x0C;
+     REG32(AR10_ETHSW_ANEG_EEE_5) = 0x0C;
+
+
+     /*to avoid switch CRC issue under high temperature*/
+     REG32(AR10_ETHSW_PCDU_0) = 0xc081;
+	 REG32(AR10_ETHSW_PCDU_5) = 0xc081;
+
+
+     asm("sync");  
+    
+     xway_mii_read(NULL, 0x4, 0x1e, &mdio_value);    
+     printf("Internal phy firmware version: 0x%04x\n",mdio_value);      
+	
+	ar10_dma_init();
 }
 
 

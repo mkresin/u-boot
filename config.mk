@@ -152,7 +152,7 @@ ARFLAGS = crv
 endif
 RELFLAGS= $(PLATFORM_RELFLAGS)
 DBGFLAGS= -g # -DDEBUG
-OPTFLAGS= -Os #-fomit-frame-pointer
+OPTFLAGS= -Os -fomit-frame-pointer
 ifndef LDSCRIPT
 #LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds.debug
 #ifeq ($(CONFIG_NAND_U_BOOT),y)
@@ -182,6 +182,9 @@ endif
 CPPFLAGS += -I$(TOPDIR)/include
 CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\
 	-isystem $(gccincdir) -pipe $(PLATFORM_CPPFLAGS)
+ifdef POLARSSL_TINY
+CPPFLAGS+=-DPOLARSSL_TINY
+endif
 
 ifdef BUILD_TAG
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes \

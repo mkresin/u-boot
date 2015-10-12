@@ -2247,7 +2247,13 @@ static int nand_write_partial (struct mtd_info *mtd, loff_t offset, u64 len, u64
              erase.addr = (sect_addr + i) * sector_size;
              erase.len  = sector_size;
              erase.state = 0;
-             nand_erase_nand (mtd, &erase, 0);
+             if (nand_block_checkbad( mtd, erase.addr, 1, 1)){
+                   printf("block bad, partial write failed..\n");
+				   *retlen = 0;
+				   return 0;
+			 }
+			 
+			 nand_erase_nand (mtd, &erase,0);
 
              nand_write(mtd, (sect_addr + i) * sector_size, (u64)sector_size, retlen, sect_buf);
              if(f_malloc) {
@@ -2798,12 +2804,12 @@ static int nand_flash_detect_onfi(struct mtd_info *mtd, struct nand_chip *chip,
 			break;
 		}
 	}
-  /* 
+    /* 
     for(j=0;j<sizeof(*p);j++){
         printf("%02x ",*((uint8_t *)p+j));
         if((j+1)%16==0) printf("\n");
 	}
-  */ 
+    */
 	if (i == 3)
 		return 0;
 
@@ -2831,7 +2837,13 @@ static int nand_flash_detect_onfi(struct mtd_info *mtd, struct nand_chip *chip,
 	mtd->writesize = le32_to_cpu(p->byte_per_page);
 	mtd->erasesize = le32_to_cpu(p->pages_per_block) * mtd->writesize;
 	mtd->oobsize = le16_to_cpu(p->spare_bytes_per_page);
-	chip->chipsize = (u64)le32_to_cpu(p->blocks_per_lun) * (u64)(mtd->erasesize);
+	chip->chipsize = (u64)le32_to_cpu(p->blocks_per_lun)*(u64)(p->lun_count)*(u64)(mtd->erasesize);
+	/*fix me, seems no way to differenciate between Micron MLC 64,128,256,512G based on the above calculation*/
+	if (strcmp(mtd->name,"MT29F128G08CFAAAWP")==0){
+		chip->chipsize *= 2; 
+	}else if(strcmp(mtd->name,"MT29F256G08CJAAAWP")==0){	
+	    chip->chipsize *= 2;
+	}
 	
 	busw = 0;
 	if (le16_to_cpu(p->features) & 1)
@@ -2973,7 +2985,33 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 			mtd->erasesize = (128 * 1024) <<
 				(((extid >> 1) & 0x04) | (extid & 0x03));
 			busw = 0;
-		} else {
+		} 
+		else if (id_data[0] == id_data[6] && id_data[1] == id_data[7] &&
+				id_data[0] == NAND_MFR_HYNIX &&
+				(chip->cellinfo & NAND_CI_CELLTYPE_MSK) &&
+				id_data[5] != 0x00) {
+			/* Calc pagesize */
+			mtd->writesize = 2048 << (extid & 0x03);
+			extid >>= 2;
+			/* Calc oobsize */
+			switch (extid & 0x03) {
+			case 0:
+				mtd->oobsize = 128;
+				break;
+			case 1:
+				mtd->oobsize = 224;
+				break;
+			case 2:
+				mtd->oobsize = 448;
+				break;
+			}
+			extid >>= 2;
+			/* Calc blocksize */
+			mtd->erasesize = (extid & 0x8) ? (1024 * 1024)<< ( extid & 0x1 ) :(128 * 1024) * (extid & 0x03)* 2;
+			busw = 0;
+		} 
+	
+		else {
 			/* Calc pagesize */
 			mtd->writesize = 1024 << (extid & 0x03);
 			extid >>= 2;

@@ -162,6 +162,15 @@
 #define AR10_GPIO_P3_ALTSEL0          ((volatile u32 *)(AR10_GPIO+ 0x00AC))
 
 
+/***********************************************************************/
+/*  Module      :  SSIO register address and bits                       */
+/***********************************************************************/
+#define AR10_SSIO_BASE_ADDR             (KSEG1+0x1E100B00)
+#define AR10_LED_CON0                   ((volatile u32*)(AR10_SSIO_BASE_ADDR + 0x00B0))
+#define AR10_LED_CON1                   ((volatile u32*)(AR10_SSIO_BASE_ADDR + 0x00B4))
+#define AR10_LED_CPU0                   ((volatile u32*)(AR10_SSIO_BASE_ADDR + 0x00B8))
+#define AR10_LED_CPU1                   ((volatile u32*)(AR10_SSIO_BASE_ADDR + 0x00BC))
+#define AR10_LED_AR                     ((volatile u32*)(AR10_SSIO_BASE_ADDR + 0x00C0))
 
 /***********************************************************************/
 /*  Module      :  PMU register address and bits                       */
@@ -174,7 +183,7 @@
 #define AR10_PMU_PWDSR1                  ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x0028))
 
 
-#define AR10_PMU_CLKGSR1                ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x001C))
+#define AR10_PMU_CLKGSR1                ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x0020))
 #define AR10_PMU_CLKGCR1_A              ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x0024))
 #define AR10_PMU_CLKGCR1_B			        ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x0028))
 #define AR10_PMU_CLKGSR2                ((volatile u32*)(AR10_PMU_BASE_ADDR + 0x0030))
@@ -257,10 +266,9 @@
 
 /*Module Base Address Configuration*/
 #define AR10_RCU_GFS_ADD0             ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0020))
-#define AR10_RCU_GFMDIO_ADD           ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0044))
-#define AR10_RCU_GCC                  ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0060))
-#define AR10_RCU_GFS_ADD1             ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0068))
-#define AR10_RCU_GFS_ADD2             ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x006C))
+#define AR10_RCU_GCC                  ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0040))
+#define AR10_RCU_GFS_ADD1             ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x0058))
+#define AR10_RCU_GFS_ADD2             ((volatile u32*)(AR10_RCU_BASE_ADDR + 0x00AC))
 
 
 
@@ -559,6 +567,22 @@
 #define AR10_ETHSW_PHY_ADDR_1            ( AR10_ETHSW_TOP  + (0x14 * 4))
 #define AR10_ETHSW_PHY_ADDR_0            ( AR10_ETHSW_TOP  + (0x15 * 4))
 
+#define AR10_ETHSW_MDIO_STAT_0           ( AR10_ETHSW_TOP  + (0x16 * 4))
+#define AR10_ETHSW_MDIO_STAT_1           ( AR10_ETHSW_TOP  + (0x17 * 4))
+#define AR10_ETHSW_MDIO_STAT_2           ( AR10_ETHSW_TOP  + (0x18 * 4))
+#define AR10_ETHSW_MDIO_STAT_3           ( AR10_ETHSW_TOP  + (0x19 * 4))
+#define AR10_ETHSW_MDIO_STAT_4           ( AR10_ETHSW_TOP  + (0x1A * 4))
+#define AR10_ETHSW_MDIO_STAT_5           ( AR10_ETHSW_TOP  + (0x1B * 4))
+
+#define AR10_ETHSW_ANEG_EEE_0            ( AR10_ETHSW_TOP  + (0x1C * 4))
+#define AR10_ETHSW_ANEG_EEE_1            ( AR10_ETHSW_TOP  + (0x1D * 4))
+#define AR10_ETHSW_ANEG_EEE_2            ( AR10_ETHSW_TOP  + (0x1E * 4))
+#define AR10_ETHSW_ANEG_EEE_3            ( AR10_ETHSW_TOP  + (0x1F * 4))
+#define AR10_ETHSW_ANEG_EEE_4            ( AR10_ETHSW_TOP  + (0x20 * 4))
+#define AR10_ETHSW_ANEG_EEE_5            ( AR10_ETHSW_TOP  + (0x21 * 4))
+
+
+
 /*ETHSW_MII_PDI Registers*/
 #define AR10_ETHSW_MII_CFG_0             ( AR10_ETHSW_TOP + (0x36 * 4))
 #define AR10_ETHSW_PCDU_0                ( AR10_ETHSW_TOP + (0x37 * 4))
@@ -634,6 +658,10 @@
 #define AR10_ETHSW_PMAC_ST_ETYPE         ( AR10_ETHSW_TOP + (0x8c * 4))
 #define AR10_ETHSW_PMAC_EWAN             ( AR10_ETHSW_TOP + (0x8d * 4))
 
+#define DCDC_1V0_BASE                 0xBF106A00
+#define DCDC_1V8_BASE                 0xBF106C00
+#define DCDC_2V5_BASE                 0xBF106E00
+#define DCDC_PWM0_OFFSET              0x24
 
 #define PPE32_BASE  0xBE180000
 #define PPE32_DEBUG_BREAK_TRACE_REG   PPE32_BASE + (0x0000 * 4)
@@ -912,6 +940,28 @@
 #define MIPS_QSB_ISTAT_REG           PPE32_BASE + (0xC00E * 4)
 #define MIPS_QSB_IMR_REG             PPE32_BASE + (0xC00F * 4)
 #define MIPS_QSB_SCR_REG             PPE32_BASE + (0xC010 * 4)
+
+
+/***********************************************************************/
+/*  Module      :  Cross Bar register address and bits                       */
+/***********************************************************************/
+
+#define AR10_CSS                          (0xBF400000)
+/***********************************************************************/
+
+/***CSS Control***/
+#define AR10_CSS_AL_CONTROL                      ((volatile u32*)(AR10_CSS + 0x0430))
+
+
+/***********************************************************************/
+/*  Module      :  Cross Bar register address and bits                       */
+/***********************************************************************/
+
+#define AR10_ICU_BASE                     (0xBF880200)
+/***********************************************************************/
+
+#define AR10_ICU_IM3_ISR                  ((volatile u32*)(AR10_ICU_BASE + 0x0078))
+
 
 
 #define AR10_REG32(addr)                 *((volatile u32 *)(addr))

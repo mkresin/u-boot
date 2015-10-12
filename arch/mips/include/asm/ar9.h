@@ -625,6 +625,8 @@
 #define AMAZON_S_CGU_PLL1_CFG                 ((volatile u32*)(AMAZON_S_CGU+ 0x0008))
 /***CGU Clock SYS Mux Register***/
 #define AMAZON_S_CGU_SYS                      ((volatile u32*)(AMAZON_S_CGU+ 0x0010))
+
+#define AMAZON_S_CGU_UPDATE                   ((volatile u32*)(AMAZON_S_CGU+ 0x0014))
 /***CGU Interface Clock Control Register***/
 #define AMAZON_S_CGU_IFCCR                        ((volatile u32*)(AMAZON_S_CGU+ 0x0018))
 /***CGU PCI Clock Control Register**/

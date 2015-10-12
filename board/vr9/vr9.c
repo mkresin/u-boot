@@ -29,6 +29,7 @@
 #include "dsl_address_define.h"
 #include <nand.h>
 #include <spi_flash.h>
+#include <configs/rg_config.h>
 
 #if !defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) && defined(CFG_BOOTSTRAP_CODE)                                                                            
 #define printf                                                                                                                                        
@@ -158,15 +159,38 @@ unsigned short config_afe(void)
 
 void show_boot_progress(int arg)
 {
+#ifdef CONFIG_RG_HW_SAGEM_HH5_VRX268
+    /* Leds are configurured and switched to default in preloader (SPL)
+     * Default state is success (Green) */
+
+    /* red power LED - gpio 12: port 0, pin 12
+     * green power LED - gpio 14: port 0, pin 14 */
+
+    if (arg >= 0)
+    {
+	/* Success */
+	*BSP_GPIO_P0_OUT &= ~(1 << 14); /* Turn on Green LED */
+	*BSP_GPIO_P0_OUT |= (1 << 12); /* Turn off Red LED */
+    }
+    else
+    {
+	/* Failure */
+	*BSP_GPIO_P0_OUT &= ~(1 << 12); /* Turn on Red LED */
+	*BSP_GPIO_P0_OUT |= (1 << 14); /* Turn off Green LED */
+    }
+#endif
   return;
 }
 
 void config_dcdc(u8 value)
 {
-	 u8 inc=0;
-	 u8 orig=REG8(PDI_DCDC_DIG_REF);
-	 
-	 
+#ifdef CONFIG_ENABLE_DCDC
+   u8 inc=0;
+   u8 orig=REG8(PDI_DCDC_DIG_REF);
+   u8 fuse_value;
+  
+   fuse_value=(u8)((REG32(0xBF107358) & 0xe0000) >>17);
+   REG8(PDI_DCDC_BIAS_VREG) |=(fuse_value & 0xf1); 
 
    REG8(PDI_DCDC_DUTY_CYCLE_MAX_SAT) = 0x5A;  /*DUTY_CYCLE_SAT_MAX = 90*/ 
    REG8(PDI_DCDC_DUTY_CYCLE_MIN_SAT) = 0x46;  /*DUTY_CYCLE_SAT_MIN = 70*/
@@ -202,7 +226,11 @@ void config_dcdc(u8 value)
 	 	  mdelay(1);
 	 	  REG8(PDI_DCDC_DIG_REF) +=inc; 
 	 }
-
+#else  /*turn off DCDC*/
+  REG8(PDI_DCDC_CONF_TEST_ANA) = 0x78;
+  REG8(PDI_DCDC_CONF_TEST_DIG) = 0x0;
+  REG8(PDI_DCDC_GENERAL) = 0x88;
+#endif
 }
 
 int check_pll1_lock(void)
@@ -252,7 +280,10 @@ int checkboard (void)
 {
 
     printf("CLOCK CPU %dM RAM %dM\n",CPU_CLOCK_RATE/1000000,RAM_CLOCK_RATE/1000000);
-    config_afe();
+#ifdef CONFIG_LTQ_SECURE_BOOT
+    printf("secure boot\n");
+#endif
+	config_afe();
 #ifdef CONFIG_VR9_CRYSTAL_25M	
 	REG8(0xbf106b00)=0x3;
 #endif	
@@ -264,7 +295,12 @@ int checkboard (void)
     if(!check_pll1_lock()) return 1;
 	
 #endif
-    
+  
+   config_dcdc(0x7f);
+
+#ifdef CONFIG_GRX200 /*power gate DEF for GRX mode*/
+   REG32(BSP_PMU_PWCSR) = 0x31b ;
+#endif
 	return 0;
 }
 
@@ -305,15 +341,23 @@ int spi_gpio_init(unsigned int cs)
    /* enable SSC1 */
         //*DANUBE_PMU_PM_GEN |= DANUBE_PMU_PM_GEN_EN11;
 
+	/* SPI_CS3 conflicts with FL_A24 - same GPIO 0.13 fills different
+	 * functions.
+	 * Prevent using SPI_CS3 by SPI, if NAND flash is enabled */
+#ifdef CONFIG_NAND_FLASH
+#define SPI_CS3_PORT 0
+#else
+#define SPI_CS3_PORT 0x2000
+#endif
         /* SSC1 Ports */
         /* p0.15 SPI_CS1(EEPROM), P0.13 SPI_CS3, P0.9 SPI_CS5, P0.10 SPI_CS4, P0.11 SPI_CS6 */
         /* Set p0.10 to alternative 01, others to 00 (In/OUT)*/
-        *(BSP_GPIO_P0_DIR) = (*BSP_GPIO_P0_DIR)|(0xAE00);
+        *(BSP_GPIO_P0_DIR) = (*BSP_GPIO_P0_DIR)|(0x8E00 | SPI_CS3_PORT);
 
-        *(BSP_GPIO_P0_ALTSEL0) = (((*BSP_GPIO_P0_ALTSEL0)&(~0x0400)) & (~(0xAA00)));
-        *(BSP_GPIO_P0_ALTSEL1) = (((*BSP_GPIO_P0_ALTSEL1)|(0x0400)) & (~(0xAA00)) );
+        *(BSP_GPIO_P0_ALTSEL0) = (((*BSP_GPIO_P0_ALTSEL0)&(~0x0400)) & (~(0x8A00 | SPI_CS3_PORT)));
+        *(BSP_GPIO_P0_ALTSEL1) = (((*BSP_GPIO_P0_ALTSEL1)|(0x0400)) & (~(0x8A00 | SPI_CS3_PORT)) );
 
-        *(BSP_GPIO_P0_OD) = (*BSP_GPIO_P0_OD)|0xAE00;
+        *(BSP_GPIO_P0_OD) = (*BSP_GPIO_P0_OD)|(0x8E00 | SPI_CS3_PORT);
 
         /* p1.6 SPI_CS2(SFLASH), p1.0 SPI_DIN, p1.1 SPI_DOUT, p1.2 SPI_CLK */
         *(BSP_GPIO_P1_DIR) = ((*BSP_GPIO_P1_DIR)|(0x46))&(~1);

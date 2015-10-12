@@ -27,6 +27,9 @@
 #include <asm/ar9.h>
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
+    *AMAZON_S_CGU_SYS=0x05;
+    *AMAZON_S_CGU_UPDATE|=1; 
+
 	*AMAZON_S_RCU_RST_REQ |=1<<30;
 	fprintf(stderr, "*** reset failed ***\n");
 	return 0;

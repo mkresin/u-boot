@@ -793,9 +793,7 @@ static int process_eb(struct ubi_device *ubi, struct ubi_scan_info *si, int pnum
 		bitflips = 1;
 	}
 
-	if (err != UBI_IO_BAD_EC_HDR)
-		si->is_empty = 0;
-	
+	si->is_empty = 0;
 
 	if (!ec_corr) {
 		/* Make sure UBI version is OK */

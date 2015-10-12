@@ -69,7 +69,7 @@ endchoice
 
 choice 
     prompt 'RAM BRAND'
-	default HYNIX_RAM
+	default HYNIX_RAM_H5DU2562GTR_E3C
 
 config QIMONDA_RAM
     bool "QIMONDA"
@@ -77,8 +77,11 @@ config QIMONDA_RAM
 config ETRON_RAM
     bool "ETRON"
 
-config HYNIX_RAM
-    bool "HYNIX"
+config HYNIX_RAM_H5DU2562GTR_E3C
+    bool "HYNIX-H5DU2562GTR-E3C"
+
+config HYNIX_RAM_H5DU5162ETR_E3C
+    bool "HYNIX-H5DU5162ETR-E3C"
 
 config NANYA_RAM
     bool "NANYA"

@@ -247,9 +247,8 @@ change_got_table:
 
       	subu    gp, 0x20000000
 #endif
-    	li	t0, 0xBE22FF00 
+    	li	t0, 0xBE1A7F00 
 	    la	sp, 0(t0)
-	    //la	t9, nand_boot
 	    la  t9, nand_spl_init
 		j	t9
 	    nop

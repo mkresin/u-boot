@@ -70,6 +70,7 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
   int waitEOS = 1; 
   /* waitEOS = 1, if there is no uncompressed size in headers, 
    so decoder will wait EOS (End of Stream Marker) in compressed stream */
+  rpos = 0;
 
   SizeT compressedSize;
   unsigned char *inStream;

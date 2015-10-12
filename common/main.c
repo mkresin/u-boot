@@ -215,6 +215,12 @@ static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
 
+#ifdef CONFIG_SILENT_CONSOLE
+	/* Do not allow abort when console is silent */
+	if (gd->flags & GD_FLG_SILENT)
+	    return 0;
+#endif
+
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else

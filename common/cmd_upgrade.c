@@ -99,7 +99,10 @@ int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
 	int curParSize=0, dir, pad;
 	image_header_t *pimg_header = NULL;
 	char name[16], strimg_crc[32], buf[32];;
-  if(argc != 3) {
+#ifdef CONFIG_CMD_UBI
+    int ubi = 0;
+#endif
+	if(argc != 3) {
 		printf("Usage :\n%s\n",cmdtp->usage);
 		return 1;
 	}
@@ -110,8 +113,13 @@ int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
 	do {
 		srcHeader = (!srcHeader ? srcAddr : srcHeader + curParSize);
 		pimg_header = (image_header_t *)srcHeader;		
-		curParSize = sizeof(image_header_t) + pimg_header->ih_size;
-		pad = (16 - (curParSize % 16)) % 16;
+		curParSize = sizeof(image_header_t) + ntohl(pimg_header->ih_size);
+		pad = (4 - (curParSize % 4)) % 4;
+
+        if (!image_check_hcrc (pimg_header) || !image_check_dcrc (pimg_header)) {
+		     printf ("Bad Header Checksum\n");
+			 return 1;
+		    }
 
 		switch(pimg_header->ih_type) {
 			case IH_TYPE_MULTI:
@@ -185,14 +193,23 @@ int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
 				curParSize = sizeof(image_header_t) + 8;
 				continue;
 			case IH_TYPE_FILESYSTEM:
+            #ifdef CONFIG_CMD_UBI
+                if(strncmp(pimg_header->ih_name, "LTQCPE UBI_RootFS", sizeof(pimg_header->ih_name)) == 0) ubi=1;
+		    #endif
 				sprintf(name, "rootfs");
 				dir = 0;
 				break;
 			case IH_TYPE_KERNEL:
+			#ifdef CONFIG_CMD_UBI
+			    if(strncmp(pimg_header->ih_name, "LTQCPE UBI_Kernel", sizeof(pimg_header->ih_name)) == 0) ubi=1;
+			#endif	
 				sprintf(name, "kernel");
 				dir = 1;
 				break;
 			case IH_TYPE_FIRMWARE:
+			#ifdef CONFIG_CMD_UBI    
+				if(strncmp(pimg_header->ih_name, "LTQCPE UBI_Firmware", sizeof(pimg_header->ih_name)) == 0) ubi=1;
+			#endif	
 				sprintf(name, "firmware");
 				dir = 0;
 				break;
@@ -204,9 +221,8 @@ int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
 				printf("Unknown image type!!\n");
 				continue;
 		}
-
-		if(upgrade_img(srcHeader, curParSize, name, dir, 0)) {
-			printf("Can not upgrade the image %s\n", name);
+        if(upgrade_img(srcHeader, curParSize, name, dir, 0)) {
+            printf("Can not upgrade the image %s\n", name);
 		} else {
 			sprintf(strimg_crc, "f_%s_crc", name);
 			sprintf(buf, "%lX", ntohl(pimg_header->ih_dcrc));
@@ -217,6 +233,9 @@ int do_upgrade( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]) {
 #endif
 		}
 		curParSize = curParSize + pad;
+#ifdef CONFIG_CMD_UBI		
+		ubi=0;
+#endif		
 	} while(srcLen > (srcHeader - srcAddr) + curParSize);
 
 	return 0;
@@ -235,7 +254,7 @@ int http_upgrade(ulong srcAddr, int srcLen) {
 		srcHeader = (!srcHeader ? srcAddr : srcHeader + curParSize);
 		printf("srcHeader=0x%08x\n",srcHeader);
 		pimg_header = (image_header_t *)srcHeader;		
-		curParSize = sizeof(image_header_t) + pimg_header->ih_size;
+		curParSize = sizeof(image_header_t) + ntohl(pimg_header->ih_size);
 		printf("curParSize=0x%x\n",curParSize);
 		
 		pad = (16 - (curParSize % 16)) % 16;
@@ -285,13 +304,46 @@ int http_upgrade(ulong srcAddr, int srcLen) {
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+
+int image_check_hcrc (const image_header_t *hdr)
+{
+	ulong hcrc = 0;
+	ulong len = image_get_header_size ();
+	image_header_t header;
+
+	/* Copy header so we can blank CRC field for re-calculation */
+	memmove (&header, (char *)hdr, image_get_header_size ());
+	image_set_hcrc (&header, 0);
+
+	hcrc ^= 0xffffffffL;
+	hcrc = crc32 (hcrc, (unsigned char *)&header, len);
+	hcrc ^= 0xffffffffL;
+
+	return (hcrc == image_get_hcrc (hdr));
+}
+
+int image_check_dcrc (const image_header_t *hdr)
+{
+	ulong data = image_get_data (hdr);
+	ulong len = image_get_data_size (hdr);
+	ulong dcrc = 0;
+
+	dcrc ^= 0xffffffffL;
+	dcrc = crc32 (dcrc, (unsigned char *)data, len);
+	dcrc ^= 0xffffffffL;
+
+	return (dcrc == image_get_dcrc (hdr));
+}
 #endif
 
 int do_upgrade( int file_fd , int srcLen) {
-	ulong srcHeader=0;
 	uint32_t curParSize=0, dir, pad;
 	char name[16], strimg_crc[32], buf[32];;
 	image_header_t xImgHeader;
+#ifdef CONFIG_FEATURE_LQ_NEW_UPGRADE
+	ulong srcHeader=0;
+	image_header_t *pimg_header = NULL;
+#endif
 	char *xHeader = NULL;
 	uint32_t iFileReadSize =0, iTotalFileReadSize = 0;
 	int iRet = 0;
@@ -318,6 +370,15 @@ int do_upgrade( int file_fd , int srcLen) {
 #endif
 
 		printf("\nImage Header --> Data Size = %d\n Image Name = %s\n",xImgHeader.ih_size , xImgHeader.ih_name);
+
+#ifdef CONFIG_FEATURE_LQ_NEW_UPGRADE
+		srcHeader = (!srcHeader ? xHeader : srcHeader + curParSize);
+		pimg_header = (image_header_t *)srcHeader;
+		if (!image_check_hcrc (pimg_header) || !image_check_dcrc (pimg_header)) {
+			printf ("Bad Header or Data Checksum\n");
+			return 1;
+		}
+#endif
 
                 if(xImgHeader.ih_type == IH_TYPE_MULTI){
                         curParSize = sizeof(image_header_t) + 8;
@@ -376,6 +437,10 @@ int do_upgrade( int file_fd , int srcLen) {
 				sprintf(name, "firmware");
 				dir = 0;
 				break;
+			case IH_TYPE_UBOOT:
+			    sprintf(name, "uboot");
+			    dir = 0;
+			    break; 
 			default:
 				printf("Unknown image type!!\n");
 				continue;
@@ -384,12 +449,14 @@ int do_upgrade( int file_fd , int srcLen) {
 		if(upgrade_img(xHeader, curParSize, name, dir, 0)) {
 			printf("Can not upgrade the image %s\n", name);
 		} else {
+#if !defined (CONFIG_TARGET_UBI_MTD_SUPPORT)
 			sprintf(strimg_crc, "f_%s_crc", name);
 			sprintf(buf, "%lX", ntohl(xImgHeader.ih_dcrc));
 			setenv(strimg_crc, buf);
 			saveenv();
 #ifdef UBOOT_ENV_COPY
 			saveenv_copy();
+#endif
 #endif
 		}
 		iTotalFileReadSize += iFileReadSize;

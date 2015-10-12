@@ -75,7 +75,7 @@
 #define CPU_CLOCK_RATE	150000000	/* default: 150 MHz clock for the MIPS core */
 #endif
 
-#define CONFIG_BAUDRATE		115200
+//#define CONFIG_BAUDRATE		115200
 
 
 /* valid baudrates */
@@ -97,11 +97,11 @@
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
 #define	CONFIG_SYS_PROMPT		"AR9 # "	/* Monitor Command Prompt    */
-#define	CONFIG_SYS_CBSIZE		512		/* Console I/O Buffer Size   */
+#define	CONFIG_SYS_CBSIZE		1024		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		32		/* max number of command args*/
 
-#define CONFIG_SYS_MALLOC_LEN		512*1024
+#define CONFIG_SYS_MALLOC_LEN		4096*1024
 
 #define CONFIG_SYS_BOOTPARAMS_LEN	256*1024
 
@@ -171,8 +171,7 @@
 #define NAND_BASE_ADDRESS  0xB4000000
 #define CFG_NAND_BASE NAND_BASE_ADDRESS
 #define NAND_WRITE(addr, val)     *((volatile u8*)(NAND_BASE_ADDRESS | (addr))) = val;while((*EBU_NAND_WAIT & 0x08) == 0);
-//#define NAND_WRITE(addr, val)     *((volatile u8*)(NAND_BASE_ADDRESS | (addr)))=val;
-#define NAND_READ(addr, val)      val = *((volatile u8*)(NAND_BASE_ADDRESS | (addr)))
+#define NAND_READ(addr, val)      val = *((volatile u8*)(NAND_BASE_ADDRESS | (addr)));while((*EBU_NAND_WAIT & 0x08) == 0);
 #define NAND_CE_SET         *EBU_NAND_CON   = 0x00F005F3
 #define NAND_CE_CLEAR       *EBU_NAND_CON   = 0x000005F2
 #define NAND_READY       ( ((*EBU_NAND_WAIT)&0x07) == 7)
@@ -205,23 +204,37 @@
 #define IFX_NAND_CTL_CLRALE *EBU_NAND_CON &=~(1<<18);
 #define IFX_NAND_CTL_SETALE *EBU_NAND_CON |=1<<18;
 
-#define CONFIG_SYS_NAND_PAGE_SIZE   512 /* NAND chip page size          */
-#define CONFIG_SYS_NAND_BLOCK_SIZE  (32 << 10) /* NAND chip block size      */
-#define CONFIG_SYS_NAND_PAGE_COUNT  32  /* NAND chip page count         */
-#define CONFIG_SYS_NAND_BAD_BLOCK_POS   5   /* Location of bad block marker */
-#undef CONFIG_SYS_NAND_4_ADDR_CYCLE     /* No fourth addr used (<=32MB) */
+
+#define CONFIG_SYS_NAND_PAGE_SIZE   CONFIG_NAND_PAGE_SIZE   /* NAND chip page size        */
+#define CONFIG_SYS_NAND_BLOCK_SIZE  CONFIG_NAND_BLOCK_SIZE /* NAND chip block size       */
+
+#define CONFIG_SYS_NAND_PAGE_COUNT  (CONFIG_SYS_NAND_BLOCK_SIZE / CONFIG_SYS_NAND_PAGE_SIZE)
+                        /* NAND chip page count       */
 
 #define CONFIG_SYS_NAND_ECCSIZE 256
 #define CONFIG_SYS_NAND_ECCBYTES    3
 #define CONFIG_SYS_NAND_ECCSTEPS    (CONFIG_SYS_NAND_PAGE_SIZE / CONFIG_SYS_NAND_ECCSIZE)
-#define CONFIG_SYS_NAND_OOBSIZE 16
 #define CONFIG_SYS_NAND_ECCTOTAL    (CONFIG_SYS_NAND_ECCBYTES * CONFIG_SYS_NAND_ECCSTEPS)
+
+
+#if (CONFIG_NAND_PAGE_SIZE == 0x200 )
+#define CONFIG_SYS_NAND_BAD_BLOCK_POS   5       /* Location of bad block marker*/
+#define CONFIG_SYS_NAND_OOBSIZE 16
 #define CONFIG_SYS_NAND_ECCPOS      {0, 1, 2, 3, 6, 7}
+
+#else
+#define CONFIG_SYS_NAND_BAD_BLOCK_POS   0       /* Location of bad block marker*/
+#define CONFIG_SYS_NAND_OOBSIZE 64
+#define CONFIG_SYS_NAND_ECCPOS      {40, 41, 42, 43, 44, 45, 46, 47, \
+                                     48, 49, 50, 51, 52, 53, 54, 55, \
+									 56, 57, 58, 59, 60, 61, 62, 63}
+#endif
+
 
 #define CONFIG_SYS_NAND_U_BOOT_SIZE  (512 << 10)
 #define CONFIG_SYS_NAND_U_BOOT_DST   CONFIG_BOOTSTRAP_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_START CONFIG_BOOTSTRAP_TEXT_BASE
-#define CONFIG_SYS_NAND_U_BOOT_OFFS  16384
+#define CONFIG_SYS_NAND_U_BOOT_OFFS  CONFIG_NAND_SPL_BLOCK_SIZE
 
 
 #ifdef CONFIG_BOOT_FROM_NOR
@@ -234,11 +247,21 @@
 #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0001ffff
 #define CONFIG_ENV_SECT_SIZE 0x1000
 #else /*CONFIG_BOOT_FRON_NAND*/
-#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0001ffe8
+ #ifdef CONFIG_CMD_UBI
+    #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0003ffe8
+    #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0003ffff
+ #else
+    #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0001ffe8
+	#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0001ffff
+ #endif
 #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
-#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0001ffff
 #endif
 
+#ifdef CONFIG_CMD_UBI
+#define CONFIG_ENV_OFFSET     0x40000
+#define CONFIG_ENV_ADDR       0x40000
+#define CONFIG_ENV_SIZE       0x40000
+#else
 /* Address and size of Primary Environment Sector	*/
 #define CONFIG_ENV_OFFSET		IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
 #define CONFIG_ENV_ADDR		  IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
@@ -248,8 +271,21 @@
 #define CONFIG_ENV_SIZE       0x1000
 #endif
 
+#endif
+
+#ifdef CONFIG_ENV_REDUND
+#define CONFIG_ENV_OFFSET_REDUND    (CONFIG_ENV_OFFSET+CONFIG_ENV_SIZE)
+#define CONFIG_ENV_SIZE_REDUND  CONFIG_ENV_SIZE
+#endif
+
+
+
 #define CONFIG_TUNING_STATUS 0xBe1a7f20 
 #define CONFIG_TUNING_SP     0x9e1a7f00 
+
+
+#define MTDIDS_DEFAULT   CONFIG_MTDIDS
+#define MTDPARTS_DEFAULT CONFIG_MTDPARTS
 
 
 #endif	/* __CONFIG_H */

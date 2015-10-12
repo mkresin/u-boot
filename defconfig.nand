@@ -1,0 +1,13 @@
+# CONFIG_BOOT_FROM_NOR is not set
+# CONFIG_BOOT_FROM_SPI is not set
+CONFIG_BOOT_FROM_NAND=y
+# CONFIG_BOOT_FROM_ETHERNET is not set
+# CONFIG_BOOT_FROM_UART is not set
+# CONFIG_BOOT_WITH_NO_FLASH is not set
+CONFIG_ENV_IS_IN_NAND=y
+CONFIG_NAND_U_BOOT=y
+CONFIG_BOOTSTRAP_TEXT_BASE=0xa0100000
+CONFIG_VR9_GPHY_FW_ADDR=0xa0120000
+CONFIG_RESET_UBOOT_CONFIG="nand write.partial 80400000 $(f_ubootconfig_addr) $(f_ubootconfig_size)"
+CONFIG_RESET_DDR_CONFIG="nand write.partial 80400000 $(f_ddrconfig_addr) $(f_ddrconfig_size)"
+CONFIG_UPDATE_NANDBOOT="tftp $(loadaddr) $(tftppath)u-boot-nand.bin; nand erase 0 0x100000; nand write.partial $(loadaddr) 0 $(filesize); reset"

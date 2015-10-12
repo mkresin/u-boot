@@ -21,6 +21,9 @@
 #include <common.h>
 #include <nand.h>
 #include <asm/io.h>
+#include <configs/rg_config.h>
+
+static int bbt_valid=0;
 
 #define CONFIG_SYS_NAND_READ_DELAY \
 	{ volatile int dummy; int i; for (i=0; i<10000; i++) dummy = i; }
@@ -127,19 +130,27 @@ static int nand_command(struct mtd_info *mtd, int block, int page, int offs, u8 
 static int nand_is_bad_block(struct mtd_info *mtd, int block)
 {
 	struct nand_chip *this = mtd->priv;
+#ifdef CONFIG_NAND_SPL_BBT	
+	if(bbt_valid){
+      return nand_isbad_bbt(mtd, block<<this->bbt_erase_shift, 1);
+	}else{
+#endif	
+	 nand_command(mtd, block, 0, CONFIG_SYS_NAND_BAD_BLOCK_POS, NAND_CMD_READOOB);
 
-	nand_command(mtd, block, 0, CONFIG_SYS_NAND_BAD_BLOCK_POS, NAND_CMD_READOOB);
-
-	/*
+	 /*
 	 * Read one byte
 	 */
 	if (readb(this->IO_ADDR_R) != 0xff)
 		return 1;
-
+#ifdef CONFIG_NAND_SPL_BBT    
+	}
+#endif	
 	return 0;
 }
 
-static int nand_read_page(struct mtd_info *mtd, int block, int page, uchar *dst)
+
+
+int nand_read_page(struct mtd_info *mtd, int block, int page, uchar *dst)
 {
 	struct nand_chip *this = mtd->priv;
 	u_char *ecc_calc;
@@ -186,6 +197,19 @@ static int nand_read_page(struct mtd_info *mtd, int block, int page, uchar *dst)
 	return 0;
 }
 
+#ifdef CONFIG_NAND_SPL_BBT
+int scan_read_raw(struct mtd_info *mtd, uint8_t *buf, loff_t offs, size_t len)
+{
+	 struct nand_chip *this = mtd->priv;
+	 int block,page;
+	 block=offs>>this->bbt_erase_shift;
+	 page=0;/*always the first page for bbt*/
+	
+	 nand_command(mtd, block, page, 0, NAND_CMD_READ0);
+	 this->read_buf(mtd, buf, mtd->writesize+mtd->oobsize);
+}			 
+#endif
+
 static int nand_load(struct mtd_info *mtd, unsigned int offs,
 		     unsigned int uboot_size, uchar *dst)
 {
@@ -200,7 +224,7 @@ static int nand_load(struct mtd_info *mtd, unsigned int offs,
 	page = (offs % CONFIG_SYS_NAND_BLOCK_SIZE) / CONFIG_SYS_NAND_PAGE_SIZE;
 
 	while (block <= lastblock) {
-		if (!nand_is_bad_block(mtd, block)) {
+				if (!nand_is_bad_block(mtd,block)){
 			/*
 			 * Skip bad blocks
 			 */
@@ -237,14 +261,35 @@ void nand_boot(void)
 	 * Init board specific nand support
 	 */
 	nand_info.priv = &nand_chip;
+	
 	nand_chip.IO_ADDR_R = nand_chip.IO_ADDR_W = (void  __iomem *)CONFIG_SYS_NAND_BASE;
 	nand_chip.dev_ready = NULL;	/* preset to NULL */
 	board_nand_init(&nand_chip);
 
 	if (nand_chip.select_chip)
 		nand_chip.select_chip(&nand_info, 0);
+#ifdef CONFIG_NAND_SPL_BBT
+   /*search and setup bbt in the memory*/
 
-	/*
+    nand_info.size=CONFIG_NAND_FLASH_SIZE*(1<<20);
+    nand_info.erasesize=CONFIG_NAND_BLOCK_SIZE;
+    nand_info.writesize=CONFIG_NAND_PAGE_SIZE;
+    nand_info.oobsize=64;
+    nand_chip.page_shift=ffs(nand_info.writesize)-1;
+    nand_chip.bbt_erase_shift=ffs(nand_info.erasesize)-1;
+    nand_chip.numchips=1;
+    nand_chip.bbt_td=NULL;
+    nand_chip.bbt_md=NULL;
+    nand_chip.chipsize=nand_info.size;
+    nand_chip.badblock_pattern=NULL;
+
+    if(nand_default_bbt(&nand_info)){
+    		bbt_valid=1;
+    }else{
+    	  bbt_valid=0;
+    }
+#endif
+    /*
 	 * Load U-Boot image from NAND into RAM
 	 */
 	ret = nand_load(&nand_info, CONFIG_SYS_NAND_U_BOOT_OFFS, CONFIG_SYS_NAND_U_BOOT_SIZE,
@@ -254,6 +299,15 @@ void nand_boot(void)
 	nand_load(&nand_info, CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE,
 		  (uchar *)CONFIG_NAND_ENV_DST);
 
+#ifdef CONFIG_BOOTLDR_UBOOT_SECURED_ENV
+	{
+#include "../common/symkey.c"
+		u8 iv[16] = {};
+
+		secure_decrypt(sym_key, iv,(u8*)CONFIG_NAND_ENV_DST,
+	        	(u8*)CONFIG_NAND_ENV_DST, CONFIG_ENV_SIZE);
+	}
+#endif
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	nand_load(&nand_info, CONFIG_ENV_OFFSET_REDUND, CONFIG_ENV_SIZE,
 		  (uchar *)CONFIG_NAND_ENV_DST + CONFIG_ENV_SIZE);
@@ -262,6 +316,18 @@ void nand_boot(void)
 
 	if (nand_chip.select_chip)
 		nand_chip.select_chip(&nand_info, -1);
+
+       asm("sync");
+
+#ifdef CONFIG_LTQ_SECURE_BOOT
+#include "aes_key.h"
+extern secure_decrypt(u8 *key, u8 *iv, u8 *src, u8 *dst, u32 nbytes);
+extern void flush_dcache_range(ulong start_addr, ulong stop);
+	   secure_decrypt(aes_key, iv,(u8*)CONFIG_STAGE2_LOADADDR,\
+	                (u8*)CONFIG_STAGE2_LOADADDR, CONFIG_STAGE2_SIZE);
+	   flush_dcache_range((ulong)CONFIG_STAGE2_LOADADDR,\
+	                      (ulong)(CONFIG_STAGE2_LOADADDR+CONFIG_STAGE2_SIZE));			
+#endif
 
 	/*
 	 * Jump to U-Boot image

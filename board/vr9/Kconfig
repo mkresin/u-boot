@@ -137,6 +137,10 @@ config LOWPOWER_SELF_REFRESH_CNT
     depends on !USE_DEFAULT_LOWPOWER_SETTING
     depends on ENABLE_POWER_MANAGEMENT
 
+config VR9_EVM_DUAL_DDR
+    bool "EVM DUAL DDR"
+	default n
+
 endmenu
 
 
@@ -451,13 +455,32 @@ config VR9_SW_PORT5b_MIIRATE
 	depends on VR9_SW_PORT_5b
 	default 4
 
+config VR9_PHY_USE_CLOCK_GPIO3
+    bool "use gpio3 as internal phy clock source"
+	default n
+
+choice
+    prompt "GPIO3 clock source"
+    default VR9_PHY_USE_CLOCK_GPIO3_INTERNAL
+    depends on VR9_PHY_USE_CLOCK_GPIO3
+
+config VR9_PHY_USE_CLOCK_GPIO3_INTERNAL
+    bool "internal"
+
+config VR9_PHY_USE_CLOCK_GPIO3_EXTERNAL
+    bool "external"
+
+endchoice
+
+
+
 config VR9_GPHY_FW_EMBEDDED
     bool "gphy firmware embedded"
 	default y
 
 config VR9_GPHY_FW_ADDR
-    hex 
-	default "0xb0010000" if ( BOOT_FROM_NOR )
+    hex 'VR9_GPHY_FW_ADDR'
+	default "0xb0020000" if ( BOOT_FROM_NOR )
 	default "0xa0110000" if ( BOOT_FROM_SPI )
 	default "0xa0120000" if ( BOOT_FROM_NAND )
 	depends on VR9_SW_PORT_2 || VR9_SW_PORT_3 || VR9_SW_PORT_4 || VR9_SW_PORT_5b
@@ -467,6 +490,15 @@ config VR9_EXTERN_GPHY_FW_ADDR
     hex "gphy firmware address"
 	default "0xb0010000"
 	depends on !VR9_GPHY_FW_EMBEDDED
+
+config RESET_UBOOT_CONFIG
+	string 'RESET_UBOOT_CONFIG'
+
+config RESET_DDR_CONFIG
+	string 'RESET_DDR_CONFIG'
+
+config SF_DEFAULT_MODE
+	int 'SF_DEFAULT_MODE'
 
 config VR9_GPHY_DEBUG
     bool "DEBUG GPHY"

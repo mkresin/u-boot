@@ -1,5 +1,6 @@
 %option backup nostdinit noyywrap never-interactive full ecs
 %option 8bit backup nodefault perf-report perf-report
+%option noinput
 %x COMMAND HELP STRING PARAM
 %{
 /*
@@ -38,7 +39,7 @@ static int last_ts, first_ts;
 static void zconf_endhelp(void);
 static void zconf_endfile(void);
 
-void new_string(void)
+static void new_string(void)
 {
 	text = malloc(START_STRSIZE);
 	text_asize = START_STRSIZE;
@@ -46,7 +47,7 @@ void new_string(void)
 	*text = 0;
 }
 
-void append_string(const char *str, int size)
+static void append_string(const char *str, int size)
 {
 	int new_size = text_size + size + 1;
 	if (new_size > text_asize) {
@@ -60,7 +61,7 @@ void append_string(const char *str, int size)
 	text[text_size] = 0;
 }
 
-void alloc_string(const char *str, int size)
+static void alloc_string(const char *str, int size)
 {
 	text = malloc(size + 1);
 	memcpy(text, str, size);
@@ -217,6 +218,11 @@ n	[A-Za-z0-9_]
 		append_string("\n", 1);
 	}
 	[^ \t\n].* {
+		while (yyleng) {
+			if ((yytext[yyleng-1] != ' ') && (yytext[yyleng-1] != '\t'))
+				break;
+			yyleng--;
+		}
 		append_string(yytext, yyleng);
 		if (!first_ts)
 			first_ts = last_ts;
@@ -265,7 +271,7 @@ FILE *zconf_fopen(const char *name)
 	FILE *f;
 
 	f = fopen(name, "r");
-	if (!f && name[0] != '/') {
+	if (!f && name != NULL && name[0] != '/') {
 		env = getenv(SRCTREE);
 		if (env) {
 			sprintf(fullname, "%s/%s", env, name);
@@ -298,9 +304,10 @@ void zconf_nextfile(const char *name)
 	memset(buf, 0, sizeof(*buf));
 
 	current_buf->state = YY_CURRENT_BUFFER;
-	yyin = zconf_fopen(name);
+	yyin = zconf_fopen(file->name);
 	if (!yyin) {
-		printf("%s:%d: can't open file \"%s\"\n", zconf_curname(), zconf_lineno(), name);
+		printf("%s:%d: can't open file \"%s\"\n",
+		    zconf_curname(), zconf_lineno(), file->name);
 		exit(1);
 	}
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
@@ -308,11 +315,14 @@ void zconf_nextfile(const char *name)
 	current_buf = buf;
 
 	if (file->flags & FILE_BUSY) {
-		printf("recursive scan (%s)?\n", name);
+		printf("%s:%d: do not source '%s' from itself\n",
+		       zconf_curname(), zconf_lineno(), name);
 		exit(1);
 	}
 	if (file->flags & FILE_SCANNED) {
-		printf("file %s already scanned?\n", name);
+		printf("%s:%d: file '%s' is already sourced from '%s'\n",
+		       zconf_curname(), zconf_lineno(), name,
+		       file->parent->name);
 		exit(1);
 	}
 	file->flags |= FILE_BUSY;
@@ -344,7 +354,7 @@ int zconf_lineno(void)
 	return current_pos.lineno;
 }
 
-char *zconf_curname(void)
+const char *zconf_curname(void)
 {
 	return current_pos.file ? current_pos.file->name : "<none>";
 }

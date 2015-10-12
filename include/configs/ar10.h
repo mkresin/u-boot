@@ -32,50 +32,40 @@
 #include <configs/lq_cfg.h>
 #include <asm/ar10.h>
 
+#define CONFIG_SILENT_CONSOLE 1
+#define CONFIG_SYS_DEVICE_NULLDEV 1
+#define CONFIG_SYS_CONSOLE_INFO_QUIET 1
 
 #ifdef CONFIG_AR10_CPU_125M_RAM_125M
 #define CPU_CLOCK_RATE          125000000   /* 125 MHz clock for the MIPS core */
 #define RAM_CLOCK_RATE          125000000   /* 125 MHz clock for RAM           */
 #elif defined(CONFIG_AR10_CPU_250M_RAM_125M)
-#define CPU_CLOCK_RATE          250000000   /* 125 MHz clock for the MIPS core */
+#define CPU_CLOCK_RATE          250000000   /* 250 MHz clock for the MIPS core */
 #define RAM_CLOCK_RATE          125000000   /* 125 MHz clock for RAM           */
 #elif defined(CONFIG_AR10_CPU_250M_RAM_250M)
-#define CPU_CLOCK_RATE          250000000   /* 166 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          250000000   /* 166 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_500M_RAM_250M)
-#define CPU_CLOCK_RATE          500000000   /* 333 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          250000000   /* 111 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_150M_RAM_150M)
-#define CPU_CLOCK_RATE          150000000   /* 333 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          150000000   /* 166 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_300M_RAM_150M)
-#define CPU_CLOCK_RATE          393000000   /* 393 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          196000000   /* 196 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_442M_RAM_221M)
-#define CPU_CLOCK_RATE          442000000   /* 442 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          221000000   /* 221 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_442M_RAM_147M)
-#define CPU_CLOCK_RATE          442000000   /* 442 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          147000000   /* 147 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_500M_RAM_166M)
-#define CPU_CLOCK_RATE          500000000   /* 500 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          166000000   /* 166 MHz clock for RAM           */
+#define CPU_CLOCK_RATE          250000000   /* 250 MHz clock for the MIPS core */
+#define RAM_CLOCK_RATE          250000000   /* 250 MHz clock for RAM           */
 #elif defined(CONFIG_AR10_CPU_500M_RAM_250M)
 #define CPU_CLOCK_RATE          500000000   /* 500 MHz clock for the MIPS core */
 #define RAM_CLOCK_RATE          250000000   /* 250 MHz clock for RAM           */
+#elif defined(CONFIG_AR10_CPU_150M_RAM_150M)
+#define CPU_CLOCK_RATE          150000000   /* 150 MHz clock for the MIPS core */
+#define RAM_CLOCK_RATE          150000000   /* 150 MHz clock for RAM           */
+#elif defined(CONFIG_AR10_CPU_300M_RAM_150M)
+#define CPU_CLOCK_RATE          300000000   /* 300 MHz clock for the MIPS core */
+#define RAM_CLOCK_RATE          150000000   /* 150 MHz clock for RAM           */
+#elif defined(CONFIG_AR10_CPU_300M_RAM_300M)
+#define CPU_CLOCK_RATE          300000000   /* 300 MHz clock for the MIPS core */
+#define RAM_CLOCK_RATE          300000000   /* 300 MHz clock for RAM           */
 #elif defined(CONFIG_AR10_CPU_500M_RAM_200M)
 #define CPU_CLOCK_RATE          500000000   /* 500 MHz clock for the MIPS core */
 #define RAM_CLOCK_RATE          200000000   /* 250 MHz clock for RAM           */
-#elif defined(CONFIG_AR10_CPU_600M_RAM_200M)
-#define CPU_CLOCK_RATE          600000000   /* 600 MHz clock for the MIPS core */
-#define RAM_CLOCK_RATE          200000000   /* 200 MHz clock for RAM           */
 #elif defined(CONFIG_AR10_CPU_600M_RAM_300M)
 #define CPU_CLOCK_RATE          600000000   /* 600 MHz clock for the MIPS core */
 #define RAM_CLOCK_RATE          300000000   /* 300 MHz clock for RAM           */
 #endif
 
-//#define F_SSC_CLK  get_fpi_clk()
-#define F_SSC_CLK  2000000
+#define F_SSC_CLK  get_fpi_clk()
 #define CONFIG_SYS_HZ 1000
 #define CONFIG_ENV_SPI_CS 0
 #define CONFIG_ENV_SPI_MODE CONFIG_SF_DEFAULT_MODE
@@ -88,7 +78,7 @@
 #endif
 
 //#define CONFIG_BAUDRATE		115200
-#define CONFIG_BAUDRATE           2400
+//#define CONFIG_BAUDRATE           2400
 
 /* valid baudrates */
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
@@ -109,11 +99,15 @@
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
 #define	CONFIG_SYS_PROMPT		"AR10 # "	/* Monitor Command Prompt    */
-#define	CONFIG_SYS_CBSIZE		512		/* Console I/O Buffer Size   */
+#define	CONFIG_SYS_CBSIZE		1024		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		32		/* max number of command args*/
 
-#define CONFIG_SYS_MALLOC_LEN		4096*1024
+#ifdef CONFIG_BOOT_FROM_NAND
+#define CONFIG_SYS_MALLOC_LEN		CONFIG_NAND_PAGE_SIZE*1024*2
+#else
+#define CONFIG_SYS_MALLOC_LEN       512*1024
+#endif
 
 #define CONFIG_SYS_BOOTPARAMS_LEN	256*1024
 
@@ -185,7 +179,8 @@
 #define NAND_CE_CLEAR       *EBU_NAND_CON   = 0x000005F3
 #endif
 
-#define NAND_READY       ( ((*EBU_NAND_WAIT)&0x07) == 7)
+//#define NAND_READY       ( ((*EBU_NAND_WAIT)&0x07) == 7)
+#define NAND_READY       ( ((*EBU_NAND_WAIT)&0x01) == 1)
 
 #define NAND_READY_CLEAR  *EBU_NAND_WAIT = 0;
 #define WRITE_CMD    0x18
@@ -217,8 +212,11 @@
 #define IFX_NAND_CTL_SETALE *EBU_NAND_CON |=1<<18;
 
 
-#define CONFIG_SYS_NAND_PAGE_SIZE   ( 2<<10 )   /* NAND chip page size        */
-#define CONFIG_SYS_NAND_BLOCK_SIZE  ( 256 << 10 ) /* NAND chip block size       */
+//#define CONFIG_SYS_NAND_PAGE_SIZE   ( 2<<10 )   /* NAND chip page size        */
+//#define CONFIG_SYS_NAND_BLOCK_SIZE  ( 256 << 10 ) /* NAND chip block size       */
+
+#define CONFIG_SYS_NAND_PAGE_SIZE   CONFIG_NAND_PAGE_SIZE   /* NAND chip page size        */
+#define CONFIG_SYS_NAND_BLOCK_SIZE  CONFIG_NAND_BLOCK_SIZE /* NAND chip block size       */
 #define CONFIG_SYS_NAND_PAGE_COUNT  (CONFIG_SYS_NAND_BLOCK_SIZE / CONFIG_SYS_NAND_PAGE_SIZE)
                         /* NAND chip page count       */
 #define CONFIG_SYS_NAND_BAD_BLOCK_POS   0       /* Location of bad block marker*/
@@ -236,9 +234,20 @@
 
 
 #define CONFIG_SYS_NAND_U_BOOT_SIZE  ( 256 << 10 )
+
+#ifdef CONFIG_LTQ_SECURE_BOOT 
+#define CONFIG_SYS_NAND_U_BOOT_DST   CONFIG_STAGE2_LOADADDR
+#define CONFIG_SYS_NAND_U_BOOT_START CONFIG_STAGE2_LOADADDR
+#else 
 #define CONFIG_SYS_NAND_U_BOOT_DST   CONFIG_BOOTSTRAP_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_START CONFIG_BOOTSTRAP_TEXT_BASE
-#define CONFIG_SYS_NAND_U_BOOT_OFFS  16384
+#endif
+
+#ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
+#define CONFIG_SYS_NAND_U_BOOT_OFFS  ( CONFIG_MLC_NAND_HEADER_NUMBER * 32768 )
+#else
+#define CONFIG_SYS_NAND_U_BOOT_OFFS  CONFIG_NAND_BLOCK_SIZE
+#endif
 
 #ifdef CONFIG_BOOT_FROM_NOR
 #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0xB000FFE8
@@ -250,15 +259,57 @@
 #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0000ffff
 #define CONFIG_ENV_SECT_SIZE 0x1000
 #else /*CONFIG_BOOT_FRON_NAND*/
-#define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x00003fe8
-#define IFX_CFG_FLASH_DDR_CFG_SIZE            24
-#define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x00003fff
+ #ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
+   #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0003ffe8
+   #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+   #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0003ffff 
+ #else
+  #ifdef CONFIG_LTQ_SECURE_BOOT
+   #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0005ffe8
+   #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+   #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0005ffff
+  #else
+   #define IFX_CFG_FLASH_DDR_CFG_START_ADDR      0x0005ffe8
+   #define IFX_CFG_FLASH_DDR_CFG_SIZE            24
+   #define IFX_CFG_FLASH_DDR_CFG_END_ADDR        0x0005ffff
+  #endif
+ #endif
 #endif
 
 /* Address and size of Primary Environment Sector	*/
+#if (defined CONFIG_CMD_UBI) && !(defined CONFIG_NAND_ECC_HW) 
+#define CONFIG_ENV_OFFSET     0xa0000
+#define CONFIG_ENV_ADDR       CONFIG_ENV_OFFSET
+#define CONFIG_ENV_SIZE       0x20000
+#define CONFIG_NAND_ENV_DST   (CONFIG_SYS_NAND_U_BOOT_DST + CONFIG_SYS_NAND_U_BOOT_SIZE)
+#elif (defined CONFIG_CMD_UBI) && (defined CONFIG_NAND_ECC_HW)
+#error please fix CONFIG_ENV_OFFSET CONFIG_ENV_ADDR CONFIG_ENV_SIZE  
+#define CONFIG_ENV_OFFSET     0x200000
+#define CONFIG_ENV_ADDR       0x200000
+#define CONFIG_ENV_SIZE       0x40000
+#define CONFIG_NAND_ENV_DST   (CONFIG_SYS_NAND_U_BOOT_DST + CONFIG_SYS_NAND_U_BOOT_SIZE)
+#else
 #define CONFIG_ENV_OFFSET	  IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
 #define CONFIG_ENV_ADDR		  IFX_CFG_FLASH_UBOOT_CFG_START_ADDR
-#define CONFIG_ENV_SIZE		  IFX_CFG_FLASH_UBOOT_CFG_SIZE
+#ifndef CONFIG_ENV_IS_NOWHERE
+#define CONFIG_ENV_SIZE       IFX_CFG_FLASH_UBOOT_CFG_SIZE
+#else
+#define CONFIG_ENV_SIZE       0x1000
+#endif
+#endif
+
+
+/*define u-boot env range, only meaningful for nand flash*/
+#ifdef CONFIG_ENV_REDUND
+  #define CONFIG_ENV_OFFSET_REDUND    0x140000
+  #define CONFIG_ENV_SIZE_REDUND      CONFIG_ENV_SIZE
+  #define CONFIG_ENV_RANGE            0x40000
+#else
+  #define CONFIG_ENV_RANGE            0x80000
+#endif
+/*********************************************************/
+
+//#define CONFIG_SYS_RX_ETH_BUFFER        8
 
 #define CONFIG_TUNING_STATUS 0xBE22FF20 
 #define CONFIG_TUNING_SP     0xBE22FF00 
@@ -266,5 +317,9 @@
 #ifdef CONFIG_DEBUG
 #define DEBUG
 #endif
+
+#define MTDIDS_DEFAULT   CONFIG_MTDIDS
+#define MTDPARTS_DEFAULT CONFIG_MTDPARTS
+
 
 #endif	/* __CONFIG_H */

@@ -225,6 +225,8 @@ sys_init_cache:
         move    a1, dcache_linesize
         bal         sys_init_dcache
         move    a2, k1
+
+#if 1
 change_got_table: 
         bal     1f
 	      nop
@@ -244,9 +246,11 @@ change_got_table:
         addi    t0, t0, 4        
 
       	subu    gp, 0x20000000
-	    li	t0, 0x9E22FF00 
+#endif	    
+		li	t0, 0xBE1a7F00 
 	    la	sp, 0(t0)
-	    la	t9, board_init_f
+
+		la	t9, board_init_f
 	    j	t9
 	    nop
 

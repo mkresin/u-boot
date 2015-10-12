@@ -144,6 +144,15 @@ COBJS-$(CONFIG_CMD_TSI148) += cmd_tsi148.o
 COBJS-$(CONFIG_CMD_UBI) += cmd_ubi.o
 COBJS-$(CONFIG_CMD_UBIFS) += cmd_ubifs.o
 COBJS-$(CONFIG_CMD_UNIVERSE) += cmd_universe.o
+COBJS-$(CONFIG_CMD_OPENRG) += cmd_openrg.o
+
+ifneq ($(SIGNED_IMAGE),)
+COBJS-$(CONFIG_CMD_OPENRG) += ../nand_spl/board/lantiq/deu_aes.o
+endif
+ifneq ($(SECURED_ENV),)
+COBJS-$(CONFIG_ENV_IS_IN_NAND) += ../nand_spl/board/lantiq/deu_aes.o
+endif
+
 ifdef CONFIG_CMD_USB
 COBJS-y += cmd_usb.o
 COBJS-y += usb.o
@@ -172,6 +181,7 @@ SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
 
 CPPFLAGS += -I..
+CFLAGS += -I$(BUILDDIR)/pkg/include/
 
 all:	$(LIB) $(AOBJS)
 

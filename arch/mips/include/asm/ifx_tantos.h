@@ -326,7 +326,8 @@ int tantos_vlan_del(int port_base, int port);
 
 #define TANTOS_REG_PIOFGPM  0xDD
 
-#define TANTOS_REG_SOFTRST      0xE1
+#define TANTOS_REG_SGC1     0xE0
+#define TANTOS_REG_SGC2     0xE1
 #define TANTOS_REG_CHM      0xE2
 #define TANTOS_REG_MS       0xE3
 

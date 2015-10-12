@@ -71,7 +71,25 @@ unsigned int get_ddr_clk(void)
 unsigned int get_fpi_clk(void)
 {
 	 unsigned int fpi_clk; 
-	 fpi_clk=get_ddr_clk();   
+	 switch((*AR10_CGU_IF_CLK >> 25) & 0x0f){
+         case 2:
+		   if (REG32(0xbf107350) & (1<<17)){
+            /* check BSP_MPS_ID_CFG, if bit 17 is set, treat FPI clock as 125 instead of 150*/
+			fpi_clk = 125000000;
+		   }else{
+		    fpi_clk = 150000000;
+		   }
+		   break;
+		 case 1:
+		   fpi_clk = 300000000;
+		   break;
+		 case 5:
+		   fpi_clk = 250000000;
+		   break;
+		 case 6:
+		   fpi_clk = 125000000;
+		   break;
+	 }
 	 return fpi_clk; 
 }
 

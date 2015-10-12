@@ -262,6 +262,14 @@ int	saveenv	     (void);
 int inline setenv   (char *, char *);
 #else
 int	setenv	     (char *, char *);
+
+#ifdef CONFIG_CMD_UBI
+int ubi_create_vol(char *volume, int size, int dynamic, int vol_id);
+int ubi_remove_vol(char *volume);
+int ubi_volume_write(char *volume, void *buf, size_t size);
+int ubi_volume_read(char *volume, char *buf, size_t size);
+#endif
+
 #ifdef CONFIG_HAS_UID
 void	forceenv     (char *, char *);
 #endif
@@ -719,6 +727,10 @@ int cpu_status(int nr);
 int cpu_reset(int nr);
 int cpu_disable(int nr);
 int cpu_release(int nr, int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_CMD_UBI
+int ubi_volume_read_offset(char *volume, char *buf, loff_t offset, size_t size);
 #endif
 
 #endif /* __ASSEMBLY__ */

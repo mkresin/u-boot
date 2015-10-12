@@ -2987,6 +2987,7 @@ If set and clear bit are written concurrently with 1, the associated bit is not 
 /***********************************************************************/
 #define BSP_PMU_BASE_ADDR 				(KSEG1+0x1F102000)
 
+#define BSP_PMU_PWCSR                   ((volatile u32*)(BSP_PMU_BASE_ADDR + 0x0100))
 #define BSP_PMU_PWDCR                   ((volatile u32*)(BSP_PMU_BASE_ADDR + 0x001C))
 #define BSP_PMU_PWDCR1                  ((volatile u32*)(BSP_PMU_BASE_ADDR + 0x0024))
 #define BSP_PMU_PWDSR 					((volatile u32*)(BSP_PMU_BASE_ADDR + 0x0020))
@@ -8433,6 +8434,21 @@ If set and clear bit are written concurrently with 1, the associated bit is not 
 #define VR9_ETHSW_PHY_ADDR_2            ( VR9_ETHSW_TOP  + (0x13 * 4))
 #define VR9_ETHSW_PHY_ADDR_1            ( VR9_ETHSW_TOP  + (0x14 * 4))
 #define VR9_ETHSW_PHY_ADDR_0            ( VR9_ETHSW_TOP  + (0x15 * 4))
+
+#define VR9_ETHSW_MDIO_STAT_0           ( VR9_ETHSW_TOP  + (0x16 * 4))      
+#define VR9_ETHSW_MDIO_STAT_1           ( VR9_ETHSW_TOP  + (0x17 * 4))
+#define VR9_ETHSW_MDIO_STAT_2           ( VR9_ETHSW_TOP  + (0x18 * 4))
+#define VR9_ETHSW_MDIO_STAT_3           ( VR9_ETHSW_TOP  + (0x19 * 4))
+#define VR9_ETHSW_MDIO_STAT_4           ( VR9_ETHSW_TOP  + (0x1A * 4))
+#define VR9_ETHSW_MDIO_STAT_5           ( VR9_ETHSW_TOP  + (0x1B * 4))
+
+#define VR9_ETHSW_ANEG_EEE_0            ( VR9_ETHSW_TOP  + (0x1C * 4))
+#define VR9_ETHSW_ANEG_EEE_1            ( VR9_ETHSW_TOP  + (0x1D * 4))
+#define VR9_ETHSW_ANEG_EEE_2            ( VR9_ETHSW_TOP  + (0x1E * 4))
+#define VR9_ETHSW_ANEG_EEE_3            ( VR9_ETHSW_TOP  + (0x1F * 4))
+#define VR9_ETHSW_ANEG_EEE_4            ( VR9_ETHSW_TOP  + (0x20 * 4))
+#define VR9_ETHSW_ANEG_EEE_5            ( VR9_ETHSW_TOP  + (0x21 * 4))
+
 
 /*ETHSW_MII_PDI Registers*/
 #define VR9_ETHSW_MII_CFG_0             ( VR9_ETHSW_TOP + (0x36 * 4))

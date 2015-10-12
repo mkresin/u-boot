@@ -4,8 +4,8 @@
  * IFAP DC COM SD
  *****************************************************************************/
 
-#include <config.h>
-//#include <common.h>
+//#include <config.h>
+#include <common.h>
 #include <asm/addrspace.h>
 #include <asm/lq_asc.h>
 
@@ -17,7 +17,7 @@
 #define SET_BITS(reg, mask)                 SET_BIT(reg, mask)
 #define SET_BITFIELD(reg, mask, off, val)   {reg &= (~mask); reg |= (val << off);}
 
-
+/*
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned long u32;
@@ -25,10 +25,12 @@ typedef signed   long s32;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef volatile unsigned short vuint;
-
+*/
 
 
 void serial_setbrg (void);
+
+DECLARE_GLOBAL_DATA_PTR;
 
 /*TODO: undefine this !!!*/
 #undef DEBUG_ASC_RAW
@@ -162,11 +164,9 @@ static void serial_divs(u32 baudrate, u32 fasc, u32 *pfdv, u32 *preload)
 void serial_setbrg (void)
 {
 	u32 uiReloadValue=0;
-  u32 fdv=0;
+    u32 fdv=0;
 	
-
-	serial_divs(CONFIG_BAUDRATE, get_fpi_clk(), &fdv, &uiReloadValue);
-  
+    serial_divs(CONFIG_BAUDRATE, get_fpi_clk(), &fdv, &uiReloadValue);
 	/* Disable Baud Rate Generator; BG should only be written when R=0 */
 	CLEAR_BIT(pAsc->asc_con, ASCCON_R);
 

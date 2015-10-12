@@ -55,7 +55,7 @@ struct mxic_spi_flash_params {
 	u8      l2_page_size;
 	u8		pages_per_sector;
 	u8		sectors_per_block;
-	u8		nr_blocks;
+	u16		nr_blocks;
 	const char	name[20];
 };
 
@@ -107,6 +107,24 @@ static const struct mxic_spi_flash_params mxic_spi_flash_table[] = {
 		  .sectors_per_block     = 16,
 		  .nr_blocks             = 128,
 		  .name                  = "MX25L6405D",
+	 },
+     {
+          .idcode1               = 0x20,
+          .idcode2               = 0x18,
+          .l2_page_size          = 8,
+          .pages_per_sector      = 16,
+          .sectors_per_block     = 16,
+          .nr_blocks             = 256,
+          .name                  = "MX25L128XX",
+     },
+	 {
+	      .idcode1               = 0x20,
+		  .idcode2               = 0x18,
+		  .l2_page_size          = 8,
+		  .pages_per_sector      = 16,
+		  .sectors_per_block     = 16,
+		  .nr_blocks             = 512,
+		  .name                  = "MX25L256XX",
 	 },
 };
 
@@ -177,14 +195,14 @@ int mx25l_erase(struct spi_flash *flash, u32 offset, size_t len)
 
                 ret = spi_flash_cmd_write(flash->spi, cmd, 4, NULL, 0);
                 if (ret < 0) {
-                        debug("SF: SPANSION page erase failed\n");
+                        debug("SF: page erase failed\n");
                         break;
                 }
 
                 /* Up to 2 seconds */
                 ret = mx25l_wait_ready(flash, SPI_FLASH_PAGE_ERASE_TIMEOUT);
                 if (ret < 0) {
-                        debug("SF: SPANSION page erase timed out\n");
+                        debug("SF: page erase timed out\n");
                         break;
                 }
         }
@@ -397,10 +415,10 @@ struct spi_flash *spi_flash_probe_mxic(struct spi_slave *spi, u8 *idcode)
 		goto err;
 	}
 
-	asf->flash.size = page_size * params->pages_per_sector
-				* params->sectors_per_block
+	asf->flash.size = page_size * params->pages_per_sector \
+				* params->sectors_per_block               \
 				* params->nr_blocks;
-
+	
 	debug("SF: Detected %s with page size %lu, total %u bytes\n",
 			params->name, page_size, asf->flash.size);
    

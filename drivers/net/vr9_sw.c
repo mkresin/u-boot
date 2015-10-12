@@ -34,6 +34,7 @@
 #include <asm/vr9.h>
 #include <asm/addrspace.h>
 #include <asm/pinstrap.h>
+#include <configs/rg_config.h>
 
 #ifdef CONFIG_BOOT_FROM_NAND
 #include <nand.h>
@@ -69,10 +70,13 @@
 #define MDIO_WRITE_CMD  ((0 << 11)| (1 <<10))
 #define MDIO_READ_CMD  ((1 << 11) | (0<<10))
 
-extern int dcache_linesize_mips32(void);
-extern void dcache_writeback_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
-extern void dcache_hit_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
-extern void mdelay (unsigned long msec);
+extern void flush_dcache_range(unsigned long start, unsigned long stop);
+extern void clean_dcache_range(unsigned long start, unsigned long stop);
+extern void invalidate_dcache_range(unsigned long start, unsigned long stop);
+extern void flush_dcache(void);
+extern void invalidate_dcache(void);
+extern void invalidate_icache(void);
+
 
 typedef struct
 {
@@ -244,9 +248,11 @@ int vr9_switch_init(struct eth_device *dev, bd_t * bis)
 		rx_desc->status.word=0;
 		rx_desc->status.field.OWN=1;
 		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */
-		rx_desc->DataPtr=(u32)NetRxPackets[i] & 0x0ffffff0;
+		rx_desc->DataPtr=(u32)NetRxPackets[i] & 0x3ffffff0;
+		invalidate_dcache_range((u32)&rx_des_ring[i],(u32)&rx_des_ring[i]+8);
 	}
 
+	
 	for(i=0;i < NUM_TX_DESC; i++)
 	{
 		dma_tx_descriptor_t * tx_desc = KSEG1ADDR(&tx_des_ring[i]);
@@ -274,7 +280,6 @@ int vr9_switch_send(struct eth_device *dev, volatile void *packet,int length)
 
 	int                 	i;
 	int 		 	res = -1;
-    int datalen, cache_linesize;
 	dma_tx_descriptor_t * tx_desc= KSEG1ADDR(&tx_des_ring[tx_num]);
 
 	if (length <= 0)
@@ -303,9 +308,8 @@ int vr9_switch_send(struct eth_device *dev, volatile void *packet,int length)
 		tx_desc->status.field.DataLen = 60;
 	else
 		tx_desc->status.field.DataLen = (u32)length;
-        cache_linesize = dcache_linesize_mips32() ;
-	datalen = cache_linesize *((tx_desc->status.field.DataLen/cache_linesize)+1);
-        dcache_writeback_invalidate(datalen, cache_linesize, (u32)packet );
+        
+	    flush_dcache_range((u32)packet,(u32)packet+(u32)tx_desc->status.field.DataLen);	
 	asm("SYNC");
 
 	tx_desc->status.field.OWN=1;
@@ -327,34 +331,26 @@ int vr9_switch_recv(struct eth_device *dev)
 
 	int                    length  = 0;
 	dma_rx_descriptor_t * rx_desc;
-	int datalen, cache_linesize;
 	for (;;)
 	{
-	        rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
+	    rx_desc = KSEG1ADDR(&rx_des_ring[rx_num]);
                
-
 		if ((rx_desc->status.field.C == 0) || (rx_desc->status.field.OWN == 1))
 		{
-                        //printf("@");
-                        break;
-                        //continue;
+          break;
 		}
 
-                
 		length = rx_desc->status.field.DataLen;
 		if (length)
 		{
-            cache_linesize = dcache_linesize_mips32() ;
-	        datalen = cache_linesize *((rx_desc->status.field.DataLen/cache_linesize)+1);
-            dcache_hit_invalidate(datalen, cache_linesize, (u32)NetRxPackets[rx_num] );
+            
+			invalidate_dcache_range((u32)NetRxPackets[rx_num], (u32)NetRxPackets[rx_num]+length);
 			NetReceive((void*)KSEG1ADDR(NetRxPackets[rx_num]), length - 4);
-			//serial_putc('*');
 		}
 		else
 		{
 			printf("Zero length!!!\n");
 		}
-
 		rx_desc->status.field.Sop=0;
 		rx_desc->status.field.Eop=0;
 		rx_desc->status.field.C=0;
@@ -362,7 +358,6 @@ int vr9_switch_recv(struct eth_device *dev)
 		rx_desc->status.field.OWN=1;
 		rx_num++;
 		if(rx_num==NUM_RX_DESC) rx_num=0;
-
 	}
 	return length;
 }
@@ -512,7 +507,16 @@ int get_gphy_firmware(u32 dst, u32 src)
      image_header_t *pimg_header = NULL;
 	 int fw_version = 1; /*1->version 1; 2->version 2*/
 	 int fw_type = 0; /*0 FE, 1 GE*/
-	
+
+     char* ep;
+
+    
+	 if (((ep = getenv("raw_gphy_fw")) != NULL) && (strcmp(ep, "yes") == 0)) {
+         memcpy(dst,src,65536);
+         result = 0;
+		 goto exit;
+	 }
+
      pimg_header = (image_header_t *)src;	
      while(1){ 
 	    if(pimg_header->ih_magic != IH_MAGIC){
@@ -535,18 +539,18 @@ int get_gphy_firmware(u32 dst, u32 src)
 	    break;
       
 	   case IH_TYPE_FIRMWARE:
-          if(strncmp(pimg_header->ih_name, "GPHY_FW_PHY11G_A1X", sizeof(pimg_header->ih_name)) == 0){
+          if(strncmp(pimg_header->ih_name, "VR9 V1.1 GPHY GE", sizeof(pimg_header->ih_name)) == 0){
                   fw_version = 1;
 				  fw_type = 1;
-		  }else if(strncmp(pimg_header->ih_name, "GPHY_FW_PHY22F_A1X", sizeof(pimg_header->ih_name)) == 0){
+		  }else if(strncmp(pimg_header->ih_name, "VR9 V1.1 GPHY FE", sizeof(pimg_header->ih_name)) == 0){
                   fw_version = 1;
 				  fw_type = 0;
-		  }else if(strncmp(pimg_header->ih_name, "GPHY_FW_PHY22F_A2X", sizeof(pimg_header->ih_name)) == 0){
-		          fw_version = 2;
-		          fw_type = 0;
-		  }else if(strncmp(pimg_header->ih_name, "GPHY_FW_PHY11G_A2X", sizeof(pimg_header->ih_name)) == 0){
+		  }else if(strncmp(pimg_header->ih_name, "VR9 V1.2 GPHY GE", sizeof(pimg_header->ih_name)) == 0){
 		          fw_version = 2;
 		          fw_type = 1;
+		  }else if(strncmp(pimg_header->ih_name, "VR9 V1.2 GPHY FE", sizeof(pimg_header->ih_name)) == 0){
+		          fw_version = 2;
+		          fw_type = 0;
 		  }
   
 		  if(((REG32(BSP_MPS_CHIPID)>>28) & 0x7) == fw_version){ 
@@ -585,10 +589,7 @@ static void vr9_sw_chip_init()
 	  u32 fw_addr,gphy_reset_value,fw_src_addr; 
 	  u8 interface_mode;
 	 
-#ifdef CONFIG_ENABLE_DCDC
-    config_dcdc(0x7f);
-#endif
-	 	
+	
 #if (CONFIG_VR9_SW_PORT_2 | CONFIG_VR9_SW_PORT_3 | CONFIG_VR9_SW_PORT_4 | CONFIG_VR9_SW_PORT_5b)
 #ifdef CONFIG_VR9_GPHY_DEBUG
 
@@ -713,19 +714,22 @@ static void vr9_sw_chip_init()
 	  /*Turn on switch macro*/  
     REG32(VR9_ETHSW_GLOB_CTRL) |= (1<<15);
     
-#if defined(CONFIG_VR9_CRYSTAL_6M) || defined(CONFIG_VR9_CRYSTAL_CPLD)
-	  /*Config GPIO3 clock,CLK_OUT2 used as input*/
-	  REG32(BSP_GPIO_P0_ALTSEL0)|=1<<3;
-	  REG32(BSP_GPIO_P0_ALTSEL1)&=~(1<<3);
-	  REG32(BSP_GPIO_P0_DIR)&=~(1<<3);
-	  
-	  /*Config GPHY clock mux to take clock from GPIO3*/
-	  REG32(BSP_IF_CLK)=0x16e00010;
-#elif defined(CONFIG_VR9_CRYSTAL_25M)
-    REG32(BSP_IF_CLK)=0x16e00006;
+#ifdef CONFIG_VR9_CRYSTAL_25M
+    REG32(BSP_IF_CLK)=0x16e00006; /*GRX mode, Xtal is 25Mhz, so directly use*/
 #else /*36Mhz crystal clock*/
-    REG32(BSP_IF_CLK)=0x16e00008; 
-      
+    REG32(BSP_IF_CLK)=0x16e00008; /*25Mhz from PLL0 divider*/
+  #ifdef CONFIG_VR9_PHY_USE_CLOCK_GPIO3
+    /* Configure GPIO3 for CLK25_OUT */
+    *BSP_IF_CLK =0x16e000010;
+    *BSP_GPIO_P0_ALTSEL0 = *BSP_GPIO_P0_ALTSEL0 | (1<<3);
+    *BSP_GPIO_P0_ALTSEL1 = *BSP_GPIO_P0_ALTSEL1 & ~(1<<3);
+    #ifdef CONFIG_VR9_PHY_USE_CLOCK_GPIO3_INTERNAL
+      *BSP_GPIO_P0_DIR |= (1<<3);  /*take clock from internal CGU, gpio3 set to clk output mode*/
+	#else
+	  *BSP_GPIO_P0_DIR &=~(1<<3);  /*take clock from external source, gpio3 set to input clock*/
+      *BSP_GPIO_P0_OD = *BSP_GPIO_P0_OD | (1<<3);
+	#endif  
+  #endif
 #endif
     
       REG32(BSP_GPHY1_Cfg)=0x1fe70000;
@@ -740,13 +744,13 @@ static void vr9_sw_chip_init()
 #endif	 
 #ifdef CONFIG_VR9_EXTERN_GPHY_FW_ADDR
  #ifdef CONFIG_BOOT_FROM_NOR
-       fw_src_addr = CONFIG_VR9_EXTERN_GPHY_FW_ADDR;
+       fw_src_addr = getenv("gphy_fw_addr")?simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16):CONFIG_VR9_EXTERN_GPHY_FW_ADDR;
  #elif defined(CONFIG_BOOT_FROM_NAND)
       {
 	   nand_info_t *nand = &nand_info[0];
-	   u64 size=65536;
+	   u64 size=131072;
 	   fw_src_addr = 0xa0120000;
-       nand_read_skip_bad(nand, CONFIG_VR9_EXTERN_GPHY_FW_ADDR, &size,(u_char *)fw_src_addr);
+       nand_read_skip_bad(nand, (getenv("gphy_fw_addr")?simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16):CONFIG_VR9_EXTERN_GPHY_FW_ADDR), &size,(u_char *)fw_src_addr);
       }
  #elif defined(CONFIG_BOOT_FROM_SPI)
       {
@@ -754,7 +758,7 @@ static void vr9_sw_chip_init()
 		fw_src_addr = 0xa0110000;
 	    flash = spi_flash_probe(0, CONFIG_ENV_SPI_CS,
 			             CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
-	    spi_flash_read(flash, CONFIG_VR9_EXTERN_GPHY_FW_ADDR, 65536, (void*)fw_src_addr);					 
+	    spi_flash_read(flash, (getenv("gphy_fw_addr")?simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16):CONFIG_VR9_EXTERN_GPHY_FW_ADDR), 131072, (void*)fw_src_addr);					 
 
 	  }
  #endif 
@@ -776,9 +780,9 @@ static void vr9_sw_chip_init()
 	  // Bring GPHY-0/GFS-0 GPHY-1/GFS-1 out of reset
 	  //REG32(0xBF203010) = 0x0;
 #ifdef CONFIG_POWER_DOWN_REGULATOR	 
-      *BSP_RCU_RST_REQ = 0x04000000;
+      *BSP_RCU_RST_REQ = 0x04000020;
 #else
-      *BSP_RCU_RST_REQ = 0x0;
+      *BSP_RCU_RST_REQ = 0x20;
 #endif	  
 	  
 	  mdelay(100); /*wait 200ms*/
@@ -809,7 +813,15 @@ static void vr9_sw_chip_init()
 #elif CONFIG_VR9_SW_PORT_5a
       REG32(VR9_ETHSW_PHY_ADDR_5) = 0x1805;  
 #endif  
-     
+
+#ifdef CONFIG_LANTIQ_VR9_PORT_SEP
+#define WAN_PHY_ADDR REG32(VR9_ETHSW_PHY_ADDR_0 - \
+    cCONFIG_LANTIQ_VR9_PORT_WAN_ETH * 4)
+#define LINK_DOWN (0x2 << 13)
+/* Force link status down for WAN port until separation will commence */
+    WAN_PHY_ADDR = WAN_PHY_ADDR | LINK_DOWN;
+#endif
+	
 	if(((REG32(BSP_MPS_CHIPID)>>28) & 0x7) ==0x1){
 /*****disable "clear on read" ability for link status bits**/
     vr9_mdio_write(0x11,0xd,0x1F);
@@ -859,6 +871,46 @@ static void vr9_sw_chip_init()
     vr9_mdio_write(0x5,0x9,0x700);
     vr9_mdio_write(0x11,0x9,0x700);
     vr9_mdio_write(0x13,0x9,0x700);
+
+/*configuration for LED status*/
+#ifdef CONFIG_VR9_SW_PORT2_GMII
+   {
+    u8 phyaddr[5]={0x0,0x1,0x5,0x11,0x13};
+	for(i=0;i<5;i++)
+	{
+     /*For LED0    (SPEED/LINK INDICATION ONLY)*/
+     REG32(VR9_ETHSW_MDC_CFG_0)=0x0;
+     vr9_mdio_write(phyaddr[i],0xd,0x1F);
+	 vr9_mdio_write(phyaddr[i],0xe,0x1e2);
+     vr9_mdio_write(phyaddr[i],0xd,0x401f);
+	 vr9_mdio_write(phyaddr[i],0xe,0x42);
+	 REG32(VR9_ETHSW_MDC_CFG_0)=0x3f;
+
+     REG32(VR9_ETHSW_MDC_CFG_0)=0x0;
+     vr9_mdio_write(phyaddr[i],0xd,0x1F);
+     vr9_mdio_write(phyaddr[i],0xe,0x1e3);
+     vr9_mdio_write(phyaddr[i],0xd,0x401f);
+     vr9_mdio_write(phyaddr[i],0xe,0x10);
+     REG32(VR9_ETHSW_MDC_CFG_0)=0x3f;
+	
+	 /*For LED1 (DATA TRAFFIC INDICATION ONLY)*/
+     REG32(VR9_ETHSW_MDC_CFG_0)=0x0;
+	 vr9_mdio_write(phyaddr[i],0xd,0x1f);
+	 vr9_mdio_write(phyaddr[i],0xe,0x1e4);
+	 vr9_mdio_write(phyaddr[i],0xd,0x401f);
+	 vr9_mdio_write(phyaddr[i],0xe,0x70);
+	 REG32(VR9_ETHSW_MDC_CFG_0)=0x3f;
+
+	 REG32(VR9_ETHSW_MDC_CFG_0)=0x0;
+	 vr9_mdio_write(phyaddr[i],0xd,0x1f);
+	 vr9_mdio_write(phyaddr[i],0xe,0x1e5);
+	 vr9_mdio_write(phyaddr[i],0xd,0x401f);
+	 vr9_mdio_write(phyaddr[i],0xe,0x03); 
+	 REG32(VR9_ETHSW_MDC_CFG_0)=0x3f;
+	}
+   }	
+
+#endif
 /**************************************/
 /*end of phy configuration*************/
 /**************************************/
@@ -894,11 +946,22 @@ static void vr9_sw_chip_init()
        }
      }
     asm("sync");  
-        // Apply workaround for buffer congestion
+
+
+	   /*Force clk stop capability*/
+     
+	   REG32(VR9_ETHSW_ANEG_EEE_0) = 0x0C;
+	   REG32(VR9_ETHSW_ANEG_EEE_1) = 0x0C;
+	   REG32(VR9_ETHSW_ANEG_EEE_2) = 0x0C;
+	   REG32(VR9_ETHSW_ANEG_EEE_3) = 0x0C;
+	   REG32(VR9_ETHSW_ANEG_EEE_4) = 0x0C;
+	   REG32(VR9_ETHSW_ANEG_EEE_5) = 0x0C;
+	 
+	 // Apply workaround for buffer congestion
 		REG32(VR9_ETHSW_MAC_CTRL_1 + ( 6* 0x30)) |= ((1<< 0x8)); // Short Preamble
 		REG32(VR9_ETHSW_MAC_CTRL_1 + ( 6* 0x30)) &= ~((0xF)); // Setting TX IPG
 		REG32(VR9_ETHSW_MAC_CTRL_1 + ( 6* 0x30)) |= ((0xC));  // to 7 bytes
-		REG32(VR9_ETHSW_MAC_CTRL_6 + ( 6* 0x30)) |= (1 << 6); // Setting RX Buffer to bypass
+    	REG32(VR9_ETHSW_MAC_CTRL_6 + ( 6* 0x30)) |= (1 << 6); // Setting RX Buffer to bypass
 
 		// Limiting global threshholds to 254 to avoid systematical concept weakness ACM bug
 		REG32(VR9_ETHSW_BM_FSQM_GCTRL) &= (0xFD);

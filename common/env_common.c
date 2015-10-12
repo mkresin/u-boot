@@ -29,6 +29,7 @@
 #include <environment.h>
 #include <linux/stddef.h>
 #include <malloc.h>
+#include <rg_config.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -132,6 +133,9 @@ uchar default_environment[] = {
 #endif
 #if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
 	"pcidelay="	MK_STR(CONFIG_PCI_BOOTDELAY)	"\0"
+#endif
+#ifdef CONFIG_BOOTLDR_UBOOT_SIGNED_IMAGES
+#include "../rmt_upd.env"
 #endif
 #ifdef  CONFIG_EXTRA_ENV_SETTINGS
 #include	CONFIG_EXTRA_ENV_SETTINGS
@@ -258,6 +262,7 @@ void env_relocate (void)
 		show_boot_progress (-60);
 #endif
 		set_default_env();
+		saveenv();
 	}
 	else {
 		env_relocate_spec ();

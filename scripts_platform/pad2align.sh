@@ -2,6 +2,7 @@
 #pad file to align with specific alignments
 #Revision history
 #30/4/2009 Author: Wu Qi Ming Qi-Ming.Wu@infineon.com
+#26/08/2011 Modified to accept hex number input  Wu Qi Ming Qi-Ming.Wu@lantiq.com
 
 Usage(){
   echo "Usage: pad2align [option]...[file]..."
@@ -41,8 +42,19 @@ if [ "$ALIGNFILE" == "" ]; then
 	  exit 1;
 fi
 
+TMP=`echo $2 | sed -n "/0x/p"`
+if [ "$TMP" ];
+then
+   TMP=`echo $2 | sed "s/0x//g"`
+   ALIGNMENT=`echo 'ibase=16;' $TMP | bc`
+else
+   ALIGNMENT=$2
+fi
+
+
 FILESIZE=`wc -c $ALIGNFILE | awk '{print $1}'`
 MODULO=`expr $FILESIZE % $ALIGNMENT`
+
 
 if [ $MODULO != 0 ];then
   PADSIZE=`expr $ALIGNMENT - $MODULO` 

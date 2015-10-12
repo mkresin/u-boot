@@ -61,6 +61,8 @@
   #elif defined(CONFIG_VR9_CPU_500M_RAM_250M) 
    #ifdef CONFIG_ENABLE_POWER_MANAGEMENT
        #include "ddr2/xrx200_ddr2_250M_lp_settings.h"
+   #elif defined(CONFIG_VR9_EVM_DUAL_DDR)
+       #include "ddr2/evm_dual_ddr_xrx200_ddr2_250M_settings.h"
    #else
        #include "ddr2/xrx200_ddr2_250M_settings.h"
    #endif
@@ -314,14 +316,14 @@
     #define CONFIG_VR9_PLL1_CFG_VALUE 0x984E6F4D   /*default value for 25M crystal*/
     #define CONFIG_VR9_PLL2_CFG_VALUE 0x0A200441
     #define PLL2_DISABLE	0x0a200000
-	#define PLL2_HIGH_M	0x0a20003d
+	#define PLL2_HIGH_M	    0x0a203ffd
 	#define PLL2_DEFAULT	0x0a200441
 #else /*36M crystal clock, for VRX288*/
     #define CONFIG_VR9_PLL0_CFG_VALUE 0x00b01f21 /*default value for 36M crystal*/
     #define CONFIG_VR9_PLL1_CFG_VALUE 0x9BA67015 /*default value for 36M crystal*/
     #define CONFIG_VR9_PLL2_CFG_VALUE 0x293002C1 /*default value for 36M crystal*/
     #define PLL2_DISABLE	0x29300000
-	#define PLL2_HIGH_M	0x2930003d
+	#define PLL2_HIGH_M	    0x29302ffd
 	#define PLL2_DEFAULT	0x293002c1
 
 #endif
@@ -623,12 +625,18 @@ delay2:
     li  t2, CGU_UPDATE
     li  a0, 1
     sw  a0, 0(t2) /*write 0x1 to CGU_UPDATE*/
-    li  t2, RST_REQ
+#ifndef CONFIG_BOOT_FROM_NOR    
+    j   freq_up2date
+    nop
+#else  
+	li  t2, RST_REQ
     li  a0, 0xe0000000
     sw  a0, 0(t2)  /*issue global software reset*/
 wait_reset:
     b   wait_reset
     nop
+#endif
+
     .end  cgu_init
 
 
@@ -1038,7 +1046,13 @@ lowlevel_init:
 
     bal cgu_init
     nop
- 
+
+    /*Crystal OSC capup setting*/
+    li      t1, 0xBF106B00   
+    li      t2, 0x3
+	sb      t2, 0(t1)
+
+#ifdef CONFIG_BOOT_FROM_NOR
 #ifdef CONFIG_TUNE_DDR
     li      t1, DDR_CCR07
     lw      t1, 0(t1)
@@ -1046,7 +1060,7 @@ lowlevel_init:
     bne     t1, zero, ddr_init_finish
     nop
 #endif
- 
+#endif 
  
   bal ddrram_init
   nop

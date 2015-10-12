@@ -27,6 +27,7 @@
 #include <environment.h>
 #include <nand.h>
 #include <spi_flash.h>
+#include <configs/rg_config.h>
 
 #if !defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) && defined(CFG_BOOTSTRAP_CODE)                                                                            
 #define printf                                                                                                                                        
@@ -44,6 +45,188 @@
 #ifndef CONFIG_ENV_SPI_MODE
 # define CONFIG_ENV_SPI_MODE    SPI_MODE_3
 #endif
+
+#ifdef CONFIG_AR10_PROGRAM_AFE_FUSE
+/******************************************************************************
+ * FOR DFE and AFE
+  ******************************************************************************/
+#define DFE_BASE_ADDR         0xBE116000
+#define mei_dbg_deco_c        (DFE_BASE_ADDR + 0x00000030)
+#define mei_fr_arcint_c       (DFE_BASE_ADDR + 0x0000001C)
+#define mei_dbg_master_c      (DFE_BASE_ADDR + 0x0000003C)
+#define mei_dbg_waddr_c       (DFE_BASE_ADDR + 0x00000024)
+#define mei_dbg_raddr_c       (DFE_BASE_ADDR + 0x00000028)
+#define mei_dbg_data_c        (DFE_BASE_ADDR + 0x0000002C)
+
+#define AFE_CTRL          0xbf107360
+
+#define ADSL_BASE 0x20000
+#define CRI_BASE          ADSL_BASE + 0x11F00
+#define CRI_CCR0          CRI_BASE + 0x00
+#define CRI_CCR1          CRI_BASE + 0x01*4
+#define CRI_UPDCTL        CRI_BASE + 0x0D*4
+#define CRI_EVENT0        CRI_BASE + 0x10*4
+#define CRI_EVENT1        CRI_BASE + 0x11*4
+#define CRI_EVENT2        CRI_BASE + 0x12*4
+//#define REG32(addr)          *((volatile u32 *)(addr))
+// Register Definitions
+#define aux_access 0x0
+#define dmp_access 0x1 // or 0x2
+#define core_access 0x3
+
+#define iri_i_enable    0x32000
+#define sty_smode   0x3c004
+
+#define afe_tcr_0   0x3c0dc
+#define afe_addr_addr   0x3c0e8
+#define afe_rdata_addr  0x3c0ec
+#define afe_wdata_addr  0x3c0f0
+#define afe_config  0x3c0f4
+#define afe_serial_cfg  0x3c0fc
+
+
+u32 mei = 0x1;
+u32 jtag = 0x0;
+u32 dmp_core_access = 0x2;
+
+
+void mei_master(u32 mode){
+  REG32(mei_dbg_master_c) = mode; // MEI as the master
+};
+
+void poll_status(void){
+  while( (REG32(mei_fr_arcint_c) & 0x20) != 0x20 ){};
+};
+
+void mei_dmp_acc(void){
+   REG32(mei_dbg_deco_c) = dmp_access;
+};
+
+void mei_aux_acc(void)
+{
+    REG32(mei_dbg_deco_c) = aux_access;
+};
+
+
+u32 ReadARCmem(u32 addr){
+   u32 data;
+   mei_master(mei);
+   mei_dmp_acc();
+   REG32(mei_dbg_raddr_c) = addr;
+   poll_status();
+   data = REG32(mei_dbg_data_c);
+   mei_master(jtag);
+   return data;
+};
+
+void WriteARCmem(u32 addr, u32 data){
+   mei_master(mei);
+   mei_dmp_acc();
+   REG32(mei_dbg_waddr_c) = addr;
+   REG32(mei_dbg_data_c) = data;
+   poll_status();
+   mei_master(jtag);
+};
+
+u32 afe_reg_read(u32 addr)
+{
+    WriteARCmem(CRI_EVENT2,0x20);
+    WriteARCmem(afe_addr_addr,addr);
+    WriteARCmem(afe_rdata_addr,0x0);
+    while((ReadARCmem(CRI_EVENT2)&0x20)!=0x20);
+    return(ReadARCmem(afe_rdata_addr));
+}
+
+u16 afe_reg_write(u32 addr,u32 data)
+{
+    WriteARCmem(afe_addr_addr,addr);
+    WriteARCmem(afe_wdata_addr,data);
+    while((ReadARCmem(CRI_EVENT2)&0x20)!=0x20);
+    return 0;
+}
+
+
+u32 ReadARCreg(u32 addr)
+{
+    u32 data;
+    mei_master(mei);
+    mei_aux_acc();
+    REG32(mei_dbg_raddr_c) = addr;
+    poll_status();
+    data = REG32(mei_dbg_data_c);
+    mei_master(jtag);
+    return data;
+};
+
+void WriteARCreg(u32 addr, u32 data)
+{
+    mei_master(mei);
+    mei_aux_acc();
+    REG32(mei_dbg_waddr_c) = addr;
+    REG32(mei_dbg_data_c) = data;
+    poll_status();
+    mei_master(jtag);
+};
+
+
+u16 enable_afe()
+{
+    u32 read_data,i;
+    REG32(AR10_PMU_PWDCR) &=0xffffffdf;
+	REG32(AR10_PMU_PWDCR1) |=0x10e00220;
+
+	REG32(AR10_PMU_PWDCR) &=0xfffffddf;
+ 
+    WriteARCreg(CRI_CCR0, 0x10);
+
+	WriteARCmem(0x32010, 0xf);
+
+    //asc_puts("Enabling AFE....\n");
+    /* Start the clock */
+    WriteARCmem(CRI_UPDCTL, 0x08);
+    
+	WriteARCmem(CRI_CCR0, 0x14);
+    WriteARCmem(CRI_CCR1, 0x500);
+    WriteARCmem(afe_config,0x01c8);
+    WriteARCmem(afe_serial_cfg,0x6); 
+    WriteARCmem(afe_tcr_0,0x5);
+    //Take afe out of reset
+    WriteARCmem(afe_config,0x0c0);
+    return(0);
+
+}
+
+void config_afe(void)
+{
+    u32 bias, bgp, dac_ftrim;
+    u32 ldo, data;
+	enable_afe();
+   
+	/*get BIAS & BGP from AFE_CTRL register*/
+    dac_ftrim = (REG32(AFE_CTRL)>>8) & 0x0f;
+	bias = REG32(AFE_CTRL)&0x1f;
+    bgp  = (REG32(AFE_CTRL)>>5) & 0x7;
+    /*write to BIAS_TRIM*/
+	data = bias | (bgp<<8);
+	afe_reg_write(0x31, data);
+
+    data = afe_reg_read(0x28);
+	data = (data & ~(0x0f))|(dac_ftrim);
+	afe_reg_write(0x28, data);
+
+    /*get 3 LDO bits from fuse string*/
+	ldo = (REG32(0xBF1073A4)>>16) & 0x7;
+    
+	/*write to afe reg offset 0x0e, bit 12 to 14*/
+    data = afe_reg_read(0x0e);
+    data = (data & ~(0x7<<12))|(ldo<<12);
+    afe_reg_write(0x0e, data);
+
+}
+#endif 
+
+
+/**********************************************************************************/
 
 #ifdef CONFIG_NOR_FLASH_AUTO
 void save_extra_env()
@@ -127,15 +310,44 @@ int flash_probe(void)
 
 void show_boot_progress(int arg)
 {
+#ifdef CONFIG_RG_HW_SAGEM_HH4_ARX300
+    /* Leds are configurured and switched to default in preloader (SPL)
+     * Default state is success (Green) */
+
+    /* red power LED - gpio 17: port 1, pin 1
+     * green power LED - gpio 6: port 0, pin 6 */
+
+    if (arg >= 0)
+    {
+	/* Success */
+	*(AR10_GPIO_P0_OUT) &= ~(1 << 6); /* Turn on Green LED */
+	*(AR10_GPIO_P1_OUT) |= (1 << 1); /* Turn off Red LED */
+    }
+    else
+    {
+	/* Failure */
+	*(AR10_GPIO_P1_OUT) &= ~(1 << 1); /* Turn on Red LED */
+	*(AR10_GPIO_P0_OUT) |= (1 << 6); /* Turn off Green LED */
+    }
+#endif
   return;
 }
 
+void config_dcdc()
+{
+   REG8(DCDC_2V5_BASE+DCDC_PWM0_OFFSET)=0x8f;
+}
 
 int checkboard (void)
 {
 
     printf("CLOCK CPU %dM RAM %dM\n",CPU_CLOCK_RATE/1000000,RAM_CLOCK_RATE/1000000);
-   
+#ifdef CONFIG_AR10_DDR_8BIT
+    printf("8 Bit RAM\n");
+#else
+    printf("16 Bit RAM\n");
+#endif
+  
     //*AR10_PMU_CLKGCR1_A |= ((1<<10)|(1<<5)) ; /*power up EBU*/ 
     REG32(0xBF102024) = REG32(0xBF102020) | 0x00000400; //writing 1 in the PMU_CLKGCR1_A_ADDR[10]
 	REG32(0xBF102024) = REG32(0xBF102020) | 0x00000020; //writing 1 in the PMU_CLKGCR1_A_ADDR[5]
@@ -143,7 +355,16 @@ int checkboard (void)
 	*AR10_EBU_CLC = 0;
     *AR10_EBU_ADDR_SEL_0 = 0x10000011;
     *AR10_EBU_ADDR_SEL_1 = 0x14000021;  
-	  return 0;
+#ifdef CONFIG_AR10_PROGRAM_AFE_FUSE
+    config_afe();
+#endif
+    
+    show_boot_progress(0);
+
+#ifdef CONFIG_AR10_DCDC_2V5_PWM0    
+	config_dcdc();
+#endif	
+    return 0;
 }
 
 
@@ -204,69 +425,71 @@ int spi_gpio_init(unsigned int cs)
 {
 
     *AR10_PMU_CLKGCR1_A |=1<<8;
-	
-   /* p0.15 SPI_CS1(EEPROM) p1.6 SPI_CS2(SFLASH) p1.0 SPI_DIN p1.1 SPI_DOUT p1.2 SPI_CLK */
-    *(AR10_GPIO_P0_DIR) = (*AR10_GPIO_P0_DIR)|(0xa000);
-    *(AR10_GPIO_P1_DIR) = ((*AR10_GPIO_P1_DIR)|(0x46))&(~1);
+     
+	 /*p0.15 SPI_CS1*/
+	 *(AR10_GPIO_P0_DIR) |= 1<<15;
+	 *(AR10_GPIO_P0_ALTSEL0) |=1<<15;
+	 *(AR10_GPIO_P0_ALTSEL1) &=~(1<<15);
 
-    *(AR10_GPIO_P0_ALTSEL0) = (*AR10_GPIO_P0_ALTSEL0)|(0x8000);
-    *(AR10_GPIO_P0_ALTSEL0) = (*AR10_GPIO_P0_ALTSEL0)&(~0x2000);
-    *(AR10_GPIO_P0_ALTSEL1) = (*AR10_GPIO_P0_ALTSEL1)&(~0xa000);
-    *(AR10_GPIO_P1_ALTSEL0) = ((*AR10_GPIO_P1_ALTSEL0)|(0x47));
-    *(AR10_GPIO_P1_ALTSEL1) = (*AR10_GPIO_P1_ALTSEL1)&(~0x47);
+     /*P1.0 SPI_DIN*/
+	 *(AR10_GPIO_P1_DIR) &=~1;
+	 *(AR10_GPIO_P1_ALTSEL0) |=1;
+	 *(AR10_GPIO_P1_ALTSEL1) &=~1;
 
-    *AR10_GPIO_P0_OD = (*AR10_GPIO_P0_OD)|0xa000;
-    *AR10_GPIO_P1_OD = (*AR10_GPIO_P1_OD)|0x0047;
-    *AR10_GPIO_P0_OUT = (*AR10_GPIO_P0_OUT)|0x2000;
-
+     /*P1.1 SPI_DOUT*/
+	 *(AR10_GPIO_P1_DIR) |=1<<1;
+	 *(AR10_GPIO_P1_ALTSEL0) |=1<<1;
+	 *(AR10_GPIO_P1_ALTSEL1) &=~(1<<1);
+			   
+     /*P1.2 SPI_CLK*/
+	 *(AR10_GPIO_P1_DIR) |=1<<2;
+	 *(AR10_GPIO_P1_ALTSEL0) |=1<<2;
+	 *(AR10_GPIO_P1_ALTSEL1) &=~(1<<2);
+			   
+     *AR10_GPIO_P0_OD = (*AR10_GPIO_P0_OD)|0xa000;
+	 *AR10_GPIO_P1_OD = (*AR10_GPIO_P1_OD)|0x0047;
+	 *AR10_GPIO_P0_OUT = (*AR10_GPIO_P0_OUT)|0x2000;
+			 
 	 return 1;																					 
 }
 #endif
 
-#ifdef CONFIG_TUNE_DDR
-#ifdef CONFIG_BOOT_FROM_NOR
-void save_ddr_param(void)
+#ifdef CONFIG_AR10_LIF_DETECTION 
+void detect_lif(void)
 {
-   int rcode;
-	 ulong   ddr_magic=0x88888888;
-	 ulong erase_addr1=0, erase_addr2=0;
-	 volatile ulong* ptr=IFX_CFG_FLASH_DDR_CFG_START_ADDR;
-	 ulong  ecc;
-	 ulong  buffer[6];
-	 erase_addr1 = IFX_CFG_FLASH_DDR_CFG_START_ADDR; 
-	 erase_addr2 = IFX_CFG_FLASH_DDR_CFG_START_ADDR + IFX_CFG_FLASH_DDR_CFG_SIZE;
-	 if(*(u32*)0xBE22FF20!=0x2)  /*0xBE1A5F20 contains the tuning status*/
-	    {
-		    /*no new parameter, return immediately*/
-		    return;
-	    }
-  if(flash_sect_protect (0, erase_addr1, erase_addr2-1))
-     {
-		      printf("protect off error!\n");
-		 }
-									 
-  if (flash_sect_erase (erase_addr1, erase_addr2-1))
-     {
-		       printf("erase error!\n");
-		 }
-	 rcode = flash_sect_erase(erase_addr1, erase_addr2-1);
+     u32 lif_type=0;
+		 u32 dir, alt0, alt1;
+     char lif_type_string[]="LIF_TYPE";
+		 char buf[32];
+		 dir=*(AR10_GPIO_P0_DIR);
+		 alt0=*(AR10_GPIO_P0_ALTSEL0);
+		 alt1=*(AR10_GPIO_P0_ALTSEL1);
+		 *(AR10_GPIO_P0_DIR) &=~(1<<10);
+		 *(AR10_GPIO_P0_ALTSEL0) &=~(1<<10);
+		 *(AR10_GPIO_P0_ALTSEL1) &=~(1<<10);
+     lif_type = (*(AR10_GPIO_P0_IN) >> 10) & 0x1;
+     *(AR10_GPIO_P0_DIR)=dir;
+		 *(AR10_GPIO_P0_ALTSEL0)=alt0;
+     *(AR10_GPIO_P0_ALTSEL1)=alt1;
 
-    
-   memcpy ((u8*)buffer,&ddr_magic,4);
-	 memcpy ((u8*)(buffer+1),(u8*)0xBF401270,4);
-	 memcpy ((u8*)(buffer+2),(u8*)0xBF401280,4);
-	 memcpy ((u8*)(buffer+3),(u8*)0xBF4012B0,4);
-	 memcpy ((u8*)(buffer+4),(u8*)0xBF4012C0,4);
-	 ecc=(*(u32*)0xBF401270)^(*(u32*)0xBF401280)^(*(u32*)0xBF4012B0)^(*(u32*)0xBF4012C0);
-	 memcpy ((u8*)(buffer+5),&ecc,4);
+		 dir=*(AR10_GPIO_P3_DIR);
+		 alt0=*(AR10_GPIO_P3_ALTSEL0);
+		 alt1=*(AR10_GPIO_P3_ALTSEL1);
+	   *(AR10_GPIO_P3_DIR) &=~(1<<10);
+	   *(AR10_GPIO_P3_ALTSEL0) &=~(1<<10);
+	   *(AR10_GPIO_P3_ALTSEL1) &=~(1<<10); 
+     lif_type |= ((*(AR10_GPIO_P3_IN) >> 10 ) & 0x1)<<1;
+		 *(AR10_GPIO_P3_DIR)=dir;
+     *(AR10_GPIO_P3_ALTSEL0)=alt0;
+     *(AR10_GPIO_P3_ALTSEL1)=alt1;
+     printf("lif_type=%d\n",lif_type);
+     sprintf(buf, "%d", lif_type);
+		 setenv(lif_type_string, buf);
+} 
+#endif
 
-	 flash_write((char *)buffer, IFX_CFG_FLASH_DDR_CFG_START_ADDR, 24);/*one magic word,4 parameters,1cc,24bytes*/
-
-	 //(void) flash_sect_protect (1, erase_addr1, erase_addr2-1);
-										
-     return;
-}
-#elif defined(CONFIG_BOOT_FROM_NAND)
+#ifdef CONFIG_TUNE_DDR
+#if defined(CONFIG_BOOT_FROM_NAND)
 extern nand_info_t nand_info[]; 
 //extern int nand_write (struct mtd_info *mtd, loff_t to, size_t len, size_t * retlen, const u_char * buf);
 
@@ -283,21 +506,24 @@ void save_ddr_param(void)
 	   nand_info_t *nand;
 	   nand_write_options_t opts;
 	   nand = &nand_info[0];
-	   int srcLen=24;
-	   if(*(u32*)0xBE22FF20!=0x2)  /*0xBE1A5F20 contains the tuning status*/
-	    {
-		    /*no new parameter, return immediately*/
-		    return;
-	    }
-	   memcpy ((u8*)buffer,&ddr_magic,4);
-	   memcpy ((u8*)(buffer+1),(u8*)0xBF401270,4);
-	   memcpy ((u8*)(buffer+2),(u8*)0xBF401280,4);
-	   memcpy ((u8*)(buffer+3),(u8*)0xBF4012B0,4);
-	   memcpy ((u8*)(buffer+4),(u8*)0xBF4012C0,4);
-	   ecc=(*(u32*)0xBF401270)^(*(u32*)0xBF401280)^(*(u32*)0xBF4012B0)^(*(u32*)0xBF4012C0);
-	   memcpy ((u8*)(buffer+5),&ecc,4); 
+	   u64 srcLen=24;
 	   
-	   nand_write_partial(&nand_info[0], IFX_CFG_FLASH_DDR_CFG_START_ADDR, &srcLen, (u_char*)buffer);
+#ifdef CONFIG_AR10_LIF_DETECTION       
+	    detect_lif(); 
+#endif	   
+       if(*(u32*)0xBE1A7F20!=0x2)  /*0xBE1A5F20 contains the tuning status*/
+        {
+              /*no new parameter, return immediately*/
+                return;
+        }
+       memcpy ((u8*)buffer,&ddr_magic,4);
+       memcpy ((u8*)(buffer+1),(u8*)0xBE1A7F10,4);
+       memcpy ((u8*)(buffer+2),(u8*)0xBE1A7F14,4);
+       memcpy ((u8*)(buffer+3),(u8*)0xBE1A7F18,4);
+       memcpy ((u8*)(buffer+4),(u8*)0xBE1A7F1C,4);
+       ecc=(*(u32*)0xBE1A7F10)^(*(u32*)0xBE1A7F14)^(*(u32*)0xBE1A7F18)^(*(u32*)0xBE1A7F1C);
+       memcpy ((u8*)(buffer+5),&ecc,4);
+       nand_write_partial(&nand_info[0], IFX_CFG_FLASH_DDR_CFG_START_ADDR, &srcLen,(u_char*)buffer);
 	   return;
 }
 #else /*BOOT from SPI*/
@@ -310,29 +536,33 @@ void save_ddr_param(void)
 	 ulong  ecc;
 	 ulong  buffer[6];
 	 static struct spi_flash *flash_spi;
+#ifdef CONFIG_AR10_LIF_DETECTION       
+	    detect_lif(); 
+#endif	
+	 
 	 flash_spi = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
             CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
 	
 	 erase_addr1 = IFX_CFG_FLASH_DDR_CFG_START_ADDR; 
 	 erase_addr2 = IFX_CFG_FLASH_DDR_CFG_START_ADDR + IFX_CFG_FLASH_DDR_CFG_SIZE;
-	 if(*(u32*)0xBE22FF20!=0x2)   /*0xBE1A5F20 contains the tuning status*/
+	 if(*(u32*)0xBE1A7F20!=0x2)   /*0xBE1A5F20 contains the tuning status*/
 	    {
 		    /*no new parameter, return immediately*/
 		    return;
 	    }
 	 
 	 memcpy ((u8*)buffer,&ddr_magic,4);
-	 memcpy ((u8*)(buffer+1),(u8*)0xBF401270,4);
-	 memcpy ((u8*)(buffer+2),(u8*)0xBF401280,4);
-	 memcpy ((u8*)(buffer+3),(u8*)0xBF4012B0,4);
-	 memcpy ((u8*)(buffer+4),(u8*)0xBF4012C0,4);
-	 ecc=(*(u32*)0xBF401270)^(*(u32*)0xBF401280)^(*(u32*)0xBF4012B0)^(*(u32*)0xBF4012C0);
+	 memcpy ((u8*)(buffer+1),(u8*)0xBE1A7F10,4);
+	 memcpy ((u8*)(buffer+2),(u8*)0xBE1A7F14,4);
+	 memcpy ((u8*)(buffer+3),(u8*)0xBE1A7F18,4);
+	 memcpy ((u8*)(buffer+4),(u8*)0xBE1A7F1C,4);
+	 ecc=(*(u32*)0xBE1A7F10)^(*(u32*)0xBE1A7F14)^(*(u32*)0xBE1A7F18)^(*(u32*)0xBE1A7F1C);
 	 memcpy ((u8*)(buffer+5),&ecc,4);
  
 	 spi_flash_write(flash_spi, erase_addr1, 24, (char *)buffer);   
 	 printf("saved ddr param in flash!\n");    
 	    
-   return;
+
 	 return; 
 }
 #endif

@@ -38,6 +38,13 @@
 #include <linux/stddef.h>
 #include <malloc.h>
 #include <nand.h>
+#include <configs/rg_config.h>
+
+#ifdef CONFIG_BOOTLDR_UBOOT_SECURED_ENV
+#include <deu_aes.h>
+#include "symkey.c"
+static u8 iv[16] = {};
+#endif
 
 #if defined(CONFIG_CMD_SAVEENV) && defined(CONFIG_CMD_NAND)
 #define CMD_SAVEENV
@@ -163,14 +170,14 @@ int env_init(void)
  */
 int writeenv(size_t offset, u_char *buf)
 {
-	size_t end = offset + CONFIG_ENV_RANGE;
-	size_t amount_saved = 0;
-	size_t blocksize, len;
+	u64 end = offset + CONFIG_ENV_RANGE;
+	u64 amount_saved = 0;
+	u64 blocksize, len;
 
 	u_char *char_ptr;
 
 	blocksize = nand_info[0].erasesize;
-	len = min(blocksize, CONFIG_ENV_SIZE);
+	len = (u64)min(blocksize, CONFIG_ENV_SIZE);
 
 	while (amount_saved < CONFIG_ENV_SIZE && offset < end) {
 		if (nand_block_isbad(&nand_info[0], offset)) {
@@ -234,9 +241,8 @@ int saveenv(void)
 int saveenv(void)
 {
 	int ret = 0;
-	u64 total;
-	/*
 	nand_erase_options_t nand_erase_options;
+	u8 *enc_env = env_ptr;
 
 	nand_erase_options.length = CONFIG_ENV_RANGE;
 	nand_erase_options.quiet = 0;
@@ -250,20 +256,23 @@ int saveenv(void)
 	if (nand_erase_opts(&nand_info[0], &nand_erase_options))
 		return 1;
 
+#ifdef CONFIG_BOOTLDR_UBOOT_SECURED_ENV
+	puts ("Encrypting enviroment...\n");
+	enc_env = malloc(sizeof(env_t));
+	secure_encrypt(sym_key, iv, (u8 *)env_ptr, (u8 *)enc_env, sizeof(env_t));
+#endif
 	puts ("Writing to Nand... ");
-	if (writeenv(CONFIG_ENV_OFFSET, (u_char *) env_ptr)) {
+	if (writeenv(CONFIG_ENV_OFFSET, enc_env)) {
 		puts("FAILED!\n");
-		return 1;
+		ret = 1;
 	}
-*/
-    puts ("Writing to Nand... ");
-    total = CONFIG_ENV_RANGE;
-	ret = nand_write_partial(&nand_info[0], CONFIG_ENV_OFFSET, &total, (u_char*)env_ptr);
-    puts ("done\n");
-    return ret;
+	else
+		puts ("done\n");
 
+#ifdef CONFIG_BOOTLDR_UBOOT_SECURED_ENV
+	free(enc_env);
+#endif
 
-	puts ("done\n");
 	return ret;
 }
 #endif /* CONFIG_ENV_OFFSET_REDUND */
@@ -271,25 +280,20 @@ int saveenv(void)
 
 int readenv (size_t offset, u_char * buf)
 {
-	u64 end = (u64)offset + CONFIG_ENV_RANGE;
+	u64 end = offset + CONFIG_ENV_RANGE;
 	u64 amount_loaded = 0;
 	u64 blocksize, len;
 
 	u_char *char_ptr;
 
-    struct nand_chip *chip=nand_info[0].priv;
-
-    chip->ops.mode=MTD_OOB_AUTO;
-
 	blocksize = nand_info[0].erasesize;
-	len =(u64)min(blocksize, CONFIG_ENV_SIZE);
+	len = (u64)min(blocksize, CONFIG_ENV_SIZE);
 
 	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
 		if (nand_block_isbad(&nand_info[0], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_loaded];
-			asm("sync");
 			if (nand_read(&nand_info[0], offset, &len, char_ptr))
 				return 1;
 			offset += blocksize;
@@ -370,12 +374,24 @@ void env_relocate_spec (void)
 {
 #if !defined(ENV_IS_EMBEDDED)
 	int ret;
+
 	ret = readenv(CONFIG_ENV_OFFSET, (u_char *) env_ptr);
 	if (ret)
-		return use_default();
-	
+	{
+		use_default();
+		saveenv();
+		return;
+	}
+
+#ifdef CONFIG_BOOTLDR_UBOOT_SECURED_ENV
+	secure_decrypt(sym_key, iv, (u8 *)env_ptr, (u8 *)env_ptr, sizeof(env_t));
+#endif
 	if (crc32(0, env_ptr->data, ENV_SIZE) != env_ptr->crc)
-		return use_default();
+	{
+	        use_default();
+		saveenv();
+		return;
+	}
 #endif /* ! ENV_IS_EMBEDDED */
 }
 #endif /* CONFIG_ENV_OFFSET_REDUND */

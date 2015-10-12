@@ -588,8 +588,8 @@ void board_init_f(ulong bootflag)
 	 tune_ddr();
 #ifdef CONFIG_BOOT_FROM_SPI
 
-   sf_read(cmd,(ulong)0x5000,addr_len,(u8*)0xa0100000,0x10000);  /*copy u-boot image*/
-   sf_read(cmd,(ulong)0x10000,addr_len,(u8*)0xa0110000,0x10000);  /*copy gphy firmware*/
+   sf_read(cmd,(ulong)0x6000,addr_len,(u8*)0xa0100000,0x20000);  /*copy u-boot image*/
+   sf_read(cmd,(ulong)0x30000,addr_len,(u8*)CONFIG_VR9_GPHY_FW_ADDR,0x20000);  /*copy gphy firmware*/
 #elif defined(CONFIG_BOOT_FROM_NAND)
    
    for(i=0;i<(0x30000/CONFIG_NAND_PAGE_SIZE+1);i++){    

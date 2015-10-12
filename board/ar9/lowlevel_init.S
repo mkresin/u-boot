@@ -39,8 +39,10 @@
 #elif defined(CONFIG_CPU_166M_RAM_166M) || defined(CONFIG_CPU_333M_RAM_166M) || defined(CONFIG_CPU_500M_RAM_166M) 
  #ifdef CONFIG_ETRON_RAM
   #include "etron_166_settings.h"
- #elif defined(CONFIG_HYNIX_RAM)
+ #elif defined(CONFIG_HYNIX_RAM_H5DU2562GTR_E3C)
   #include "hynix_166_settings.h"
+ #elif defined(CONFIG_HYNIX_RAM_H5DU5162ETR_E3C)
+  #include "hynix64M_166_settings.h"
  #elif defined(CONFIG_QIMONDA_RAM)
   #include "qimonda_166_settings.h"
  #elif defined(CONFIG_NANYA_RAM)
@@ -51,8 +53,10 @@
 #elif defined(CONFIG_CPU_393M_RAM_196M)
  #ifdef CONFIG_ETRON_RAM
   #include "etron_196_settings.h"
- #elif defined(CONFIG_HYNIX_RAM)
+ #elif defined(CONFIG_HYNIX_RAM_H5DU2562GTR_E3C)
   #include "hynix_196_settings.h"
+ #elif defined(CONFIG_HYNIX_RAM_H5DU5162ETR_E3C)
+   #include "hynix64M_196_settings.h"
  #elif defined(CONFIG_QIMONDA_RAM)
   #include "qimonda_196_settings.h"
  #endif 
@@ -249,23 +253,23 @@ cgu_init:
        sw  a1, 0(t1)      // Turn on DDR PAD Class II to INC drive.
 #endif
 
-#ifdef CONFIG_BOOT_FROM_ETHERNET
+
     li  t1, CGU_UPDATE
 	li  t2, 0x1
 	sw  t2, 0(t1)
 	nop
-	j   cgu_init
-    nop
-
-#else
-	li  t1, RCU_RST_REQ
-	li  t2, 0x40000008
-	sw	t2,0(t1)
+#ifdef CONFIG_BOOT_FROM_NOR
+    li  t1, RCU_RST_REQ
+    li  t2, 0x40000008
+	sw  t2,0(t1)
 	b   wait_reset
-	nop
+    nop
 wait_reset:
-        b   wait_reset
-        nop
+    b   wait_reset
+    nop
+#else
+    j   cgu_init
+    nop
 #endif
 
 freq_up2date:
@@ -577,7 +581,6 @@ lowlevel_init:
 
         bal cgu_init
         nop
-
 #ifdef CONFIG_TUNE_DDR
         li      t1, 0xbf800060
         lw      t2, 0(t1)
@@ -586,13 +589,13 @@ lowlevel_init:
         nop
 #endif
 1:
+
         bal ddrram_init
         nop
+ddr_init_finish:
 
-
-ddr_init_finish:	
         move	ra, t0
-	      j	ra
-	      nop
+	    j	ra
+	    nop
 
 	.end	lowlevel_init

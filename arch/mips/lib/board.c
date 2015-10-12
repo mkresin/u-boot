@@ -53,7 +53,7 @@ extern ulong uboot_end;
 ulong monitor_flash_len;
 
 const char version_string[] =
-	U_BOOT_VERSION" (" U_BOOT_DATE " - " U_BOOT_TIME ")";
+	U_BOOT_VERSION" (" U_BOOT_DATE " - " U_BOOT_TIME " on " U_BOOT_HOST_NAME ")";
 
 static char *failed = "*** failed ***\n";
 
@@ -148,9 +148,7 @@ init_fnc_t *init_sequence[] = {
 	incaip_set_cpuclk,	/* set cpu clock according to environment variable */
 #endif
 	init_baudrate,		/* initialze baudrate settings */
-#ifndef CONFIG_LANTIQ_UBOOT_ar10	
 	serial_init,		/* serial communications setup */
-#endif	
 	console_init_f,
 	display_banner,		/* say that we are here */
 	checkboard,
@@ -396,6 +394,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		copy_filename (BootFile, s, sizeof (BootFile));
 	}
 #endif
+   setenv ("ver", version_string);
 
 #ifdef CONFIG_CMD_SPI
 	puts ("SPI:   ");
@@ -412,11 +411,9 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	bb_miiphy_init();
 #endif
     
-#ifndef CONFIG_LANTIQ_UBOOT_ar10
 #ifdef CONFIG_TUNE_DDR
     save_ddr_param();
 #endif
-#endif	
 
 #if defined(CONFIG_CMD_NET)
 #if defined(CONFIG_NET_MULTI)

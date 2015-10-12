@@ -5,7 +5,7 @@
 #include <asm/vr9.h>
 #include <environment.h>
 #include <nand.h>
-
+#include <configs/rg_config.h>
 
 #define DDR_OFFSET   0xbf401000
 #define DDR_CCR00      (DDR_OFFSET + 0x0000 )
@@ -235,6 +235,24 @@ void nand_gpio_init(void)
     *BSP_GPIO_P1_DIR |= (0x100);
 }
 									  
+static void leds_default(void)
+{
+#ifdef CONFIG_RG_HW_SAGEM_HH5_VRX268
+    /* red power LED - gpio 12: port 0, pin 12 */
+    *BSP_GPIO_P0_DIR |= (1 << 12);
+    *BSP_GPIO_P0_ALTSEL0 &= ~(1 << 12);
+    *BSP_GPIO_P0_ALTSEL1 &= ~(1 << 12);
+    *BSP_GPIO_P0_OD &= ~(1 << 12);
+    *BSP_GPIO_P0_OUT |= (1 << 12);  /* By default switch off */
+
+    /* green power LED - gpio 14: port 0, pin 14 */
+    *BSP_GPIO_P0_DIR |= (1 << 14);
+    *BSP_GPIO_P0_ALTSEL0 &= ~(1 << 14);
+    *BSP_GPIO_P0_ALTSEL1 &= ~(1 << 14);
+    *BSP_GPIO_P0_OD &= ~(1 << 14);
+    *BSP_GPIO_P0_OUT &= ~(1 << 14); /* By default switch on */
+#endif
+}
 
 void *malloc(unsigned int size)
 {
@@ -310,11 +328,12 @@ void nand_spl_init(void)
   erase_addr2 = IFX_CFG_FLASH_DDR_CFG_START_ADDR + IFX_CFG_FLASH_DDR_CFG_SIZE;
 
   serial_init();
+  leds_default();
 
   buffer[0] = 0;
 
   asm("sync");
-  nand_read_page((16384/CONFIG_NAND_PAGE_SIZE)-1,page_buf);
+  nand_read_page(((IFX_CFG_FLASH_DDR_CFG_END_ADDR+1)/CONFIG_NAND_PAGE_SIZE)-1,page_buf);
   asm("sync");
   
   for(i=0;i<6;i++){

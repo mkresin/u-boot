@@ -45,8 +45,8 @@ extern void invalidate_icache(void);
 
 
 static int hsnand_tx_num, hsnand_rx_num;
-static dma_rx_descriptor_t hsnand_rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(8)));
-static dma_tx_descriptor_t hsnand_tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(8)));
+static dma_rx_descriptor_t hsnand_rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(16)));
+static dma_tx_descriptor_t hsnand_tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(16)));
 static int current_cmd =  NAND_CMD_NONE;
 static int addr_cnt;
 
@@ -478,6 +478,8 @@ u8 *reed_solomn_128bytes_ecc(u8 *data_bytes_partial) {
     return s;  
 };
 
+
+#ifndef CONFIG_NAND_SPL
 /**
  * nand_default_bbt - [NAND Interface] Select a default bad block table for the device
  * @mtd:    MTD device structure
@@ -517,18 +519,23 @@ int lq_rs_nand_default_bbt(struct mtd_info *mtd)
 	return nand_scan_bbt(mtd, this->badblock_pattern);
 
 }
+#endif
+
 
 static void hsnand_dma_setup(void)
 {
+         int i;     
 		 /*configure DMA*/
          *AR10_PMU_CLKGCR1_A |= (1<<5)|(1<<10); /*enable EBU and DMA clocks in PMU*/
          *AR10_DMA_PS = 0x3;                    /*port3 for HSNAND*/ 
-         *AR10_DMA_PCTRL = 0xf3c;                /*burst size to 8 words*/ 
-        
+      
+	
+		 *AR10_DMA_PCTRL = 0xf3c;                /*burst size to 8 words*/ 
+   
          *AR10_DMA_CS    = RX_CHAN_NO;
          *AR10_DMA_CCTRL=  0x2;
          *AR10_DMA_CCTRL = 0x30000;  /* Channel is off , we will enable it once des are set*/
-         *AR10_DMA_CDBA  = (u32)hsnand_rx_des_ring & 0x0ffffff0;;   
+         *AR10_DMA_CDBA  = (u32)hsnand_rx_des_ring & 0x1ffffff0;;   
 		 *AR10_DMA_CDLEN = NUM_RX_DESC; 
          *AR10_DMA_CIE   = 0x0;
          *AR10_DMA_CPOLL = 0x80000080;
@@ -536,13 +543,24 @@ static void hsnand_dma_setup(void)
          *AR10_DMA_CS    = TX_CHAN_NO;
          *AR10_DMA_CCTRL=  0x2;
          *AR10_DMA_CCTRL = 0x30100;  /* Channel is off , we will enable it once des are set*/
-         *AR10_DMA_CDBA  = (u32)hsnand_tx_des_ring & 0x0ffffff0;;   
+         *AR10_DMA_CDBA  = (u32)hsnand_tx_des_ring & 0x1ffffff0;;   
 		 *AR10_DMA_CDLEN = NUM_TX_DESC; 
          *AR10_DMA_CIE   = 0x0;
          *AR10_DMA_CPOLL = 0x80000080;
 			   
 	      hsnand_tx_num = 0; 
           hsnand_rx_num = 0;
+          
+          for(i=0;i < NUM_RX_DESC; i++)
+	      {
+	          dma_rx_descriptor_t * rx_desc = KSEG1ADDR(&hsnand_rx_des_ring[i]);
+              rx_desc->status.word=0;
+              rx_desc->status.field.OWN = 0;
+	          rx_desc->status.field.DataLen = 0;   /* 1536  */
+	          rx_desc->DataPtr = 0;
+	      }
+		  
+			  
 }
 
 /**
@@ -561,21 +579,30 @@ static int lq_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 	 dma_rx_descriptor_t * rx_desc;
      u8* tmp_buf;
 	 int flag=0;
+	 int i;
+	
 	 rx_desc = KSEG1ADDR(&hsnand_rx_des_ring[hsnand_rx_num]); 
      while(rx_desc->status.field.OWN);
      rx_desc->status.field.Sop=0;
      rx_desc->status.field.Eop=0;
      rx_desc->status.field.C=0;
      rx_desc->status.field.DataLen=mtd->writesize;
+#ifdef CONFIG_NAND_SPL    
+     rx_desc->DataPtr = (u32)buf & 0x1ffffff0;
+#else
      if((u32)buf & 0x1f ){
 		//tmp_buf = (u8*)0x80200000; /*fix me, need to allocate 32byte aligned buffer in kernel*/
 		tmp_buf = (uchar *)memalign(32, mtd->writesize);
-		rx_desc->DataPtr = (u32)tmp_buf & 0x0ffffff0;
+		rx_desc->DataPtr = (u32)tmp_buf & 0x1ffffff0;
 		flag=1;
 	 }else{
-	    rx_desc->DataPtr = (u32)buf & 0x0ffffff0;
-	 }  
+	    rx_desc->DataPtr = (u32)buf & 0x1ffffff0;
+	 }
+#endif
+	 
 	 rx_desc->status.field.OWN=1;
+	 
+	 	 
      *AR10_DMA_CS=RX_CHAN_NO;
 
 	 if(!(*AR10_DMA_CCTRL & 1))
@@ -589,14 +616,17 @@ static int lq_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
    
 	 while(rx_desc->status.field.OWN || !rx_desc->status.field.C);
      /*invalidate cache here*/
-     
-     if(flag){
+#ifdef CONFIG_NAND_SPL     
+     invalidate_dcache_range(buf, buf+mtd->writesize);
+#else	 
+	 if(flag){
 	     invalidate_dcache_range(tmp_buf, tmp_buf+mtd->writesize);
          memcpy(buf, tmp_buf, mtd->writesize);
 		 free(tmp_buf);
 	 }else{
          invalidate_dcache_range(buf, buf+mtd->writesize);
 	 }
+#endif	 
 	 
      hsnand_rx_num++;
      if(hsnand_rx_num==NUM_RX_DESC) hsnand_rx_num=0;
@@ -604,7 +634,9 @@ static int lq_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 
      if(*BSP_INT_Sta){
        //printf("page %d read error!\n",page);
-	   ret = -1;
+	   for(i=0;i<mtd->writesize;i++){
+            if(buf[i]!=0xff) ret=-1;
+	   }
 	 }
 	 *BSP_INT_Sta |=((page%2)?6:5);/*clear interrupts status*/
 	 return ret;
@@ -622,6 +654,7 @@ static void lq_nand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chi
 {
     dma_tx_descriptor_t * tx_desc= KSEG1ADDR(&hsnand_tx_des_ring[hsnand_tx_num]);  
     u8* tmp_buf;
+	
 	while(tx_desc->status.field.OWN);/*descriptor not available, wait here*/
     tx_desc->status.field.Sop=1;
     tx_desc->status.field.Eop=1;
@@ -633,6 +666,8 @@ static void lq_nand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chi
     tx_desc->status.field.OWN=1;	
     hsnand_tx_num++;
 	if(hsnand_tx_num==NUM_TX_DESC) hsnand_tx_num=0;
+		
+			
 	*AR10_DMA_CS=TX_CHAN_NO;
 
 	if(!(*AR10_DMA_CCTRL & 1))
@@ -1083,7 +1118,9 @@ int board_nand_init(struct nand_chip *nand)
    nand->select_chip=ifx_nand_select_chip;
 #ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
    nand->ecc.mode = NAND_ECC_HW;
+#ifndef CONFIG_NAND_SPL   
    nand->scan_bbt = lq_rs_nand_default_bbt;
+#endif   
    nand->ecc.read_page  = lq_nand_read_page_hwecc;
    nand->ecc.write_page = lq_nand_write_page_hwecc;
    nand->ecc.read_page_raw = lq_nand_read_page_raw;
@@ -1096,7 +1133,9 @@ int board_nand_init(struct nand_chip *nand)
    nand->ecc.mode=NAND_ECC_SOFT;
 #endif
    //nand->ecc.mode=NAND_ECC_NONE;
+#ifdef CONFIG_NAND_SPL_BBT
    nand->options|=NAND_USE_FLASH_BBT;
+#endif
    //nand->options|=NAND_SKIP_BBTSCAN;
 #ifdef CONFIG_NAND_SPL
    nand->ecc.hwctl = lq_enable_hwecc;

@@ -1,6 +1,25 @@
+ifdef CONFIG_AR10_GPHY_FW_EMBEDDED
+    GPHY_FIRMWARE = $(TOPDIR)/board/$(BOARD)/gphy_firmware.img
+else
+    GPHY_FIRMWARE = $(TOPDIR)/dummy
+endif
+		
 
-ALL +=bootstrap.bin u-boot.lzimg u-boot.lq
+ENV_BLOCK=
 
+ifdef CONFIG_BUILD_ENV_BLOCK
+ENV_BLOCK=ubootenv.img
+endif
+
+
+ALL +=bootstrap.bin u-boot.lzimg u-boot.ltq $(ENV_BLOCK)
+ifdef CONFIG_LTQ_SECURE_BOOT
+ALL +=stage3.bin stage2.bin  
+endif
+
+ifdef CONFIG_BOOT_FROM_UART
+ALL += u-boot.asc
+endif
 
 LDSCRIPT_BOOTSTRAP := $(TOPDIR)/board/$(BOARD)/bootstrap.lds
 ifdef CONFIG_BOOT_FROM_NOR
@@ -25,22 +44,53 @@ LIBS_BOOTSTRAP += $(TOPDIR)/arch/mips/lib/time.o
 BOOTSTRAP_LDFLAGS = -Bstatic -T $(LDSCRIPT_BOOTSTRAP) -Ttext $(CONFIG_BOOTSTRAP_TEXT_BASE) 
 
 ifdef CONFIG_BOOT_FROM_NAND
-$(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
+$(obj)u-boot.ltq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
+		@echo -=== BUILD NAND image ===-
+		@touch dummy
 		@$(TOPDIR)/scripts_platform/pad2align.sh -n 10240 bootstrap.bin
-		@cat $(obj)bootstrap.bin > $(obj)u-boot.lq
-		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.lq
-		@$(TOPDIR)/scripts_platform/pad2align.sh -n 65536 u-boot.lq
+		@cat $(obj)bootstrap.bin > $(obj)u-boot.ltq
+		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 131072 u-boot.ltq
+		@@cat $(GPHY_FIRMWARE) >>u-boot.ltq
 endif
 
 ifdef CONFIG_BOOT_FROM_SPI
-$(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.bin 
+ifdef CONFIG_LTQ_SECURE_BOOT
+$(obj)u-boot.ltq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.bin stools
 		@touch dummy
-		@scripts_platform/mk_sf.pl dummy sfddr.bin 0xbe1a0000 u-boot.lq
-		@scripts_platform/pad2align.sh -n 20480 u-boot.lq
-		@cat u-boot.lzimg >> u-boot.lq
-		@scripts_platform/pad2align.sh -n 65536 u-boot.lq
+		@scripts_platform/pad2align.sh -n 32 sfddr.bin
+		@./stools -i sfddr.bin -o sfddr.enc -e 0xbe1a4030 -d 0xbe1a0000 -j 0xbe1a0000 -k $(CONFIG_AES_KEY)
+		@scripts_platform/mk_sf.pl dummy sfddr.enc 0xbe1a4000 u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 15360 u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 10240 bootstrap.bin
+		@cat $(obj)bootstrap.bin >> $(obj)u-boot.ltq
+		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 0x10000 u-boot.ltq
+		@cat $(GPHY_FIRMWARE) >> u-boot.ltq
+else
+$(obj)u-boot.ltq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.bin 
+		@echo -=== BUILD SPI image ===-
+		@touch dummy
+		@scripts_platform/mk_sf.pl dummy sfddr.bin 0xbe1a0000 u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 15360 u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 10240 bootstrap.bin
+		@cat $(obj)bootstrap.bin >> $(obj)u-boot.ltq
+		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.ltq
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n 0x10000 u-boot.ltq
+		@cat $(GPHY_FIRMWARE) >> u-boot.ltq								
+endif
 endif
 						
+RAMCONF=ddr2_16bit.conf
+u-boot.asc: u-boot.srec
+		@echo -=== BUILD ASCII image ===-
+		ln -s -f board/$(BOARDDIR)/$(RAMCONF) ram.conf
+		cp $(GPHY_FIRMWARE) phy_firmware_alligned
+		scripts_platform/pad2align.sh -n 128 phy_firmware_alligned
+		hexdump -v -e '/1 "%02X"' phy_firmware_alligned > phy_firmware.hex
+		scripts_platform/gct ram.conf u-boot.srec phy_firmware.hex \
+		    $(CONFIG_AR10_GPHY_FW_ADDR) u-boot.asc
+
 LDFLAGS_SFDDR = -Bstatic -T $(TOPDIR)/board/$(BOARD)/bootstrap.lds -Ttext 0xbe1a0000 $(PLATFORM_LDFLAGS)
 OBJS_SFDDR = $(TOPDIR)/board/$(BOARD)/start_sfddr.o 
 OBJS_SFDDR +=$(TOPDIR)/board/$(BOARD)/sfddr_board.o 
@@ -53,8 +103,8 @@ LIBS_SFDDR += $(TOPDIR)/lib/crc32.o
 LIBS_SFDDR += $(TOPDIR)/$(CPUDIR)/$(BOARD)/clock.o
 LIBS_SFDDR += $(TOPDIR)/drivers/serial/lq_asc.o
 LIBS_SFDDR += $(TOPDIR)/arch/mips/lib/time.o
-LIBS_SFDDR += $(TOPDIR)/lib_bootstrap/LzmaDecode.o
-LIBS_SFDDR += $(TOPDIR)/lib_bootstrap/LzmaWrapper.o
+#LIBS_SFDDR += $(TOPDIR)/lib_bootstrap/LzmaDecode.o
+#LIBS_SFDDR += $(TOPDIR)/lib_bootstrap/LzmaWrapper.o
 
 
 sfddr.bin:    $(obj)sfddr
@@ -87,4 +137,56 @@ bootstrap: $(OBJS_BOOTSTRAP) $(LIBS_BOOTSTRAP)  $(LDSCRIPT_BOOTSTRAP)
 		
 $(LIBS_BOOTSTRAP):
 		$(MAKE) -C `dirname $@` all
-		
+
+stools: $(TOPDIR)/board/$(BOARD)/stools.c
+		$(HOSTCC) -o $@ $<
+
+$(ENV_BLOCK): $(obj)u-boot $(obj)u-boot.bin
+		$(NM) -Ss u-boot >u-boot.sym
+		scripts_platform/mk_envimg.sh $@
+
+stage3.bin: $(CONFIG_DSA_PRIVKEY) u-boot.ltq
+		@scripts_platform/pad2align.sh -n 32 u-boot.ltq
+ifdef CONFIG_ENCRYPT_STAGE3
+		@scripts_platform/build_stage3.sh -i u-boot.ltq -o stage3.bin \
+		                                  -d $(CONFIG_BOOTSTRAP_TEXT_BASE)\
+										  -j $(CONFIG_BOOTSTRAP_TEXT_BASE)\
+										  -p $(CONFIG_DSA_PRIVKEY) \
+										  -k $(CONFIG_STAGE3_AES_KEY)
+else
+		@scripts_platform/build_stage3.sh -i u-boot.ltq -o stage3.bin \
+		                                  -d $(CONFIG_BOOTSTRAP_TEXT_BASE)\
+										  -j $(CONFIG_BOOTSTRAP_TEXT_BASE)\
+										  -p $(CONFIG_DSA_PRIVKEY)
+endif
+
+
+$(CONFIG_DSA_PRIVKEY):
+ifdef CONFIG_DSA_KEY_AUTO
+		@openssl dsaparam -out dsaparam.pem 1024
+		@openssl gendsa -out $(CONFIG_DSA_PRIVKEY) dsaparam.pem
+		@openssl dsa -in $(CONFIG_DSA_PRIVKEY) -out $(CONFIG_DSA_PUBKEY) -pubout
+endif
+		@echo "private key:"$(CONFIG_DSA_PRIVKEY)
+		@echo "public key: "$(CONFIG_DSA_PUBKEY)
+
+
+
+
+stage2.bin: $(CONFIG_DSA_PRIVKEY)
+		@ln -sf $(TOPDIR)/.config $(TOPDIR)/stage2/.config
+		@ln -sf $(TOPDIR)/include/configs/autoconf.h $(TOPDIR)/stage2/include/autoconf.h
+		@scripts_platform/key2header.sh $(CONFIG_DSA_PRIVKEY) stage2/bn_val.h
+		@scripts_platform/hex2array.pl aes_key $(CONFIG_STAGE3_AES_KEY) >>stage2/bn_val.h
+		@$(TOPDIR)/scripts_platform/hex2array.pl aes_key $(CONFIG_STAGE2_AES_KEY)\
+                                                         >$(TOPDIR)/nand_spl/board/lantiq/aes_key.h
+		@$(TOPDIR)/scripts_platform/hex2array.pl iv $(CONFIG_STAGE2_AES_IV)\
+                                                         >>$(TOPDIR)/nand_spl/board/lantiq/aes_key.h
+
+		@$(MAKE) -C $(TOPDIR)/stage2 all
+		@cp $(TOPDIR)/stage2/stage2.bin stage2.bin
+		@$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_STAGE2_SIZE) stage2.bin
+		@openssl enc -aes-256-cbc -in stage2.bin \
+		                -out stage2.enc -K $(CONFIG_STAGE2_AES_KEY) \
+		                -iv $(CONFIG_STAGE2_AES_IV) -nopad 
+

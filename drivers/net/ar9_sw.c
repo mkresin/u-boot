@@ -71,9 +71,12 @@
 #define RED_MII_MODE_OC 7  /*Output clock */
 #define RGMII_MODE_10MB 8
 
-extern int dcache_linesize_mips32(void);
-extern void dcache_writeback_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
-extern void dcache_hit_invalidate(u32 size, u32  dcache_line_size, u32 start_addr);
+extern void flush_dcache_range(unsigned long start, unsigned long stop);
+extern void clean_dcache_range(unsigned long start, unsigned long stop);
+extern void invalidate_dcache_range(unsigned long start, unsigned long stop);
+extern void flush_dcache(void);
+extern void invalidate_dcache(void);
+extern void invalidate_icache(void);
 extern void mdelay (unsigned long msec);
 
 typedef struct
@@ -206,6 +209,7 @@ int amazon_s_switch_init(struct eth_device *dev, bd_t * bis)
 		rx_desc->status.field.OWN=1;
 		rx_desc->status.field.DataLen=PKTSIZE_ALIGN;   /* 1536  */
 		rx_desc->DataPtr=(u32)KSEG1ADDR(NetRxPackets[i]);
+	    invalidate_dcache_range((u32)&rx_des_ring[i],(u32)&rx_des_ring[i]+8);
 	}
 
 	for(i=0;i < NUM_TX_DESC; i++)
@@ -247,7 +251,6 @@ int amazon_s_switch_send(struct eth_device *dev, volatile void *packet,int lengt
 
 	int                    	i;
 	int 		 	res = -1;
-        int datalen, cache_linesize;
 	danube_tx_descriptor_t * tx_desc= (danube_tx_descriptor_t *)KSEG1ADDR(&tx_des_ring[tx_num]);
 
 	if (length <= 0)
@@ -275,9 +278,8 @@ int amazon_s_switch_send(struct eth_device *dev, volatile void *packet,int lengt
 		tx_desc->status.field.DataLen = 60;
 	else
 		tx_desc->status.field.DataLen = (u32)length;
-        cache_linesize = dcache_linesize_mips32() ;
-	datalen = cache_linesize *((tx_desc->status.field.DataLen/cache_linesize)+1);
-        dcache_writeback_invalidate(datalen, cache_linesize, (u32)packet );
+	
+    flush_dcache_range((u32)packet,(u32)packet+(u32)tx_desc->status.field.DataLen);	
 	asm("SYNC");
 
 	tx_desc->status.field.OWN=1;
@@ -300,7 +302,6 @@ int amazon_s_switch_recv(struct eth_device *dev)
 	int                    length  = 0;
 
 	danube_rx_descriptor_t * rx_desc;
-	int datalen, cache_linesize;
 	for (;;)
 	{
 	        rx_desc = (danube_rx_descriptor_t *)KSEG1ADDR(&rx_des_ring[rx_num]);
@@ -317,9 +318,7 @@ int amazon_s_switch_recv(struct eth_device *dev)
 		length = rx_desc->status.field.DataLen;
 		if (length)
 		{
-                        cache_linesize = dcache_linesize_mips32() ;
-	                datalen = cache_linesize *((rx_desc->status.field.DataLen/cache_linesize)+1);
-                        dcache_hit_invalidate(datalen, cache_linesize, (u32)NetRxPackets[rx_num] );
+			invalidate_dcache_range((u32)NetRxPackets[rx_num], (u32)NetRxPackets[rx_num]+length);
 			NetReceive((void*)KSEG1ADDR(NetRxPackets[rx_num]), length - 4);
 			//serial_putc('*');
 		}
@@ -580,16 +579,39 @@ static int amazon_s_sw_chip_init(struct eth_device *dev)
 	//printf("probe for TANTOS: Chip ID %04X\n", mdio_value);
 
 	if (mdio_value == TANTOS_CHIP_ID) {
+
+		port[0].phy_addr = 0;
+		port[0].phy_id = TANTOS_CHIP_ID;
+
+		/* read TANTOS GSHS register to detect port 6 (RG)MII configuration */
+		xway_mii_read(dev->name, 8, 2, &mdio_value);
+		switch ((mdio_value & 0x30) >> 4) {
+			case 0:
+				/* TANTOS Port 6 is MII, so we want to be REV_MII */
+				port[0].mode = REV_MII_MODE;
+				break;
+			case 1:
+				/* TANTOS Port 6 is REV_MII, so we want to be MII */
+				port[0].mode = MII_MODE;
+				break;
+			case 3:
+			default:
+				port[0].mode = RGMII_MODE;
+				break;
+		}
+
 		/* TANTOS per definition connected to Port 0 in RGMII mode */
 		printf("TANTOS_CHIP_ID@0-f, ");
 		xway_mii_write(dev->name, 5, 1, 0x0004); /* port 5 force link up */
 		xway_mii_write(dev->name, 6, 1, 0x0004); /* port 6 force link up */
-		xway_mii_write(dev->name, 7, 0x15, 0x0BBB); /* port 4-6 duplex mode,
+		if (port[0].mode == RGMII_MODE) {
+			xway_mii_write(dev->name, 7, 0x15, 0x0BBB); /* port 4-6 duplex mode,
 		                                   flow control enable, 1000Mbit/s */
-
-		port[0].phy_addr = 0;
-		port[0].phy_id = TANTOS_CHIP_ID;
-		port[0].mode = RGMII_MODE;
+		}
+		else {
+			xway_mii_write(dev->name, 7, 0x15, 0x0777); /* port 4-6 duplex mode,
+		                                   flow control enable, 100Mbit/s */
+		}
 
 		REG32(AMAZON_S_SW_P0_CTL) |= 0x40001;  // force link up
 
@@ -611,6 +633,17 @@ static int amazon_s_sw_chip_init(struct eth_device *dev)
 		case PHYID_LANTIQ_PHY11G:
 			printf("PHYID_LANTIQ_PHY11G@%x, ", probe_phyad);
 			mode = RGMII_MODE;
+			xway_mii_read(dev->name, probe_phyad, 0x1E, &mdio_value);/*check firmware version*/
+			if(mdio_value == 0x8301){
+                xway_mii_read(dev->name, probe_phyad, 0x09, &mdio_value);
+				mdio_value |=1<<10;/*MSPT*/
+                xway_mii_write(dev->name, probe_phyad, 0x09, mdio_value); 
+			}
+			xway_mii_write(dev->name, probe_phyad, 0x0D, 0x001f);
+			xway_mii_write(dev->name, probe_phyad, 0x0E, 0x0fc6);
+			xway_mii_write(dev->name, probe_phyad, 0x0D, 0x401f);
+			xway_mii_write(dev->name, probe_phyad, 0x0E, 0x0052);
+			xway_mii_write(dev->name, probe_phyad, 0x0D, 0x0000);
 			break;
 
 		case PHYID_IFX_PHY11G:

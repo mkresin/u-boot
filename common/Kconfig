@@ -27,6 +27,11 @@ config CMD_SETGETDCR
 config CMD_DIAG
      bool "diag"
 
+config CMD_OPENRG
+     bool "dualimage"
+     bool "signverify"
+     default y
+
 config CMD_DOC
      bool "doc"
 
@@ -109,16 +114,16 @@ config CMD_MII
 
 config CMD_MTDPARTS
      bool "mtdparts"
+     depends on MTD_PARTITIONS
 
 config MTD_DEVICE
-     bool
+     bool "MTD_DEVICE"
 	 default y
-	 depends on CMD_MTDPARTS
 	 
 config MTD_PARTITIONS
-     bool
+     bool "MTD_PARTITIONS"
 	 default y
-	 depends on CMD_MTDPARTS
+	 depends on MTD_DEVICE
 			   
 
 config PHY_GIGE
@@ -178,6 +183,12 @@ config CMD_SPI
 
 config CMD_UBI
 	 bool "ubi"
+     depends on MTD_PARTITIONS
+
+config UBI_WL_THRESHOLD
+     int "UBI wear-leveling threshold"
+	 default 4096
+     depends on CMD_UBI
 
 config CMD_UBIFS
      bool "ubifs"

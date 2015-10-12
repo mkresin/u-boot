@@ -682,8 +682,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	show_boot_progress (8);
 
 #ifdef CONFIG_SILENT_CONSOLE
+#ifdef CONFIG_SUPPRESS_KERNEL_OUTPUT
 	if (images.os.os == IH_OS_LINUX)
 		fixup_silent_linux();
+#endif
 #endif
 
 	boot_fn = boot_os[images.os.os];

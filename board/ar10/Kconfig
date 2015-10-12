@@ -27,7 +27,6 @@ config CHIP_VERSION
 
 menu "CPU/DDR FREQUENCY"
 
-
 choice 
     prompt "DDR TYPE SELECTION"
     default AR10_DDR2
@@ -41,7 +40,21 @@ config AR10_DDR2
 endchoice
 
 choice
+    prompt "CRYSTAL CLOCK FREQUENCY"
+    default AR10_CRYSTAL_36M
+
+config AR10_CRYSTAL_25M
+    bool "25M"
+
+config AR10_CRYSTAL_36M
+    bool "36M"
+
+endchoice
+
+
+choice
     prompt "CPU AND RAM CONFIGURATION"
+    default AR10_SYS_CLOCK_500M
 
 config AR10_CPU_125M_RAM_125M
     bool "125M/125M"
@@ -82,7 +95,23 @@ config AR10_SYS_CLOCK_500M
 
 config AR10_SYS_CLOCK_600M
     bool
-	
+
+choice
+    prompt "PPE FREQUENCY"
+    default AR10_PPE_FREQ_250M
+
+config AR10_PPE_FREQ_250M
+    bool "250M"
+
+config AR10_PPE_FREQ_400M
+    bool "400M"
+
+endchoice	
+
+config AR10_DDR_8BIT
+    bool "8Bit DDR RAM"
+	default n
+
 endmenu
 
 	
@@ -384,12 +413,41 @@ config AR10_SW_PORT5b_MIIRATE
 	depends on AR10_SW_PORT_5b
 	default 4
 
+choice 
+    prompt "INTERNAL GPHY CLOCK SOURCE"
+    default AR10_GPHY_CLK_25M
+
+config AR10_GPHY_CLK_36M
+    bool "36Mhz"
+
+config AR10_GPHY_CLK_25M
+    bool "25Mhz"
+
+endchoice
+
+config AR10_EXTERNAL_GPHY_INTERNAL
+   bool "Use internal 25Mhz clock for external phy" 
+   default y
+
+
+config AR10_GPHY_FW_EMBEDDED
+    bool "gphy firmware embedded"
+	default y
+		
+
 config AR10_GPHY_FW_ADDR
-    hex 
+    hex  
 	default "0xb0010000" if ( BOOT_FROM_NOR )
 	default "0xa0110000" if ( BOOT_FROM_SPI )
-	default "0xa0110000" if ( BOOT_FROM_NAND )
-	depends on AR10_SW_PORT_2 || AR10_SW_PORT_3 || AR10_SW_PORT_4 || AR10_SW_PORT_5b
+	default "0xa0120000" if ( BOOT_FROM_NAND )
+	depends on AR10_SW_PORT_1 || AR10_SW_PORT_2 || AR10_SW_PORT_3 || AR10_SW_PORT_4 || AR10_SW_PORT_5b
+    depends on AR10_GPHY_FW_EMBEDDED
+
+config AR10_EXTERN_GPHY_FW_ADDR
+    hex "gphy firmware address"
+	default "0xb0010000"
+	depends on !AR10_GPHY_FW_EMBEDDED
+			
 
 config AR10_GPHY_DEBUG
     bool "DEBUG GPHY"
@@ -398,6 +456,17 @@ config AR10_GPHY_DEBUG
 	
 endmenu
 
+config AR10_LIF_DETECTION
+    bool "LIF DETECTION"
+	default n
+
+config AR10_PROGRAM_AFE_FUSE
+    bool "PROGRAM AFE WITH FUSED VALUE"
+    default y
+
+config AR10_DCDC_2V5_PWM0
+    bool "Set DCDC 2V5 PWM0 VALUE to 0x8f"
+	default n
 
 config TUNE_DDR
     bool "DDR tuning support"

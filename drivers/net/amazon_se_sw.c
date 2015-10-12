@@ -117,8 +117,8 @@ typedef struct
 
 
 
-static amazon_se_rx_descriptor_t rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(8)));
-static amazon_se_tx_descriptor_t tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(8)));
+static amazon_se_rx_descriptor_t rx_des_ring[NUM_RX_DESC] __attribute__ ((aligned(16)));
+static amazon_se_tx_descriptor_t tx_des_ring[NUM_TX_DESC] __attribute__ ((aligned(16)));
 static int tx_num, rx_num;
 
 int amazon_se_switch_init(struct eth_device *dev, bd_t * bis);

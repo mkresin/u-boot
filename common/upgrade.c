@@ -3,6 +3,11 @@
 #include "cmd_upgrade.h"
 #include "flash.h"
 
+#ifdef CONFIG_CMD_UBI
+#include <ubi_uboot.h>
+#endif
+
+
 #ifdef CONFIG_BOOT_FROM_SPI
 #if defined(BUILD_FROM_IFX_UTILITIES)
 #define u32 unsigned int
@@ -250,6 +255,67 @@ int FindNPImgLoc(ulong img_addr,ulong *nextStartAddr,ulong *preEndAddr)
 	return 0;
 }
 
+#ifdef CONFIG_CMD_UBI
+int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, int bSaveEnv)
+{
+#if !defined(BUILD_FROM_IFX_UTILITIES)
+	char strimg_vol[32],strimg_vol_id[32];
+	u32  destAddr=0;
+#else
+	FILE *fp;
+	char strimg_dataout[100];
+#endif
+	image_header_t *pimg_header = NULL;
+
+#if !defined(BUILD_FROM_IFX_UTILITIES)
+  memset(strimg_vol,0x00,sizeof(strimg_vol));
+  memset(strimg_vol_id,0x00,sizeof(strimg_vol_id));
+	sprintf(strimg_vol,"%s_vol",imgName);
+	sprintf(strimg_vol_id,"%s_id",getenv(strimg_vol));
+#endif
+	
+	pimg_header = (image_header_t *)srcAddr;
+	
+	if (ntohl(pimg_header->ih_magic) == IH_MAGIC) {
+		printf("Image contains header with name [%s]\n",pimg_header->ih_name);
+		if(pimg_header->ih_type != IH_TYPE_KERNEL) {
+			upgrade_debug_printf("This is not kernel image and so removing header\n");
+			srcAddr += sizeof(*pimg_header);
+			srcLen -= sizeof(*pimg_header);
+		}
+	}
+#if !defined(BUILD_FROM_IFX_UTILITIES)
+	if(pimg_header->ih_type==IH_TYPE_UBOOT){
+	   destAddr=simple_strtoul((char *)getenv("f_uboot_addr"),NULL,16);
+	   program_img(srcAddr,srcLen,destAddr);
+	}else if(!strcmp(pimg_header->ih_name,"gphyfw")){
+       destAddr=simple_strtoul((char *)getenv("gphy_fw_addr"),NULL,16); 
+	   program_img(srcAddr,srcLen,destAddr);
+	}else{
+	   ubi_remove_vol(getenv(strimg_vol));
+	   ubi_create_vol(getenv(strimg_vol), srcLen, 1, simple_strtoul((char *)getenv(strimg_vol_id),NULL,16));
+	   ubi_volume_write(getenv(strimg_vol), (void *)srcAddr, (size_t)srcLen);
+    }
+#else
+  #if defined(CONFIG_UBOOT_CONFIG_DUAL_IMAGE)
+	sprintf(strimg_dataout, "/usr/sbin/vol_mgmt upgrade_dualvol_stdin %s %u %s", imgName, (size_t)srcLen, pimg_header->ih_name);
+  #else
+	sprintf(strimg_dataout, "/usr/sbin/vol_mgmt upgrade_vol_stdin %s %u %s", imgName, (size_t)srcLen, pimg_header->ih_name);
+  #endif
+	fp = popen (strimg_dataout, "w");
+	if (fp == NULL) {
+		fprintf(stderr, "upgrade %s: unable to open file for writing\n", imgName);
+		return (0);
+	} else {
+		if(fwrite((void *)srcAddr, sizeof(char), (size_t)srcLen, fp) != srcLen)
+			fprintf(stderr, "upgrade %s: unable to complete writing\n", imgName);
+		pclose(fp);
+	}
+#endif
+   return 0;
+}
+
+#else
 int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, int bSaveEnv)
 {
 	ulong img_addr,img_size,img_endaddr;
@@ -263,15 +329,16 @@ int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, 
 	sprintf(strimg_addr,"f_%s_addr",imgName);
 	sprintf(strimg_size,"f_%s_size",imgName);
 	img_addr = simple_strtoul((char *)getenv(strimg_addr),NULL,16);
+	/*
 	if (img_addr == 0) {
 		printf("The environment variable %s not found\n",strimg_addr);
 		return 1;
 	}
-
+    */
 	if (FindNPImgLoc(img_addr,&nextStartAddr,&preEndAddr))
 		return 1;
 	pimg_header = (image_header_t *)srcAddr;
-	if (pimg_header->ih_magic == IH_MAGIC) {
+	if (ntohl(pimg_header->ih_magic) == IH_MAGIC) {
 		printf("Image contains header with name [%s]\n",pimg_header->ih_name);
 		if(pimg_header->ih_type != IH_TYPE_KERNEL) {
 			upgrade_debug_printf("This is not kernel image and so removing header\n");
@@ -370,6 +437,9 @@ int upgrade_img(ulong srcAddr, ulong srcLen, char *imgName, enum ExpandDir dir, 
 	if (srcData_Copy)
 		free(srcData_Copy);
 #endif
+
+
 	return 0;
 }
 
+#endif //CONFIG_CMD_UBI

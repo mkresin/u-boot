@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 touch scripts_platform/dummy
 scripts_platform/sgct scripts_platform/dummy board/vr9/bootrom.rec u-boot.nand
 scripts_platform/pad2align.sh -n 2048 u-boot.nand

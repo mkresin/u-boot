@@ -37,6 +37,26 @@ CFLAGS	+=-mabicalls -fpic -DCONFIG_NAND_SPL -I$(TOPDIR)/board/$(BOARD)/
 SOBJS	= start.o lowlevel_init.o 
 COBJS	= nand_boot.o nand_ecc.o lq_nand.o board.o asc.o clock.o tune_ddr.o string.o time.o
 
+ifdef CONFIG_NAND_SPL_BBT
+COBJS  +=nand_bbt.o
+endif
+
+ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
+COBJS  += cache.o
+endif
+
+ifeq (${CONFIG_ENABLE_DDR_DCDC},y) 
+COBJS	+= ddr_dcdc.o
+endif
+
+ifneq ($(CONFIG_LTQ_SECURE_BOOT)-$(SECURED_ENV),-)
+COBJS  += deu_aes.o 
+ifndef  CONFIG_NAND_ECC_HW_REED_SOLOMON
+COBJS  += cache.o
+endif
+endif
+
+
 SRCS	:= $(addprefix $(obj),$(SOBJS:.o=.S) $(COBJS:.o=.c))
 OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
 __OBJS	:= $(SOBJS) $(COBJS)
@@ -44,12 +64,15 @@ LNDIR	:= $(OBJTREE)/nand_spl/board/lantiq
 
 nandobj	:= $(OBJTREE)/nand_spl/board/lantiq
 
-ALL	= $(nandobj)u-boot-spl $(nandobj)u-boot-spl.bin $(nandobj)u-boot-spl-16k.bin nandpreload.bin
+ALL	= $(nandobj)u-boot-spl $(nandobj)u-boot-spl.bin $(nandobj)u-boot-spl-128k.bin
 
 all:	$(obj).depend $(ALL)
-	@rm -f u-boot-spl.bin u-boot-spl-16k.bin 
-	@ln -s $(nandobj)u-boot-spl.bin $(TOPDIR)/nand_spl/u-boot-spl.bin
-	@ln -s $(nandobj)u-boot-spl-16k.bin $(TOPDIR)/nand_spl/u-boot-spl-16k.bin
+	@rm -f u-boot-spl.bin u-boot-spl-128k.bin 
+	@ln -fs $(nandobj)u-boot-spl.bin $(TOPDIR)/nand_spl/u-boot-spl.bin
+	@ln -fs $(nandobj)u-boot-spl-128k.bin $(TOPDIR)/nand_spl/u-boot-spl-128k.bin
+
+ifdef CONFIG_NAND_PRELOAD
+ALL +=nandpreload.bin
 
 LDFLAGS_NANDPRELOAD = -Bstatic -T nandpreload.lds -Ttext $(CONFIG_NAND_PRELOAD_TEXT_BASE)
 OBJS_NANDPRELOAD =  start_nandpreload.o
@@ -59,23 +82,95 @@ nandpreload.bin: nandpreload
 	$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 
 nandpreload:  $(OBJS_NANDPRELOAD)
-	$(LD) $(LDFLAGS_NANDPRELOAD) $(OBJS_NANDPRELOAD) -o nandpreload
-				
+	$(LD) $(LDFLAGS_NANDPRELOAD) $(OBJS_NANDPRELOAD) -Map nandpreload.map -o nandpreload
+	$(OBJDUMP) -S -d nandpreload > nandpreload.dis				
 
 $(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin nandpreload.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nandpreload.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 512 $(nandobj)u-boot-spl-16k.bin
 	cat $(nandobj)u-boot-spl.bin >> $(nandobj)u-boot-spl-16k.bin
-	$(TOPDIR)/scripts_platform/pad2align.sh -n 16384 $(nandobj)u-boot-spl-16k.bin 
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin 
+
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin nandpreload.bin
+	touch dummy
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nandpreload.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-128k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 512 $(nandobj)u-boot-spl-128k.bin
+	cat $(nandobj)u-boot-spl.bin >> $(nandobj)u-boot-spl-128k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 131072 $(nandobj)u-boot-spl-128k.bin 
+else
+
+ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
+ifdef CONFIG_LTQ_SECURE_BOOT
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
+	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	-k $(CONFIG_AES_KEY)
+	$(TOPDIR)/scripts_platform/mk_mlc_image.pl u-boot-spl.enc $(nandobj)u-boot-spl-32k.bin
+	$(TOPDIR)/scripts_platform/swap_bin.pl $(nandobj)u-boot-spl-32k.bin $(nandobj)u-boot-spl-16k.bin
+	$(TOPDIR)/scripts_platform/duplicate.sh $(CONFIG_MLC_NAND_HEADER_NUMBER) $(nandobj)u-boot-spl-16k.bin
+else
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin
+	$(TOPDIR)/scripts_platform/mk_mlc_image.pl $(nandobj)u-boot-spl.bin $(nandobj)u-boot-spl-32k.bin
+	$(TOPDIR)/scripts_platform/swap_bin.pl $(nandobj)u-boot-spl-32k.bin $(nandobj)u-boot-spl-16k.bin
+	$(TOPDIR)/scripts_platform/duplicate.sh $(CONFIG_MLC_NAND_HEADER_NUMBER) $(nandobj)u-boot-spl-16k.bin 
+endif
+else
+ifdef CONFIG_LTQ_SECURE_BOOT
+ifdef CONFIG_LANTIQ_UBOOT_vr9
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools ds_crypt.bin
+	touch dummy
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
+	./stools -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nand_spl.enc $(CONFIG_NAND_SPL_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
+
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools ds_crypt.bin
+	touch dummy
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
+	./stools -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nand_spl.enc $(CONFIG_NAND_SPL_TEXT_BASE) $(nandobj)u-boot-spl-128k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
+else
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+	touch dummy
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
+	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	-k $(CONFIG_AES_KEY)
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy u-boot-spl.enc 0xbe1a0000 $(nandobj)u-boot-spl-16k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
+
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools
+	touch dummy
+	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
+	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	-k $(CONFIG_AES_KEY)
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy u-boot-spl.enc 0xbe1a0000 $(nandobj)u-boot-spl-128k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
+endif
+else
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools
+	touch dummy
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy $(nandobj)u-boot-spl.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-128k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
+
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+	touch dummy
+	$(TOPDIR)/scripts_platform/mk_sf.pl dummy $(nandobj)u-boot-spl.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
+	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
+endif
+endif
+endif
 
 $(nandobj)u-boot-spl.bin:	$(nandobj)u-boot-spl
 	$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 
-$(nandobj)u-boot-spl:	$(OBJS) $(nandobj)u-boot.lds
+$(nandobj)u-boot-spl:$(OBJS) $(nandobj)u-boot.lds
 	cd $(LNDIR) && $(LD) $(LDFLAGS) $(__OBJS) \
+		 $(PLATFORM_LIBS) \
 		-Map $(nandobj)u-boot-spl.map \
 		-o $(nandobj)u-boot-spl
+	$(OBJDUMP) -S -d $(nandobj)u-boot-spl > $(nandobj)u-boot-spl.dis
 
 $(nandobj)u-boot.lds: $(LDSCRIPT)
 	$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
@@ -91,9 +186,15 @@ clock.c:
 	@rm -f $@
 	@ln -s $(TOPDIR)/arch/mips/cpu/$(BOARD)/clock.c $@
 
+cache.c:
+	@rm -f $@
+	@ln -s $(TOPDIR)/arch/mips/cpu/$(BOARD)/cache.c $@
+
+# from driver/serial directory
 asc.c:
 	@rm -f $@
 	@ln -s $(TOPDIR)/drivers/serial/lq_asc.c $@
+		
 
 # from board directory
 $(obj)lowlevel_init.S:
@@ -105,6 +206,22 @@ board.c:
 	@rm -f $@
 	@ln -s $(TOPDIR)/board/$(BOARD)/nand_spl_board.c $@
 		
+$(obj)ddr_dcdc.c:
+	@rm -f $@
+	@ln -s $(TOPDIR)/board/$(BOARD)/ddr_dcdc.c $@
+
+ds_crypt.bin: ds_crypt
+	$(OBJCOPY) --gap-fill=0xff -O binary $< $@
+
+ds_crypt: rsa_crypt.o
+	$(LD) -G 0 -static -T $(TOPDIR)/board/$(BOARD)/rsalinker.lds --start-group rsa_crypt.o --end-group -o ds_crypt
+
+rsa_crypt.o: $(TOPDIR)/board/$(BOARD)/rsa_crypt.c
+	$(CC) -g -ggdb -G0 -fno-common -fno-strict-aliasing -fno-builtin -pipe -eb -Wall -c -o $@ $<
+
+stools: $(TOPDIR)/board/$(BOARD)/stools.c
+	$(HOSTCC) -o $@ $<
+
 
 #from lib_bootstrap directory
 tune_ddr.c:
@@ -113,9 +230,18 @@ tune_ddr.c:
 
 
 # from nand_spl directory
+
+ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
+$(obj)nand_boot.c:
+	@rm -f $@
+	@ln -s $(TOPDIR)/nand_spl/nand_boot_lq_mlc.c $@
+		
+else
 $(obj)nand_boot.c:
 	@rm -f $@
 	@ln -s $(TOPDIR)/nand_spl/nand_boot.c $@
+
+endif
 
 # from drivers/mtd/nand directory
 $(obj)nand_ecc.c:

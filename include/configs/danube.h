@@ -75,7 +75,7 @@
 #define CPU_CLOCK_RATE	150000000	/* default: 150 MHz clock for the MIPS core */
 #endif
 
-#define CONFIG_BAUDRATE		115200
+//#define CONFIG_BAUDRATE		115200
 
 
 /* valid baudrates */
@@ -97,7 +97,7 @@
  */
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory      */
 #define	CONFIG_SYS_PROMPT		"DANUBE # "	/* Monitor Command Prompt    */
-#define	CONFIG_SYS_CBSIZE		512		/* Console I/O Buffer Size   */
+#define	CONFIG_SYS_CBSIZE		1024		/* Console I/O Buffer Size   */
 #define	CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)  /* Print Buffer Size */
 #define	CONFIG_SYS_MAXARGS		32		/* max number of command args*/
 
