@@ -1,5 +1,4 @@
-RGSRC=../../../..
-include $(RGSRC)/envir.mak
+include ./rg/rg_config.mk
 
 ifdef CONFIG_BOOT_FROM_SPI
 BOOT_FLASH_TYPE=spi
@@ -44,39 +43,39 @@ else
 endif
 
 GE_REV2=$(shell [ $(CONFIG_RG_HW_SAGEM_HH4_ARX300_REV) -ge 2 ] && echo true)
-RMT_UPD_CRT=$(shell ls -L $(BUILDDIR)/pkg/rmt-update/rmt_upd*.crt)
-RMT_UPD_SYMKEY=$(BUILDDIR)/pkg/rmt-update/rmt_upd_sym.key
-ENV_CRT=$(PWD_BUILD)/rmt_upd.env
-SYMKEY_C=$(PWD_BUILD)/common/symkey.c
+RMT_UPD_CRT=$(shell ls -L ./rg/rmt_upd*.crt)
+RMT_UPD_SYMKEY=./rg/rmt_upd_sym.key
+ENV_CRT=./rmt_upd.env
+SYMKEY_C=./common/symkey.c
 
 ARCHCONFIG_FIRST_TASKS+=uboot_make_config
 uboot_make_config:
 	# Assembler compiler cannot handle "extern vcCONFIG.." and we dont need
 	# them - so remove them
-	sed -e's/extern.*vc.*//' $(BUILDDIR)/rg_config.h > $(PWD_BUILD)/include/configs/rg_config.h
+	sed -e's/extern.*vc.*//' ./rg/rg_config.h > ./include/configs/rg_config.h
 ifeq ($(CONFIG_BOOT_FROM_SPI)$(CONFIG_BOOT_FROM_NOR)$(CONFIG_BOOT_FROM_NAND),)
 	@echo -e "\n*** Error: Please specify type of flash to boot u-boot from! ***\n"; false
 else
 	@$(MAKE) -f Makefile.u-boot $(BOARD_CONFIG)
-	@$(RG_CP) $(PWD_SRC)/defconfig.common $(PWD_BUILD)/.config
-	@cat $(PWD_SRC)/defconfig.$(BOOT_FLASH_TYPE) >> $(PWD_BUILD)/.config
-	@cat $(PWD_SRC)/defconfig.$(BOARD_TYPE) >> $(PWD_BUILD)/.config
+	@cp ./defconfig.common ./.config
+	@cat ./defconfig.$(BOOT_FLASH_TYPE) >> ./.config
+	@cat ./defconfig.$(BOARD_TYPE) >> ./.config
 ifeq ($(CONFIG_BOOTLDR_UBOOT_SECURED_BOOT)-$(CONFIG_RG_GPL),y-)
-	@cat $(PWD_SRC)/defconfig.secured >> $(PWD_BUILD)/.config
+	@cat ./defconfig.secured >> ./.config
 else
-	@cat $(PWD_SRC)/defconfig.non_secured >> $(PWD_BUILD)/.config
+	@cat ./defconfig.non_secured >> ./.config
 endif
 ifdef CONFIG_AR10
   ifeq ($(GE_REV2),true) # Spin2B and up #
-	@cat $(PWD_SRC)/defconfig.ar10_cs1 >> $(PWD_BUILD)/.config
+	@cat ./defconfig.ar10_cs1 >> ./.config
   else
-	@cat $(PWD_SRC)/defconfig.ar10_cs0 >> $(PWD_BUILD)/.config
+	@cat ./defconfig.ar10_cs0 >> ./.config
   endif
 endif
 ifdef CONFIG_RG_GPL
-	@cat $(PWD_SRC)/defconfig.gpl >> $(PWD_BUILD)/.config
+	@cat ./defconfig.gpl >> ./.config
 else
-	@cat $(PWD_SRC)/defconfig.openrg >> $(PWD_BUILD)/.config
+	@cat ./defconfig.openrg >> ./.config
 endif
 	@$(MAKE) -f Makefile.u-boot oldconfig
 endif

@@ -29,7 +29,7 @@
 #include <environment.h>
 #include <linux/stddef.h>
 #include <malloc.h>
-#include <rg_config.h>
+#include <configs/rg_config.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
