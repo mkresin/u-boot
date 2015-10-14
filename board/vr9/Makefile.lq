@@ -64,9 +64,9 @@ endif
 
 ifdef CONFIG_BOOT_FROM_SPI
 ifdef CONFIG_LTQ_SECURE_BOOT
-$(obj)u-boot.ltq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.bin ds_crypt.bin stools
+$(obj)u-boot.ltq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.bin ds_crypt.bin
 		@echo -=== BUILD SPI image ===-
-		@./stools -i sfddr.bin -o sfddr.enc -d ds_crypt.bin -a 0xbe220000
+		@./stools.sh -i sfddr.bin -o sfddr.enc -d ds_crypt.bin -a 0xbe220000
 		@scripts_platform/mk_sf.pl board/vr9/xrx200_ddr2_197_CAS4_config.conf sfddr.enc 0xa0600000 u-boot.ltq
 		@scripts_platform/pad2align.sh -n 24576 u-boot.ltq
 		@cat u-boot.lzimg >>u-boot.ltq
@@ -142,10 +142,6 @@ ds_crypt: rsa_crypt.o
 
 rsa_crypt.o: $(TOPDIR)/board/$(BOARD)/rsa_crypt.c
 		$(CC) -g -ggdb -G0 -fno-common -fno-strict-aliasing -fno-builtin -pipe -eb -Wall -c -o $@ $<	
-
-stools: $(TOPDIR)/board/$(BOARD)/stools.c
-		$(HOSTCC) -o $@ $<	
-
 
 $(LIBS_BOOTSTRAP):
 		$(MAKE) -C `dirname $@` all

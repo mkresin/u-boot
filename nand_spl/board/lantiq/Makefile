@@ -102,9 +102,9 @@ else
 
 ifdef CONFIG_NAND_ECC_HW_REED_SOLOMON
 ifdef CONFIG_LTQ_SECURE_BOOT
-$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
-	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	$(TOPDIR)/board/$(BOARD)/stools.sh -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
 	-k $(CONFIG_AES_KEY)
 	$(TOPDIR)/scripts_platform/mk_mlc_image.pl u-boot-spl.enc $(nandobj)u-boot-spl-32k.bin
 	$(TOPDIR)/scripts_platform/swap_bin.pl $(nandobj)u-boot-spl-32k.bin $(nandobj)u-boot-spl-16k.bin
@@ -118,43 +118,43 @@ endif
 else
 ifdef CONFIG_LTQ_SECURE_BOOT
 ifdef CONFIG_LANTIQ_UBOOT_vr9
-$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools ds_crypt.bin
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin ds_crypt.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
-	./stools -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
+	$(TOPDIR)/board/$(BOARD)/stools.sh -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nand_spl.enc $(CONFIG_NAND_SPL_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
 
-$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools ds_crypt.bin
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin ds_crypt.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
-	./stools -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
+	$(TOPDIR)/board/$(BOARD)/stools.sh -i $(nandobj)u-boot-spl.bin -o nand_spl.enc -d ./ds_crypt.bin -a $(CONFIG_NAND_SPL_TEXT_BASE) -k $(CONFIG_AES_KEY) -s
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy nand_spl.enc $(CONFIG_NAND_SPL_TEXT_BASE) $(nandobj)u-boot-spl-128k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
 else
-$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
-	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	$(TOPDIR)/board/$(BOARD)/stools.sh -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
 	-k $(CONFIG_AES_KEY)
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy u-boot-spl.enc 0xbe1a0000 $(nandobj)u-boot-spl-16k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
 
-$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/pad2align.sh -n 32 $(nandobj)u-boot-spl.bin
-	./stools -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
+	$(TOPDIR)/board/$(BOARD)/stools.sh -i $(nandobj)u-boot-spl.bin -o u-boot-spl.enc -e 0xbe1a0030 -d 0xbe1a0000 -j 0xbe1a0000 \
 	-k $(CONFIG_AES_KEY)
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy u-boot-spl.enc 0xbe1a0000 $(nandobj)u-boot-spl-128k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
 endif
 else
-$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin stools
+$(nandobj)u-boot-spl-128k.bin: $(nandobj)u-boot-spl.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy $(nandobj)u-boot-spl.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-128k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-128k.bin
 
-$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin stools
+$(nandobj)u-boot-spl-16k.bin: $(nandobj)u-boot-spl.bin
 	touch dummy
 	$(TOPDIR)/scripts_platform/mk_sf.pl dummy $(nandobj)u-boot-spl.bin $(CONFIG_NAND_PRELOAD_TEXT_BASE) $(nandobj)u-boot-spl-16k.bin
 	$(TOPDIR)/scripts_platform/pad2align.sh -n $(CONFIG_NAND_SPL_BLOCK_SIZE) $(nandobj)u-boot-spl-16k.bin
@@ -218,10 +218,6 @@ ds_crypt: rsa_crypt.o
 
 rsa_crypt.o: $(TOPDIR)/board/$(BOARD)/rsa_crypt.c
 	$(CC) -g -ggdb -G0 -fno-common -fno-strict-aliasing -fno-builtin -pipe -eb -Wall -c -o $@ $<
-
-stools: $(TOPDIR)/board/$(BOARD)/stools.c
-	$(HOSTCC) -o $@ $<
-
 
 #from lib_bootstrap directory
 tune_ddr.c:
