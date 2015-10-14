@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #shell script to generate stage3 image 
 #revision history
 #Wu Qi Ming 6/12/2012 Qi-Ming.Wu@lantiq.com
