@@ -113,11 +113,9 @@ uboot_make: $(ENV_CRT) $(SYMKEY_C)
 	SECURED_ENV=$(CONFIG_BOOTLDR_UBOOT_SECURED_ENV) \
 	-f Makefile.u-boot all
 
-ifdef IS_BUILDDIR
 clean:: uboot_clean
 
 uboot_clean:
-	$(MAKE) -f Makefile.u-boot clean
-endif
+	$(MAKE) -f Makefile.u-boot distclean
 
 include $(RGMK)
