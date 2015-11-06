@@ -295,6 +295,7 @@ CONFIG_HZ=100
 CONFIG_CPU_MIPS32_R2=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:4398
 CONFIG_MTD_NAND=y
+CONFIG_BOOT_FROM_NAND=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:4399
 CONFIG_MTD_NAND_IDS=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:620
@@ -1129,8 +1130,6 @@ CONFIG_RG_FOUNDATION_CORE=y
 CONFIG_RG_TARGET_LINUX=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/config_host.c:125
 CONFIG_RG_HOST_LINUX=y
-# Set by command line:
-CONFIG_RG_GPL=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/dist_config.c:825
 MODULE_RG_FOUNDATION=y
 # /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/dist_config.c:833

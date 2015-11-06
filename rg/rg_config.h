@@ -1050,6 +1050,7 @@ extern int vcCONFIG_SPI_SI3220_FEATURE;
 extern int vcCONFIG_COMCERTO_CAL;
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:4398 */
 #define CONFIG_MTD_NAND 1
+#define CONFIG_BOOT_FROM_NAND 1
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:4399 */
 #define CONFIG_MTD_NAND_IDS 1
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/feature_config.c:620 */
@@ -3318,8 +3319,6 @@ extern int vcCONFIG_RG_PERM_STATS;
 #define CONFIG_RG_TARGET_LINUX 1
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/config_host.c:125 */
 #define CONFIG_RG_HOST_LINUX 1
-/* Set by command line */
-#define CONFIG_RG_GPL 1
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/dist_config.c:825 */
 #define MODULE_RG_FOUNDATION 1
 /* /media/data/build/router/bt_hh5a_rg-4.7.5.1/rg/pkg/build/dist_config.c:833 */
