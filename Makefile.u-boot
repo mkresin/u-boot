@@ -275,7 +275,7 @@ LIBS += api/libapi.a
 LIBS += post/libpost.a
 
 ifneq ($(POLARSSL_TINY),)
-POLARDIR=$(BUILDDIR)/pkg/polarssl/library
+POLARDIR=./rg/pkg/polarssl/library
 LIBS += $(POLARDIR)/libpolarssl_tiny.a
 endif
 
