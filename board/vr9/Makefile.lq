@@ -1,10 +1,3 @@
-ifdef CONFIG_VR9_GPHY_FW_EMBEDDED
-    GPHY_FIRMWARE = $(TOPDIR)/board/$(BOARD)/gphy_firmware.img
-else
-    GPHY_FIRMWARE = $(TOPDIR)/dummy
-endif
-
-
 ALL +=bootstrap.bin u-boot.lzimg u-boot.lq
 
 
@@ -35,8 +28,6 @@ $(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
 		@touch dummy
 		@cat $(obj)bootstrap.bin > $(obj)u-boot.lq
 		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.lq
-		@scripts_platform/pad2align.sh -n 65536 u-boot.lq 
-		@cat $(GPHY_FIRMWARE) >>u-boot.lq
 endif
 
 ifdef CONFIG_BOOT_FROM_NAND
@@ -45,8 +36,6 @@ $(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg
 		@$(TOPDIR)/scripts_platform/pad2align.sh -n 10240 bootstrap.bin
 		@cat $(obj)bootstrap.bin > $(obj)u-boot.lq
 		@cat $(obj)u-boot.lzimg >> $(obj)u-boot.lq
-		@$(TOPDIR)/scripts_platform/pad2align.sh -n 65536 u-boot.lq
-		@cat $(GPHY_FIRMWARE) >>u-boot.lq
 endif
 
 ifdef CONFIG_BOOT_FROM_SPI
@@ -57,8 +46,6 @@ $(obj)u-boot.lq: $(obj)System.map $(obj)bootstrap.bin $(obj)u-boot.lzimg sfddr.b
 		@cat sfddr.bin >>u-boot.lq
 		@scripts_platform/pad2align.sh -n 20480 u-boot.lq
 		@cat u-boot.lzimg >> u-boot.lq
-		@scripts_platform/pad2align.sh -n 65536 u-boot.lq
-		@cat $(GPHY_FIRMWARE) >>u-boot.lq
 endif
 						
 LDFLAGS_SFDDR = -Bstatic -T $(TOPDIR)/board/$(BOARD)/bootstrap.lds -Ttext 0xbe220500 $(PLATFORM_LDFLAGS)
