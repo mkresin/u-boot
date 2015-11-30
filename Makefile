@@ -314,11 +314,17 @@ ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map $(U_BOOT_NAND) $(U_BO
 
 all:		$(ALL)
 
+ddr_settings:	board/vr9/ddr2/xrx200_ddr2_250M_settings.h
+		awk -f tools/lantiq_ram_init_uart.awk -v soc=vr9 $< > $@
+
 $(obj)u-boot.hex:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@
 
 $(obj)u-boot.srec:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O srec $< $@
+
+$(obj)u-boot.asc:	ddr_settings $(obj)u-boot.srec
+		./scripts_platform/gct $^ $@
 
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
