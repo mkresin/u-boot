@@ -12,8 +12,6 @@
 
 #include "spi_flash_internal.h"
 
-#define CONFIG_SPI_FLASH_WINBOND	/* added by yangxv, 2011.03 */
-
 int spi_flash_cmd(struct spi_slave *spi, u8 cmd, void *response, size_t len)
 {
 	unsigned long flags = SPI_XFER_BEGIN;
@@ -162,11 +160,11 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	     flash = spi_flash_probe_mxic(spi,idcode);
 	     break;
 #endif
-	/* added by yangxv for EON flash, 2012.4 */
+#ifdef CONFIG_SPI_FLASH_EON
 	case 0x1c:
 	     flash = spi_flash_probe_eon(spi, idcode);
-	     break;		
-	/* end added */			
+	     break;
+#endif
 
 	default:
 		debug("SF: Unsupported manufacturer %02X\n", idcode[0]);
