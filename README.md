@@ -1,9 +1,9 @@
-You will find the precompiled version of the toolchain I'm using at the [releases section](https://github.com/mkresin/u-boot/releases).
+You will find the precompiled version of the x86 toolchain from the TD-W8970 GPL tarball at the [releases section](https://github.com/mkresin/u-boot/releases).
 
 ```shell
-export PATH=/your/path/to/openwrt/toolchain-mips_34kc+dsp_gcc-4.8-linaro_musl-1.1.11/bin/:$PATH
+export PATH=/your/path/to/toolchain-mips_r2_gcc-4.3.3+cs_uClibc-0.9.30.1_2_6_3/usr/bin/:$PATH
 export ARCH=mips
-export CROSS_COMPILE=mips-openwrt-linux-musl-
+export CROSS_COMPILE=mips-linux-
 
 make distclean vr9_config
 cp tdw8970.config .config
