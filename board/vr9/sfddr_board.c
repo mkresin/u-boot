@@ -524,10 +524,8 @@ void board_init_f(ulong bootflag)
 	ulong  ecc;
 	int i;
 #ifdef CONFIG_BOOT_FROM_SPI		
-#ifdef CONFIG_SPI_FLASH_MXIC
   u8  cmd = CMD_MX25L_READ;
   size_t  addr_len = 3;
-#endif	
 #endif	
 
   
