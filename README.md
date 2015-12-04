@@ -1,7 +1,7 @@
 You will find the precompiled version of the x86 toolchain from the TD-W8970 GPL tarball at the [releases section](https://github.com/mkresin/u-boot/releases).
 
 ```shell
-export PATH=/your/path/to/toolchain-mips_r2_gcc-4.3.3+cs_uClibc-0.9.30.1_2_6_3/usr/bin/:$PATH
+export PATH=/your/path/to/toolchain-mips_r2_gcc-4.3.3+cs_uClibc-0.9.30.1_2_6_32/usr/bin/:$PATH
 export ARCH=mips
 export CROSS_COMPILE=mips-linux-
 
