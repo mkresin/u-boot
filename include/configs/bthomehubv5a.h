@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 Mathias Kresin <openwrt@kresin.me>
  * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  * Based on p2812hnufx.h: (C) 2013 Luka Perkov <luka@openwrt.org>
  *
@@ -33,6 +34,18 @@
 
 #define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
 
+/* MTD devices */
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_MTD_DEVICE
+#define CONFIG_CMD_MTDPARTS
+#define MTDIDS_DEFAULT			"nand0=nand-xway"
+#define MTDPARTS_DEFAULT		"mtdparts=nand-xway:0x07e80000@0x100000(UBI)"
+
+/* UBI */
+#define CONFIG_RBTREE
+#define CONFIG_CMD_UBI
+#define CONFIG_CMD_UBIFS
+
 /* Environment */
 #if defined(CONFIG_SYS_BOOT_NANDSPL)
 #define CONFIG_SPL_TPL_OFFS		0x800
@@ -43,15 +56,14 @@
 
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_ENV_OVERWRITE
-#define CONFIG_ENV_OFFSET		(256 * 1024)
-#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
-#define CONFIG_ENV_OFFSET_REDUND	(CONFIG_ENV_OFFSET + CONFIG_ENV_SECT_SIZE)
+#define CONFIG_ENV_OFFSET		(2 * CONFIG_SYS_NAND_BLOCK_SIZE)
+#define CONFIG_ENV_SECT_SIZE		CONFIG_SYS_NAND_BLOCK_SIZE
+#define CONFIG_ENV_RANGE		(2 * CONFIG_ENV_SECT_SIZE)
 #else
 #define CONFIG_ENV_IS_NOWHERE
 #endif
 
-#define CONFIG_ENV_SIZE			(8 * 1024)
-#define CONFIG_ENV_SIZE_REDUND		(CONFIG_ENV_SIZE)
+#define CONFIG_ENV_SIZE			(128 * 1024)
 
 #define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
 
@@ -69,15 +81,11 @@
 /* Pull in default OpenWrt configs for Lantiq SoC */
 #include "openwrt-lantiq-common.h"
 
-#define CONFIG_ENV_UPDATE_UBOOT_NAND					\
-	"update-uboot-nand=run load-uboot-nandspl-lzo write-uboot-nand\0"
-
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \
-	"nand read ${loadaddr} 0xa0000 0x200000; bootm ${loadaddr}"
+	"mtdparts default; ubi part UBI; ubi read ${loadaddr} kernel; bootm ${loadaddr}"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
-	CONFIG_ENV_LANTIQ_DEFAULTS	\
-	CONFIG_ENV_UPDATE_UBOOT_NAND
+	CONFIG_ENV_LANTIQ_DEFAULTS
 
 #endif /* __CONFIG_H */

@@ -44,7 +44,6 @@ static void gpio_init(void)
 
 	/* Turn on the green power LED */
 	gpio_direction_output(GPIO_POWER_GREEN, 0);
-	gpio_set_value(GPIO_POWER_GREEN, 0);
 }
 
 int board_early_init_f(void)
