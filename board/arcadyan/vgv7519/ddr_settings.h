@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2007-2010 Lantiq Deutschland GmbH
- * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
+ * Copyright (C) 2016 Mathias Kresin <dev@kresin.me>
+ *
+ * The values have been extracted from original brnboot.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -8,7 +9,7 @@
 #define	MC_CCR00_VALUE	0x101
 #define	MC_CCR01_VALUE	0x1000100
 #define	MC_CCR02_VALUE	0x1010000
-#define	MC_CCR03_VALUE	0x101
+#define	MC_CCR03_VALUE	0x100
 #define	MC_CCR04_VALUE	0x1000000
 #define	MC_CCR05_VALUE	0x1000101
 #define	MC_CCR06_VALUE	0x1000100
@@ -16,7 +17,7 @@
 #define	MC_CCR08_VALUE	0x1000101
 #define	MC_CCR09_VALUE	0x0
 #define	MC_CCR10_VALUE	0x2000100
-#define	MC_CCR11_VALUE	0x2000300
+#define	MC_CCR11_VALUE	0x2000401
 #define	MC_CCR12_VALUE	0x30000
 #define	MC_CCR13_VALUE	0x202
 #define	MC_CCR14_VALUE	0x7080A0F
@@ -36,7 +37,7 @@
 #define	MC_CCR28_VALUE	0x0
 #define	MC_CCR29_VALUE	0x0
 #define	MC_CCR30_VALUE	0x798
-#define	MC_CCR31_VALUE	0x0
+#define	MC_CCR31_VALUE	0x2040F
 #define	MC_CCR32_VALUE	0x0
 #define	MC_CCR33_VALUE	0x650000
 #define	MC_CCR34_VALUE	0x200C8
@@ -46,13 +47,13 @@
 #define	MC_CCR38_VALUE	0x0
 #define	MC_CCR39_VALUE	0x141F04
 #define	MC_CCR40_VALUE	0x142704
-#define	MC_CCR41_VALUE	0x141b42
-#define	MC_CCR42_VALUE	0x141b42
+#define	MC_CCR41_VALUE	0x141B42
+#define	MC_CCR42_VALUE	0x141B42
 #define	MC_CCR43_VALUE	0x566504
 #define	MC_CCR44_VALUE	0x566504
 #define	MC_CCR45_VALUE	0x565F17
 #define	MC_CCR46_VALUE	0x565F17
-#define	MC_CCR47_VALUE	0x0
+#define	MC_CCR47_VALUE	0x2040F
 #define	MC_CCR48_VALUE	0x0
 #define	MC_CCR49_VALUE	0x0
 #define	MC_CCR50_VALUE	0x0

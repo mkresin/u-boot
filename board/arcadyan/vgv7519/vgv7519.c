@@ -6,7 +6,6 @@
  */
 
 #include <common.h>
-#include <spi.h>
 #include <asm/gpio.h>
 #include <asm/lantiq/eth.h>
 #include <asm/lantiq/chipid.h>
@@ -20,10 +19,6 @@
 #elif defined(CONFIG_SYS_BOOT_RAM)
 #define do_gpio_init	1
 #define do_pll_init	0
-#define do_dcdc_init	1
-#elif defined(CONFIG_SYS_BOOT_NOR)
-#define do_gpio_init	1
-#define do_pll_init	1
 #define do_dcdc_init	1
 #else
 #define do_gpio_init	0
