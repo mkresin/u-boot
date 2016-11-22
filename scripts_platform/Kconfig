@@ -235,7 +235,7 @@ config SPI_FLASH_1M
      bool "1M"
 
 endchoice
-							  
+
 
 config SPI_FLASH_ATMEL
         bool "ATMEL SFLASH SUPPORT"
@@ -255,6 +255,14 @@ config SPI_FLASH_SPANSION
 
 config SPI_FLASH_MXIC
         bool "MXIC SFLASH SUPPORT"
+    depends on SPI_FLASH
+
+config SPI_FLASH_WINBOND
+        bool "WINBOND SFLASH SUPPORT"
+    depends on SPI_FLASH
+
+config SPI_FLASH_EON
+        bool "EON SFLASH SUPPORT"
     depends on SPI_FLASH
 
 config LANTIQ_SPI
