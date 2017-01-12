@@ -39,7 +39,7 @@
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(256 * 1024)
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
 
-#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_COMP_LZMA
 #define CONFIG_LTQ_SPL_CONSOLE
 #define CONFIG_LTQ_SPL_MC_TUNE
 
@@ -125,13 +125,13 @@
 #include "openwrt-lantiq-common.h"
 
 #define CONFIG_ENV_UPDATE_UBOOT_NOR					\
-	"update-uboot-nor=run load-uboot-norspl-lzo write-uboot-nor\0"
+	"update-uboot-nor=run load-uboot-norspl-lzma write-uboot-nor\0"
 
 #define CONFIG_ENV_UPDATE_UBOOT_SF					\
-	"update-uboot-sf=run load-uboot-sfspl-lzo write-uboot-sf\0"
+	"update-uboot-sf=run load-uboot-sfspl-lzma write-uboot-sf\0"
 
 #define CONFIG_ENV_UPDATE_UBOOT_NAND					\
-	"update-uboot-nand=run load-uboot-nandspl-lzo write-uboot-nand\0"
+	"update-uboot-nand=run load-uboot-nandspl-lzma write-uboot-nand\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_ENV_LANTIQ_DEFAULTS	\

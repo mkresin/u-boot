@@ -19,7 +19,7 @@
 #define CONFIG_LTQ_SUPPORT_NOR_FLASH		/* Have a parallel NOR flash */
 
 #define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
-#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
+#define CONFIG_LTQ_SPL_COMP_LZMA		/* Compress SPL with LZMA */
 #define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
 #define CONFIG_SPL_TPL_OFFS		0x1000
 #define CONFIG_SPL_TPL_SIZE		0x4000
@@ -61,7 +61,7 @@
 #include "openwrt-lantiq-common.h"
 
 #define CONFIG_ENV_UPDATE_UBOOT_NOR \
-	"update-uboot-nor=run load-uboot-norspl-lzo write-uboot-nor\0"
+	"update-uboot-nor=run load-uboot-norspl-lzma write-uboot-nor\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_ENV_LANTIQ_DEFAULTS	\

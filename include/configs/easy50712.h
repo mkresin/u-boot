@@ -26,7 +26,7 @@
 
 #define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
 
-#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_COMP_LZMA
 #define CONFIG_LTQ_SPL_CONSOLE
 
 /* Switch devices */
@@ -88,7 +88,7 @@
 #include "openwrt-lantiq-common.h"
 
 #define CONFIG_ENV_UPDATE_UBOOT_NOR					\
-	"update-uboot-nor=run load-uboot-norspl-lzo write-uboot-nor\0"
+	"update-uboot-nor=run load-uboot-norspl-lzma write-uboot-nor\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_ENV_LANTIQ_DEFAULTS	\

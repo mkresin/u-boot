@@ -27,7 +27,7 @@
 /* #define CONFIG_SYS_NAND_USE_FLASH_BBT */
 
 #define CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH	/* Build NAND flash SPL */
-#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_COMP_LZMA
 #define CONFIG_LTQ_SPL_CONSOLE
 #define CONFIG_LTQ_SPL_MC_TUNE
 #define CONFIG_SPL_TPL_OFFS		0x800
@@ -67,7 +67,7 @@
 #include "openwrt-lantiq-common.h"
 
 #define CONFIG_ENV_UPDATE_UBOOT_NAND					\
-	"update-uboot-nand=run load-uboot-nandspl-lzo write-uboot-nand\0"
+	"update-uboot-nand=run load-uboot-nandspl-lzma write-uboot-nand\0"
 
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \
