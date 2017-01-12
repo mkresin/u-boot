@@ -26,7 +26,7 @@
 
 #define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
 
-#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_COMP_LZMA
 #define CONFIG_LTQ_SPL_CONSOLE
 
 /* support (uncompressed) kernels up to 16 MByte */

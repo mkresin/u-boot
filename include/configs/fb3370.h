@@ -23,7 +23,7 @@
 #define CONFIG_SYS_NAND_USE_FLASH_BBT
 
 #define CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH	/* Build SPI flash SPL */
-#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
+#define CONFIG_LTQ_SPL_COMP_LZMA			/* Compress SPL with LZMA */
 #define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
 #define CONFIG_SPL_SPI_BUS		0
 #define CONFIG_SPL_SPI_CS		4

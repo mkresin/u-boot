@@ -25,7 +25,7 @@
 #define CONFIG_SYS_NAND_USE_FLASH_BBT
 
 #define CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH	/* Build NAND flash SPL */
-#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
+#define CONFIG_LTQ_SPL_COMP_LZMA			/* Compress SPL with LZMA */
 #define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
 #define CONFIG_SPL_TPL_OFFS		0x800
 #define CONFIG_SPL_TPL_SIZE		0x5000
