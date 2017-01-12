@@ -79,6 +79,12 @@
 #define CONFIG_SPL_LZO_SUPPORT
 #endif
 
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_LZMA
+#define CONFIG_SPL_LZMA_SUPPORT
+#endif
+
+
 /* Basic commands */
 #define CONFIG_CMD_BDI
 #define CONFIG_CMD_EDITENV
@@ -132,6 +138,7 @@
 	"load-uboot-nor=tftpboot u-boot.bin\0"				\
 	"load-uboot-norspl=tftpboot u-boot.ltq.norspl\0"		\
 	"load-uboot-norspl-lzo=tftpboot u-boot.ltq.lzo.norspl\0"	\
+	"load-uboot-norspl-lzma=tftpboot u-boot.ltq.lzma.norspl\0"
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NOR
 #define CONFIG_ENV_LOAD_UBOOT_NOR
@@ -151,6 +158,7 @@
 #define CONFIG_ENV_LOAD_UBOOT_SF					\
 	"load-uboot-sfspl=tftpboot u-boot.ltq.sfspl\0"			\
 	"load-uboot-sfspl-lzo=tftpboot u-boot.ltq.lzo.sfspl\0"		\
+	"load-uboot-sfspl-lzma=tftpboot u-boot.ltq.lzma.sfspl\0"
 #else
 #define CONFIG_ENV_SF_PROBE
 #define CONFIG_ENV_WRITE_UBOOT_SF
@@ -166,6 +174,7 @@
 #define CONFIG_ENV_LOAD_UBOOT_NAND						\
 	"load-uboot-nandspl=tftpboot u-boot.ltq.nandspl\0"			\
 	"load-uboot-nandspl-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
+	"load-uboot-nandspl-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NAND
 #define CONFIG_ENV_LOAD_UBOOT_NAND
