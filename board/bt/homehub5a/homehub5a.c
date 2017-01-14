@@ -97,17 +97,17 @@ int misc_init_r(void)
 
 static const struct ltq_eth_port_config eth_port_config[] = {
 	/* GMAC0: external Lantiq PEF7071 10/100/1000 PHY for LAN port 3 */
-	{ 0, 0x0, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
+/*	{ 0, 0x0, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII }, */
 	/* GMAC1: external Lantiq PEF7071 10/100/1000 PHY for LAN port 4 */
-	{ 1, 0x1, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
+/*	{ 1, 0x1, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII }, */
 	/* GMAC2: internal GPHY0 with 10/100/1000 firmware for LAN port 2 */
-	{ 2, 0x11, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_GMII },
+/*	{ 2, 0x11, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_GMII }, */
 	/* GMAC3: unused */
-	{ 3, 0x0, LTQ_ETH_PORT_NONE, PHY_INTERFACE_MODE_NONE },
+/*	{ 3, 0x0, LTQ_ETH_PORT_NONE, PHY_INTERFACE_MODE_NONE }, */
 	/* GMAC4: internal GPHY1 with 10/100/1000 firmware for LAN port 1 */
 	{ 4, 0x13, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_GMII },
 	/* GMAC5: external Lantiq PEF7071 10/100/1000 PHY for WANoE port */
-	{ 5, 0x5, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
+/*	{ 5, 0x5, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII }, */
 };
 
 static const struct ltq_eth_board_config eth_board_config = {
