@@ -264,7 +264,7 @@ static int spl_load_spi_flash(struct spl_image *spl)
 		return ret;
 
 	if (spl_is_compressed(spl))
-		loadaddr = CONFIG_LOADADDR;
+		loadaddr = CONFIG_SYS_LOAD_ADDR;
 	else
 		loadaddr = spl->entry_addr;
 
@@ -328,7 +328,7 @@ static int spl_load_nand_flash(struct spl_image *spl)
 {
 	const image_header_t *hdr;
 	int ret;
-	unsigned long loadaddr = CONFIG_LOADADDR;
+	unsigned long loadaddr = CONFIG_SYS_LOAD_ADDR;
 
 	/*
 	 * Image format:
