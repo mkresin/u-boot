@@ -20,11 +20,11 @@
 #if defined(CONFIG_SYS_BOOT_NORSPL)
 #define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
 #define CONFIG_LTQ_SPL_CONSOLE
-#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_COMP_LZMA
 #define CONFIG_SPL_TPL_OFFS		0x100
 #define CONFIG_SPL_TPL_SIZE		0x3100
 #define CONFIG_SPL_U_BOOT_OFFS		0x3200
-#define CONFIG_SPL_U_BOOT_SIZE		0x2ce00
+#define CONFIG_SPL_U_BOOT_SIZE		0xce00 /* only 64KB */
 #endif
 
 /* 2nd stage bootloader */
@@ -50,7 +50,9 @@
 #define CONFIG_ENV_SIZE			(8 * 1024)
 
 /* Console */
+#if !defined(CONFIG_SYS_BOOT_NORSPL)
 #define CONFIG_LTQ_ADVANCED_CONSOLE
+#endif
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_CONSOLE_ASC		1
 
