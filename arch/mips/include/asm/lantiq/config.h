@@ -62,6 +62,7 @@
 #if defined(CONFIG_SPL)
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
+#define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_GPIO_SUPPORT
 #define CONFIG_SPL_START_S_PATH		\
 		"arch/mips/cpu/mips32/lantiq-common"
@@ -71,7 +72,6 @@
 
 #if defined(CONFIG_LTQ_SPL_CONSOLE)
 #define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
 #endif
 
 #if defined(CONFIG_LTQ_SPL_COMP_LZO)
