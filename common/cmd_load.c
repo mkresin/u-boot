@@ -529,6 +529,7 @@ static ulong load_serial_bin(ulong offset)
 
 	printf("## Total Size      = 0x%08x = %d Bytes\n", size, size);
 	setenv_hex("filesize", size);
+	setenv_hex("fileaddr", offset);
 
 	return offset;
 }
@@ -1000,6 +1001,7 @@ static ulong load_serial_ymodem(ulong offset, int mode)
 
 	printf("## Total Size      = 0x%08x = %d Bytes\n", size, size);
 	setenv_hex("filesize", size);
+	setenv_hex("fileaddr", offset);
 
 	return offset;
 }
