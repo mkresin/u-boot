@@ -1,5 +1,6 @@
 #ifndef _LIBFDT_H
 #define _LIBFDT_H
+#define LIBFDT_H
 /*
  * libfdt - Flat Device Tree manipulation
  * Copyright (C) 2006 David Gibson, IBM Corporation.

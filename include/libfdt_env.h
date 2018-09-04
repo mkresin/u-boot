@@ -8,6 +8,7 @@
 
 #ifndef _LIBFDT_ENV_H
 #define _LIBFDT_ENV_H
+#define LIBFDT_ENV_H
 
 #include "compiler.h"
 #include "linux/types.h"
