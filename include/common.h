@@ -39,6 +39,7 @@ typedef volatile unsigned char	vu_char;
 #include <linux/bitops.h>
 #include <linux/types.h>
 #include <linux/string.h>
+#include <linux/compiler.h>
 #include <asm/ptrace.h>
 #include <stdarg.h>
 #if defined(CONFIG_PCI) && (defined(CONFIG_4xx) && !defined(CONFIG_AP1000))
@@ -249,10 +250,10 @@ typedef void (interrupt_handler_t)(void *);
 
 #if defined(CONFIG_ENV_IS_EMBEDDED)
 #define TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
-#elif ( ((CONFIG_ENV_ADDR+CONFIG_ENV_SIZE) < CONFIG_SYS_MONITOR_BASE) || \
+#elif ( ((CONFIG_ENV_ADDR+CONFIG_ENV_SIZE_MAX) < CONFIG_SYS_MONITOR_BASE) || \
 	(CONFIG_ENV_ADDR >= (CONFIG_SYS_MONITOR_BASE + CONFIG_SYS_MONITOR_LEN)) ) || \
       defined(CONFIG_ENV_IS_IN_NVRAM)
-#define	TOTAL_MALLOC_LEN	(CONFIG_SYS_MALLOC_LEN + CONFIG_ENV_SIZE)
+#define	TOTAL_MALLOC_LEN	(CONFIG_SYS_MALLOC_LEN + CONFIG_ENV_SIZE_MAX)
 #else
 #define	TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
 #endif
@@ -338,7 +339,13 @@ int	envmatch     (uchar *, int);
 char	*getenv	     (const char *);
 int	getenv_f     (const char *name, char *buf, unsigned len);
 ulong getenv_ulong(const char *name, int base, ulong default_val);
+#ifdef CONFIG_IPQ806X_ENV
+extern int	(*saveenv)   (void);
+#elif defined CONFIG_IPQ40XX_ENV
+extern int	(*saveenv)(void);
+#else
 int	saveenv	     (void);
+#endif
 #ifdef CONFIG_PPC		/* ARM version to be fixed! */
 int inline setenv    (const char *, const char *);
 #else
@@ -722,6 +729,9 @@ void	flush_dcache_range(unsigned long start, unsigned long stop);
 void	invalidate_dcache_range(unsigned long start, unsigned long stop);
 void	invalidate_dcache_all(void);
 void	invalidate_icache_all(void);
+void	set_l2_indirect_reg(u32 reg_addr, u32 val);
+void	clear_l2cache_err(void);
+u32 	get_l2_indirect_reg(u32 reg_addr);
 
 /* arch/$(ARCH)/lib/ticks.S */
 unsigned long long get_ticks(void);
@@ -880,6 +890,9 @@ int cpu_release(int nr, int argc, char * const argv[]);
 #define DIV_ROUND(n,d)		(((n) + ((d)/2)) / (d))
 #define DIV_ROUND_UP(n,d)	(((n) + (d) - 1) / (d))
 #define roundup(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#define __round_mask(x, y) 	((__typeof__(x))((y)-1))
+#define round_up(x, y) 		((((x)-1) | __round_mask(x, y))+1)
+#define round_down(x, y) 	((x) & ~__round_mask(x, y))
 
 #define ALIGN(x,a)		__ALIGN_MASK((x),(typeof(x))(a)-1)
 #define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))

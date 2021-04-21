@@ -34,6 +34,9 @@
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <asm/bootm.h>
+#include <jffs2/load_kernel.h>
+#include <nand.h>
+#include <asm/arch-ipq806x/smem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -258,10 +261,99 @@ static int create_fdt(bootm_headers_t *images)
 	fixup_memory_node(*of_flat_tree);
 	fdt_fixup_ethernet(*of_flat_tree);
 	fdt_initrd(*of_flat_tree, *initrd_start, *initrd_end, 1);
+#ifdef CONFIG_OF_BOARD_SETUP
+	ft_board_setup(*of_flat_tree, gd->bd);
+#endif
+
 
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+void setup_ipq_partition_tag(struct tag **in_params)
+{
+	extern int ipq_fs_on_nand, rootfs_part_avail;
+	extern uint32_t ipq_smem_get_flash_block_size(void);
+	extern struct mtd_device *current_mtd_dev;
+
+	uint32_t bs = ipq_smem_get_flash_block_size();
+	u32 tag = ipq_fs_on_nand ? ATAG_MSM_PARTITION : ATAG_IPQ_NOR_PARTITION;
+	uint32_t nr_parts = 0;
+	struct tag_msm_ptn *ptn = &params->u.ptn;
+
+	if (!rootfs_part_avail) {
+		printf("Setting up atags for msm partition: "
+				IPQ_ROOT_FS_PART_NAME "\n");
+		strncpy(ptn->name, IPQ_ROOT_FS_PART_NAME, sizeof(ptn->name));
+		if (ipq_smem_bootconfig_info.magic == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			/* When active 0 rootfs is at @0 offset */
+			if (get_rootfs_active_partition() == 0)
+				ptn->offset = 0;
+			else
+			/* When active 1 rootfs is at @0x4000000 offset */
+				ptn->offset = IPQ_NAND_ROOTFS_SIZE /
+						nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+		} else {
+			ptn->offset = 0;
+		}
+		ptn->size = IPQ_NAND_ROOTFS_SIZE /
+			nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+		ptn->flags = 0;
+		ptn ++;
+		nr_parts ++;
+
+		if (ipq_smem_bootconfig_info.magic == _SMEM_DUAL_BOOTINFO_MAGIC) {
+			strncpy(ptn->name, IPQ_ROOT_FS_ALT_PART_NAME, sizeof(ptn->name));
+
+			/* When active is 0 rootfs_1 will be @0x4000000 offset */
+			if (get_rootfs_active_partition() == 0)
+				ptn->offset = IPQ_NAND_ROOTFS_SIZE /
+						nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+			else
+			/* When active is 1 rootfs_1 will be @0 offset */
+				ptn->offset = 0;
+			ptn->size = IPQ_NAND_ROOTFS_SIZE /
+					nand_info[CONFIG_IPQ_NAND_NAND_INFO_IDX].erasesize;
+			ptn->flags = 0;
+			ptn ++;
+			nr_parts ++;
+		}
+	}
+
+	run_command("mtd", 0);
+
+	if (current_mtd_dev) {
+		struct list_head *entry;
+		struct part_info *part;
+
+		list_for_each(entry, &current_mtd_dev->parts) {
+			part = list_entry(entry, struct part_info, link);
+
+			if (strcmp(part->name, "fs") == 0)
+				continue;
+
+			printf("Setting up atags for msm partition: %s\n", part->name);
+			strncpy(ptn->name, part->name, sizeof(ptn->name));
+			ptn->offset = part->offset / bs;
+			ptn->size = part->size / bs;
+			ptn->flags = part->mask_flags;
+			ptn ++;
+			nr_parts ++;
+		}
+	} else {
+		printf("info: \"mtdparts\" not set\n");
+	}
+
+	if (nr_parts) {
+		params->hdr.tag = tag;
+		params->hdr.size = ((sizeof(struct tag_header) +
+							(sizeof(struct tag_msm_ptn) * nr_parts)) >> 2);
+		params = tag_next (params);
+	}
+
+}
+#endif /* CONFIG_IPQ_ATAG_PART_LIST */
 
 /* Subcommand: PREP */
 static void boot_prep_linux(bootm_headers_t *images)
@@ -284,7 +376,8 @@ static void boot_prep_linux(bootm_headers_t *images)
 	defined(CONFIG_CMDLINE_TAG) || \
 	defined(CONFIG_INITRD_TAG) || \
 	defined(CONFIG_SERIAL_TAG) || \
-	defined(CONFIG_REVISION_TAG)
+	defined(CONFIG_REVISION_TAG) || \
+	defined(CONFIG_IPQ_ATAG_PART_LIST)
 		debug("using: ATAGS\n");
 		setup_start_tag(gd->bd);
 #ifdef CONFIG_SERIAL_TAG
@@ -295,6 +388,9 @@ static void boot_prep_linux(bootm_headers_t *images)
 #endif
 #ifdef CONFIG_REVISION_TAG
 		setup_revision_tag(&params);
+#endif
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+		setup_ipq_partition_tag(&params);
 #endif
 #ifdef CONFIG_SETUP_MEMORY_TAGS
 		setup_memory_tags(gd->bd);

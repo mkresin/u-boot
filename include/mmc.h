@@ -159,6 +159,10 @@
 #define EXT_CSD_CARD_TYPE		196	/* RO */
 #define EXT_CSD_SEC_CNT			212	/* RO, 4 bytes */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
+#define EXT_CSD_SEC_FEATURE_SUPPORT     231     /* RO */
+
+#define EXT_CSD_SEC_ER_EN       (1 << 0)
+#define EXT_CSD_SEC_GB_CL_EN    (1 << 4)
 
 /*
  * EXT_CSD field definitions
@@ -198,6 +202,10 @@
 #define MMCPART_NOAVAILABLE	(0xff)
 #define PART_ACCESS_MASK	(0x7)
 #define PART_SUPPORT		(0x1)
+
+#define MMC_SECURE_TRIM1_ARG    0x80000001
+#define MMC_SECURE_TRIM2_ARG    0x80008000
+
 
 struct mmc_cid {
 	unsigned long psn;
@@ -259,6 +267,7 @@ struct mmc {
 	int (*init)(struct mmc *mmc);
 	int (*getcd)(struct mmc *mmc);
 	uint b_max;
+	uchar sec_feature_support;
 };
 
 int mmc_register(struct mmc *mmc);

@@ -205,6 +205,19 @@ struct tag_memclk {
 	u32 fmemclk;
 };
 
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+#define ATAG_MSM_PARTITION	0x4d534D70 /* MSMp */
+#define ATAG_IPQ_NOR_PARTITION	0x494e4f52 /* INOR */
+
+#define MSM_MAX_PARTITIONS	18
+struct tag_msm_ptn {
+	char name[16];
+	u32 offset;
+	u32 size;
+	u32 flags;
+};
+#endif /* CONFIG_IPQ_ATAG_PART_LIST */
+
 struct tag {
 	struct tag_header hdr;
 	union {
@@ -227,6 +240,9 @@ struct tag {
 		 * DC21285 specific
 		 */
 		struct tag_memclk	memclk;
+#ifdef CONFIG_IPQ_ATAG_PART_LIST
+		struct tag_msm_ptn	ptn;
+#endif
 	} u;
 };
 

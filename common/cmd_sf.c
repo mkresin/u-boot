@@ -261,6 +261,22 @@ static int do_spi_flash_erase(int argc, char * const argv[])
 	return 0;
 }
 
+static int do_spi_flash_berase(int argc, char * const argv[])
+{
+	switch (spi_flash_berase(flash)) {
+	case 0:
+		return 0;
+	case -ENOTSUPP:
+		printf("SPI flash %s not supported\n", argv[0]);
+		return 1;
+	default:
+		printf("SPI flash %s failed\n", argv[0]);
+		return 1;
+	}
+
+	return 1;
+}
+
 static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	const char *cmd;
@@ -290,6 +306,8 @@ static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret = do_spi_flash_read_write(argc, argv);
 	else if (strcmp(cmd, "erase") == 0)
 		ret = do_spi_flash_erase(argc, argv);
+	else if (strcmp(cmd, "bulkerase") == 0)
+		ret = do_spi_flash_berase(argc, argv);
 	else
 		ret = -1;
 
@@ -312,6 +330,8 @@ U_BOOT_CMD(
 	"				  at `addr' to flash at `offset'\n"
 	"sf erase offset [+]len		- erase `len' bytes from `offset'\n"
 	"				  `+len' round up `len' to block size\n"
+	"sf bulkerase			- Erase entire flash chip\n"
+	"				  (Not supported on all devices)\n"
 	"sf update addr offset len	- erase and write `len' bytes from memory\n"
 	"				  at `addr' to flash at `offset'"
 );

@@ -34,6 +34,8 @@
 /* S25FLxx-specific commands */
 #define CMD_S25FLXX_SE		0xd8	/* Sector Erase */
 #define CMD_S25FLXX_BE		0xc7	/* Bulk Erase */
+#define CMD_S25FLXX_4SE		0xdc	/* 4-byte Sector Erase */
+#define CMD_S25FSXX_BE		0x60	/* Bulk Erase */
 
 struct spansion_spi_flash_params {
 	u16 idcode1;
@@ -41,6 +43,7 @@ struct spansion_spi_flash_params {
 	u16 page_size;
 	u16 pages_per_sector;
 	u16 nr_sectors;
+	u16 bulkerase_timeout;	/* in seconds */
 	const char *name;
 };
 
@@ -107,13 +110,50 @@ static const struct spansion_spi_flash_params spansion_spi_flash_table[] = {
 		.page_size = 256,
 		.pages_per_sector = 256,
 		.nr_sectors = 256,
+		/*
+		 * http://www.spansion.com/Support/Datasheets/S25FS-S_00.pdf
+		 * Refer to Table 11.1, tBE entry
+		 */
+		.bulkerase_timeout = 180,
 		.name = "S25FL129P_64K",
+	},
+	{
+		.idcode1 = 0x0219,
+		.idcode2 = 0x4d01,
+		.page_size = 256,
+		.pages_per_sector = 256,
+		.nr_sectors = 512,
+		/*
+		 * http://www.spansion.com/Support/Datasheets/S25FS-S_00.pdf
+		 * Refer to Table 11.1, tBE entry
+		 */
+		.bulkerase_timeout = 360,
+		.name = "S25FL256S",
+	},
+	{
+		.idcode1 = 0x0220,
+		.idcode2 = 0x4d00,
+		.page_size = 256,
+		.pages_per_sector = 1024,
+		.nr_sectors = 256,
+		.name = "S25FL512S",
 	},
 };
 
 static int spansion_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_S25FLXX_SE, offset, len);
+	u8 erase_opcode;
+	if (flash->addr_width == 4)
+		erase_opcode = CMD_S25FLXX_4SE;
+	else
+		erase_opcode = CMD_S25FLXX_SE;
+
+	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+}
+
+static int spansion_berase(struct spi_flash *flash)
+{
+	return spi_flash_cmd_berase(flash, CMD_S25FSXX_BE);
 }
 
 struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
@@ -121,6 +161,7 @@ struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
 	const struct spansion_spi_flash_params *params;
 	struct spi_flash *flash;
 	unsigned int i;
+	int ret;
 	unsigned short jedec, ext_jedec;
 
 	jedec = idcode[1] << 8 | idcode[2];
@@ -150,10 +191,19 @@ struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
 
 	flash->write = spi_flash_cmd_write_multi;
 	flash->erase = spansion_erase;
+	if (params->bulkerase_timeout) {
+		flash->berase = spansion_berase;
+		flash->berase_timeout = params->bulkerase_timeout;
+	}
 	flash->read = spi_flash_cmd_read_fast;
 	flash->page_size = params->page_size;
 	flash->sector_size = params->page_size * params->pages_per_sector;
 	flash->size = flash->sector_size * params->nr_sectors;
+
+	if (flash->size > 0x1000000) {
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
+	}
 
 	return flash;
 }

@@ -15,12 +15,20 @@
 
 #include "spi_flash_internal.h"
 
-static void spi_flash_addr(u32 addr, u8 *cmd)
+static void spi_flash_addr(struct spi_flash *flash, u32 addr, u8 *cmd)
 {
 	/* cmd[0] is actual command */
-	cmd[1] = addr >> 16;
-	cmd[2] = addr >> 8;
-	cmd[3] = addr >> 0;
+	cmd[1] = addr >> (flash->addr_width * 8 -  8);
+	cmd[2] = addr >> (flash->addr_width * 8 - 16);
+	cmd[3] = addr >> (flash->addr_width * 8 - 24);
+	cmd[4] = addr >> (flash->addr_width * 8 - 32);
+}
+
+static int flash_cmdsz(struct spi_flash *flash)
+{
+	/* This is needed for driver which have not updated this parameter */
+
+	return 1 + flash->addr_width;
 }
 
 static int spi_flash_read_write(struct spi_slave *spi,
@@ -71,7 +79,7 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 	unsigned long page_addr, byte_addr, page_size;
 	size_t chunk_len, actual;
 	int ret;
-	u8 cmd[4];
+	u8 cmd[5];
 
 	page_size = flash->page_size;
 	page_addr = offset / page_size;
@@ -83,13 +91,20 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 		return ret;
 	}
 
-	cmd[0] = CMD_PAGE_PROGRAM;
+	cmd[0] = flash->write_opcode;
 	for (actual = 0; actual < len; actual += chunk_len) {
 		chunk_len = min(len - actual, page_size - byte_addr);
 
-		cmd[1] = page_addr >> 8;
-		cmd[2] = page_addr;
-		cmd[3] = byte_addr;
+		if (flash->addr_width == 4) {
+			cmd[1] = page_addr >> 16;
+			cmd[2] = page_addr >> 8;
+			cmd[3] = page_addr;
+			cmd[4] = byte_addr;
+		} else {
+			cmd[1] = page_addr >> 8;
+			cmd[2] = page_addr;
+			cmd[3] = byte_addr;
+		}
 
 		debug("PP: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
 		      buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
@@ -100,7 +115,7 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 			break;
 		}
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, 4,
+		ret = spi_flash_cmd_write(flash->spi, cmd, flash_cmdsz(flash),
 					  buf + actual, chunk_len);
 		if (ret < 0) {
 			debug("SF: write failed\n");
@@ -138,13 +153,14 @@ int spi_flash_read_common(struct spi_flash *flash, const u8 *cmd,
 int spi_flash_cmd_read_fast(struct spi_flash *flash, u32 offset,
 		size_t len, void *data)
 {
-	u8 cmd[5];
+	u8 cmd[6];
 
-	cmd[0] = CMD_READ_ARRAY_FAST;
-	spi_flash_addr(offset, cmd);
-	cmd[4] = 0x00;
+	cmd[0] = flash->read_opcode;
+	spi_flash_addr(flash, offset, cmd);
+	cmd[5] = 0x00;
 
-	return spi_flash_read_common(flash, cmd, sizeof(cmd), data, len);
+	return spi_flash_read_common(flash, cmd, flash_cmdsz(flash)
+					+ FAST_READ_DUMMY_BYTE, data, len);
 }
 
 int spi_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
@@ -190,14 +206,49 @@ int spi_flash_cmd_wait_ready(struct spi_flash *flash, unsigned long timeout)
 		CMD_READ_STATUS, STATUS_WIP);
 }
 
-int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
-			u32 offset, size_t len)
+int spi_nand_flash_cmd_poll_bit(struct spi_flash *flash, unsigned long timeout,
+                           u8 cmd, u8 poll_bit, u8 *status)
 {
-	u32 start, end, erase_size;
-	int ret;
-	u8 cmd[4];
+	struct spi_slave *spi = flash->spi;
+	unsigned long timebase;
+	u8 cmd_buf[2];
 
-	erase_size = flash->sector_size;
+	cmd_buf[0] = 0x0F;
+	cmd_buf[1] = cmd;
+
+	timebase = get_timer(0);
+	do {
+		WATCHDOG_RESET();
+
+		spi_flash_cmd_read(spi, cmd_buf, 2, status, 1);
+		if ((*status & poll_bit) == 0)
+			break;
+
+	} while (get_timer(timebase) < timeout);
+
+	if ((*status & poll_bit) == 0)
+		return 0;
+
+	/* Timed out */
+	debug("SF: time out!\n");
+	return -1;
+}
+
+int spi_nand_flash_cmd_wait_ready(struct spi_flash *flash, u8 status_bit, u8 *status,
+                                  unsigned long timeout)
+{
+	return spi_nand_flash_cmd_poll_bit(flash, timeout,
+					   0xC0, status_bit, status);
+}
+
+
+static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase_cmd,
+					u32 erase_size, u32 offset, size_t len)
+{
+	u32 start, end;
+	int ret;
+	u8 cmd[5];
+
 	if (offset % erase_size || len % erase_size) {
 		debug("SF: Erase offset/length not multiple of erase size\n");
 		return -1;
@@ -214,7 +265,7 @@ int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
 	end = start + len;
 
 	while (offset < end) {
-		spi_flash_addr(offset, cmd);
+		spi_flash_addr(flash, offset, cmd);
 		offset += erase_size;
 
 		debug("SF: erase %2x %2x %2x %2x (%x)\n", cmd[0], cmd[1],
@@ -224,7 +275,7 @@ int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
 		if (ret)
 			goto out;
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, sizeof(cmd), NULL, 0);
+		ret = spi_flash_cmd_write(flash->spi, cmd, flash_cmdsz(flash), NULL, 0);
 		if (ret)
 			goto out;
 
@@ -236,6 +287,46 @@ int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
 	debug("SF: Successfully erased %zu bytes @ %#x\n", len, start);
 
  out:
+	spi_release_bus(flash->spi);
+	return ret;
+}
+
+/* Block Erase */
+int spi_flash_cmd_erase_block(struct spi_flash *flash, u8 erase_cmd,
+			u32 offset, size_t len)
+{
+	return spi_flash_cmd_erase_block_or_sector(flash, erase_cmd, flash->block_size,
+			offset, len);
+}
+
+/* Sector Erase */
+int spi_flash_cmd_erase(struct spi_flash *flash, u8 erase_cmd,
+			u32 offset, size_t len)
+{
+	return spi_flash_cmd_erase_block_or_sector(flash, erase_cmd, flash->sector_size,
+			offset, len);
+}
+
+int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd)
+{
+	int ret;
+
+	ret = spi_claim_bus(flash->spi);
+	if (ret) {
+		debug("SF: Unable to claim SPI bus\n");
+		return ret;
+	}
+
+	ret = spi_flash_cmd_write_enable(flash);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_write(flash->spi, &erase_cmd, 1, NULL, 0);
+	if (ret)
+		goto out;
+
+	ret = spi_flash_cmd_wait_ready(flash, SPI_FLASH_BERASE_TIMEOUT(flash));
+out:
 	spi_release_bus(flash->spi);
 	return ret;
 }
@@ -291,6 +382,9 @@ static const struct {
 #ifdef CONFIG_SPI_FLASH_WINBOND
 	{ 0, 0xef, spi_flash_probe_winbond, },
 #endif
+#ifdef CONFIG_SPI_FLASH_GIGA
+	{ 0, 0xc8, spi_flash_probe_giga, },
+#endif
 #ifdef CONFIG_SPI_FRAM_RAMTRON
 	{ 6, 0xc2, spi_fram_probe_ramtron, },
 # undef IDCODE_CONT_LEN
@@ -303,8 +397,22 @@ static const struct {
 #ifdef CONFIG_SPI_FRAM_RAMTRON_NON_JEDEC
 	{ 0, 0xff, spi_fram_probe_ramtron, },
 #endif
+#ifdef CONFIG_SPI_NAND_GIGA
+	{ 0, 0xc8, spi_nand_flash_probe, },
+#endif
+#ifdef CONFIG_SPI_NAND_ATO
+	{ 0, 0xff, spi_nand_flash_probe, },
+#endif
+#ifdef CONFIG_SPI_NAND_MACRONIX
+	{ 0, 0x00, spi_nand_flash_probe, },
+#endif
+#ifdef CONFIG_SPI_NAND_WINBOND
+	{ 0, 0x00, spi_nand_flash_probe, },
+#endif
 };
 #define IDCODE_LEN (IDCODE_CONT_LEN + IDCODE_PART_LEN)
+#define MFID_ATO	0x9b
+#define MFID_MACRONIX   0xc2
 
 struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 		unsigned int max_hz, unsigned int spi_mode)
@@ -351,9 +459,23 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 				break;
 		}
 
+#ifdef CONFIG_SPI_NOR_GENERIC
+	if (!flash)
+		/* We did not find a match, do generic probe */
+		flash = spi_nor_probe_generic(spi, idp);
+#endif
+
 	if (!flash) {
 		printf("SF: Unsupported manufacturer %02x\n", *idp);
 		goto err_manufacturer_probe;
+	}
+
+	if (flash->size > 0x1000000) {
+		flash->addr_width = 4;
+	} else {
+		flash->addr_width = 3;
+		flash->read_opcode  = CMD_READ_ARRAY_FAST;
+		flash->write_opcode = CMD_PAGE_PROGRAM;
 	}
 
 	printf("SF: Detected %s with page size ", flash->name);

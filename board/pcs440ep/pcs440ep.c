@@ -29,7 +29,7 @@
 #include <asm/processor.h>
 #include <spd_sdram.h>
 #include <status_led.h>
-#include <sha1.h>
+#include <u-boot-sha1.h>
 #include <asm/io.h>
 #include <net.h>
 

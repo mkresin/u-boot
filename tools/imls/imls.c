@@ -37,7 +37,7 @@
 #include <mtd/mtd-user.h>
 #endif
 
-#include <sha1.h>
+#include <u-boot-sha1.h>
 #include <fdt.h>
 #include <libfdt.h>
 #include <fdt_support.h>

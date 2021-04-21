@@ -161,6 +161,7 @@ int   test_part_amiga (block_dev_desc_t *dev_desc);
 int get_partition_info_efi (block_dev_desc_t * dev_desc, int part, disk_partition_t *info);
 void print_part_efi (block_dev_desc_t *dev_desc);
 int   test_part_efi (block_dev_desc_t *dev_desc);
+int find_part_efi(block_dev_desc_t *, char *, disk_partition_t *);
 #endif
 
 #endif /* _PART_H */

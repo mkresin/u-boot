@@ -37,7 +37,9 @@
 
 /* MX25xx-specific commands */
 #define CMD_MX25XX_SE		0x20	/* Sector Erase */
+#define CMD_MX25XX_4SE		0x21	/* Sector Erase 4-Byte address */
 #define CMD_MX25XX_BE		0xD8	/* Block Erase */
+#define CMD_MX25XX_4BE		0xDC	/* Block Erase 4-byte address */
 #define CMD_MX25XX_CE		0xc7	/* Chip Erase */
 
 struct macronix_spi_flash_params {
@@ -99,6 +101,14 @@ static const struct macronix_spi_flash_params macronix_spi_flash_table[] = {
 		.name = "MX25L12805D",
 	},
 	{
+		.idcode = 0x2019,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 512,
+		.name = "MX25L25635E",
+	},
+	{
 		.idcode = 0x2618,
 		.page_size = 256,
 		.pages_per_sector = 16,
@@ -106,6 +116,30 @@ static const struct macronix_spi_flash_params macronix_spi_flash_table[] = {
 		.nr_blocks = 256,
 		.name = "MX25L12855E",
 	},
+	{
+		.idcode = 0x2536,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 64,
+		.name = "MX25U3235F",
+	},
+	{
+		.idcode = 0x2537,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 128,
+		.name = "MX25U6435F",
+	},
+	{
+		.idcode = 0x2539,
+		.page_size = 256,
+		.pages_per_sector = 16,
+		.sectors_per_block = 16,
+		.nr_blocks = 512,
+		.name = "MX25U25635F",
+	}
 };
 
 static int macronix_write_status(struct spi_flash *flash, u8 sr)
@@ -149,7 +183,29 @@ static int macronix_unlock(struct spi_flash *flash)
 
 static int macronix_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_MX25XX_BE, offset, len);
+	u8 erase_opcode;
+	int ret;
+
+	if ((offset % flash->block_size) == 0 && (len % flash->block_size) == 0) {
+		/* Block Erase */
+		if (flash->addr_width == 4)
+			erase_opcode = CMD_MX25XX_4BE;
+		else
+			erase_opcode = CMD_MX25XX_BE;
+
+		ret = spi_flash_cmd_erase_block(flash, erase_opcode, offset, len);
+	} else {
+		/* Sector Erase */
+
+		if (flash->addr_width == 4)
+			erase_opcode = CMD_MX25XX_4SE;
+		else
+			erase_opcode = CMD_MX25XX_SE;
+
+		ret = spi_flash_cmd_erase(flash, erase_opcode, offset, len);
+	}
+
+	return ret;
 }
 
 struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
@@ -183,9 +239,14 @@ struct spi_flash *spi_flash_probe_macronix(struct spi_slave *spi, u8 *idcode)
 	flash->erase = macronix_erase;
 	flash->read = spi_flash_cmd_read_fast;
 	flash->page_size = params->page_size;
-	flash->sector_size = params->page_size * params->pages_per_sector
-		* params->sectors_per_block;
-	flash->size = flash->sector_size * params->nr_blocks;
+	flash->sector_size = params->page_size * params->pages_per_sector;
+	flash->block_size = flash->sector_size * params->sectors_per_block;
+	flash->size = flash->block_size * params->nr_blocks;
+
+	if (flash->size > 0x1000000) {
+		flash->read_opcode  = CMD_4READ_ARRAY_FAST;
+		flash->write_opcode = CMD_4PAGE_PROGRAM;
+	}
 
 	/* Clear BP# bits for read-only flash */
 	macronix_unlock(flash);

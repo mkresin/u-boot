@@ -126,6 +126,11 @@
 #define BB_BANNER
 #endif
 #endif
+
+#ifdef CONFIG_STINKBUG
+#include <meraki_config.h>
+#endif
+
 #define SPECIAL_VAR_SYMBOL 03
 #ifndef __U_BOOT__
 #define FLAG_EXIT_FROM_LOOP 1
@@ -1014,7 +1019,11 @@ static void get_user_input(struct in_str *i)
 #endif
 	i->__promptme = 1;
 	if (i->promptmode == 1) {
+#ifdef CONFIG_STINKBUG
+		n = readline (get_insect_prompt());
+#else
 		n = readline(CONFIG_SYS_PROMPT);
+#endif
 	} else {
 		n = readline(CONFIG_SYS_PROMPT_HUSH_PS2);
 	}

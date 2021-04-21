@@ -185,6 +185,7 @@ stack_setup:
 	adr	r0, _start
 	cmp	r0, r6
 	moveq	r9, #0		/* no relocation. relocation offset(r9) = 0 */
+#ifndef CONFIG_IPQ40XX_XIP
 	beq	clear_bss		/* skip relocation */
 	mov	r1, r6			/* r1 <- scratch for copy_loop */
 	ldr	r3, _image_copy_end_ofs
@@ -196,6 +197,7 @@ copy_loop:
 	cmp	r0, r2			/* until source end address [r2]    */
 	blo	copy_loop
 
+#endif
 #ifndef CONFIG_SPL_BUILD
 	/*
 	 * fix .rel.dyn relocations

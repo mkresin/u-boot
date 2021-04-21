@@ -23,7 +23,7 @@
 
 #include <common.h>
 #include <command.h>
-#include <sha1.h>
+#include <u-boot-sha1.h>
 
 static int do_sha1sum(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {

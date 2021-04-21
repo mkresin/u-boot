@@ -66,6 +66,7 @@ BIN_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc$(SFX)
 BIN_FILES-$(CONFIG_CMD_NET) += gen_eth_addr$(SFX)
 BIN_FILES-$(CONFIG_CMD_LOADS) += img2srec$(SFX)
 BIN_FILES-$(CONFIG_XWAY_SWAP_BYTES) += xway-swap-bytes$(SFX)
+BIN_FILES-y += dumpimage$(SFX)
 BIN_FILES-y += mkenvimage$(SFX)
 BIN_FILES-y += mkimage$(SFX)
 BIN_FILES-$(CONFIG_SMDK5250) += mksmdk5250spl$(SFX)
@@ -86,12 +87,14 @@ OBJ_FILES-$(CONFIG_LCD_LOGO) += bmp_logo.o
 OBJ_FILES-$(CONFIG_VIDEO_LOGO) += bmp_logo.o
 NOPED_OBJ_FILES-y += default_image.o
 OBJ_FILES-$(CONFIG_BUILD_ENVCRC) += envcrc.o
+NOPED_OBJ_FILES-y += dumpimage.o
 NOPED_OBJ_FILES-y += fit_image.o
 OBJ_FILES-$(CONFIG_CMD_NET) += gen_eth_addr.o
 OBJ_FILES-$(CONFIG_CMD_LOADS) += img2srec.o
 OBJ_FILES-$(CONFIG_XWAY_SWAP_BYTES) += xway-swap-bytes.o
 NOPED_OBJ_FILES-y += aisimage.o
 NOPED_OBJ_FILES-y += kwbimage.o
+NOPED_OBJ_FILES-y += imagetool.o
 NOPED_OBJ_FILES-y += imximage.o
 NOPED_OBJ_FILES-y += omapimage.o
 NOPED_OBJ_FILES-y += mkenvimage.o
@@ -174,38 +177,59 @@ HOSTCPPFLAGS =	-idirafter $(SRCTREE)/include \
 all:	$(obj).depend $(BINS) $(LOGO-y) subdirs
 
 $(obj)bin2header$(SFX): $(obj)bin2header.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)bmp_logo$(SFX):	$(obj)bmp_logo.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)envcrc$(SFX):	$(obj)crc32.o $(obj)env_embedded.o $(obj)envcrc.o $(obj)sha1.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
 
 $(obj)gen_eth_addr$(SFX):	$(obj)gen_eth_addr.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)img2srec$(SFX):	$(obj)img2srec.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)xway-swap-bytes$(SFX):	$(obj)xway-swap-bytes.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
+
+$(obj)dumpimage$(SFX):	$(obj)aisimage.o \
+			$(FIT_SIG_OBJS) \
+			$(obj)crc32.o \
+			$(obj)default_image.o \
+			$(obj)fit_image.o \
+			$(obj)image.o \
+			$(obj)imagetool.o \
+			$(obj)imximage.o \
+			$(obj)kwbimage.o \
+			$(obj)dumpimage.o \
+			$(obj)md5.o \
+			$(obj)omapimage.o \
+			$(obj)os_support.o \
+			$(obj)sha1.o \
+			$(obj)ublimage.o \
+			$(LIBFDT_OBJS) \
+			$(RSA_OBJS)
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) $(QSDK_CFLAGS) $(QSDK_LDFLAGS) -o $@ $^ $(HOSTLIBS))
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mkenvimage$(SFX):	$(obj)crc32.o $(obj)mkenvimage.o \
 	$(obj)os_support.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mkimage$(SFX):	$(obj)aisimage.o \
 			$(obj)crc32.o \
 			$(obj)default_image.o \
 			$(obj)fit_image.o \
 			$(obj)image.o \
+			$(obj)imagetool.o \
 			$(obj)imximage.o \
 			$(obj)kwbimage.o \
 			$(obj)md5.o \
@@ -215,41 +239,41 @@ $(obj)mkimage$(SFX):	$(obj)aisimage.o \
 			$(obj)sha1.o \
 			$(obj)ublimage.o \
 			$(LIBFDT_OBJS)
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) $(QSDK_CFLAGS) $(QSDK_LDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mk$(BOARD)spl$(SFX):	$(obj)mkexynosspl.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mpc86x_clk$(SFX):	$(obj)mpc86x_clk.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)mxsboot$(SFX):	$(obj)mxsboot.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)ncb$(SFX):	$(obj)ncb.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 $(obj)ubsha1$(SFX):	$(obj)os_support.o $(obj)sha1.o $(obj)ubsha1.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
 
 $(obj)kwboot$(SFX): $(obj)kwboot.o
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(HOSTSTRIP) $@
+	@$(call compile,$(HOSTCC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(HOSTSTRIP) $@)
 
 # Some of the tool objects need to be accessed from outside the tools directory
 $(obj)%.o: $(SRCTREE)/common/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/libfdt/%.c
-	$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(HOSTCC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 subdirs:
 ifeq ($(TOOLSUBDIRS),)

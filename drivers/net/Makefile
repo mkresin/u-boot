@@ -22,6 +22,8 @@
 #
 
 include $(TOPDIR)/config.mk
+CPPFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+CFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
 
 LIB	:= $(obj)libnet.o
 
@@ -79,6 +81,17 @@ COBJS-$(CONFIG_XILINX_AXIEMAC) += xilinx_axi_emac.o
 COBJS-$(CONFIG_XILINX_EMACLITE) += xilinx_emaclite.o
 COBJS-$(CONFIG_XILINX_LL_TEMAC) += xilinx_ll_temac.o xilinx_ll_temac_mdio.o \
 		xilinx_ll_temac_fifo.o xilinx_ll_temac_sdma.o
+COBJS-$(CONFIG_SYNOPSYS_GEMAC) += nss/synopGMAC_network_interface.o nss/synopGMAC_Dev.o nss/uboot_skb.o nss/mii_gpio.o nss/synop_mdio_acc.o
+COBJS-$(CONFIG_SYNOPSYS_GEMAC) += ../../board/qcom/common/athrs17_phy.o
+COBJS-$(CONFIG_IPQ_SNPS_GMAC) += ipq/ipq_gmac_eth.o
+COBJS-$(CONFIG_IPQ_MDIO) += ipq/ipq_mdio.o
+COBJS-$(CONFIG_IPQ_SWITCH_ATHRS17) += ../../board/qcom/common/athrs17_phy.o
+COBJS-$(CONFIG_IPQ_SWITCH_QCA8511) += ../../board/qcom/common/qca8511.o
+COBJS-$(CONFIG_IPQ40XX_EDMA) += ipq40xx/ipq40xx_edma_eth.o
+COBJS-$(CONFIG_IPQ40XX_ESS) += ipq40xx/ipq40xx_ess_sw.o
+COBJS-$(CONFIG_QCA8075_PHY) += ipq40xx/ipq40xx_qca8075.o
+COBJS-$(CONFIG_QCA8033_PHY) += ipq40xx/ipq40xx_qca8033.o
+COBJS-$(CONFIG_IPQ40XX_MDIO) += ipq40xx/ipq40xx_mdio.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)

@@ -32,7 +32,7 @@ static void usage(void);
 struct image_type_params *mkimage_tparams = NULL;
 
 /* parameters initialized by core will be used by the image type code */
-struct mkimage_params params = {
+struct image_tool_params params = {
 	.os = IH_OS_LINUX,
 	.arch = IH_ARCH_PPC,
 	.type = IH_TYPE_KERNEL,
@@ -150,20 +150,8 @@ main (int argc, char **argv)
 	int retval = 0;
 	struct image_type_params *tparams = NULL;
 
-	/* Init Kirkwood Boot image generation/list support */
-	init_kwb_image_type ();
-	/* Init Freescale imx Boot image generation/list support */
-	init_imx_image_type ();
-	/* Init FIT image generation/list support */
-	init_fit_image_type ();
-	/* Init TI OMAP Boot image generation/list support */
-	init_omap_image_type();
-	/* Init Default image generation/list support */
-	init_default_image_type ();
-	/* Init Davinci UBL support */
-	init_ubl_image_type();
-	/* Init Davinci AIS support */
-	init_ais_image_type();
+	/* Init all image generation/list support */
+	register_image_tool(mkimage_register);
 
 	params.cmdname = *argv;
 	params.addr = params.ep = 0;

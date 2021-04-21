@@ -14,6 +14,7 @@
 #define CMD_W25_SE		0x20	/* Sector (4K) Erase */
 #define CMD_W25_BE		0xd8	/* Block (64K) Erase */
 #define CMD_W25_CE		0xc7	/* Chip Erase */
+#define CMD_W25_EN4B            0xb7    /* Enter 4-byte mode */
 
 struct winbond_spi_flash_params {
 	uint16_t	id;
@@ -93,16 +94,41 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 	{
 		.id			= 0x4018,
 		.l2_page_size		= 8,
-		.pages_per_sector	= 16,
-		.sectors_per_block	= 16,
+		.pages_per_sector	= 256,
+		.sectors_per_block	= 1,
 		.nr_blocks		= 256,
 		.name			= "W25Q128",
 	},
+	{
+		.id                     = 0x6016,
+		.l2_page_size           = 8,
+		.pages_per_sector       = 256,
+		.sectors_per_block      = 1,
+		.nr_blocks              = 64,
+		.name                   = "W25Q32",
+	},
+	{
+		.id                     = 0x6017,
+		.l2_page_size           = 8,
+		.pages_per_sector       = 256,
+		.sectors_per_block      = 1,
+		.nr_blocks              = 128,
+		.name                   = "W25Q64",
+	},
+	{
+		.id                     = 0x4019,
+		.l2_page_size           = 8,
+		.pages_per_sector       = 256,
+		.sectors_per_block      = 1,
+		.nr_blocks              = 512,
+		.name                   = "W25Q256",
+	},
+
 };
 
 static int winbond_erase(struct spi_flash *flash, u32 offset, size_t len)
 {
-	return spi_flash_cmd_erase(flash, CMD_W25_SE, offset, len);
+	return spi_flash_cmd_erase(flash, CMD_W25_BE, offset, len);
 }
 
 struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
@@ -111,6 +137,7 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	struct spi_flash *flash;
 	unsigned int i;
 	unsigned page_size;
+	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(winbond_spi_flash_table); i++) {
 		params = &winbond_spi_flash_table[i];
@@ -144,6 +171,18 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	flash->size = page_size * params->pages_per_sector
 				* params->sectors_per_block
 				* params->nr_blocks;
+
+	flash->read_opcode  = CMD_READ_ARRAY_FAST;
+	flash->write_opcode = CMD_PAGE_PROGRAM;
+
+	if (flash->size > 0x1000000) {
+		/* Switch to 4 byte addressing mode */
+		ret = spi_flash_cmd(spi, CMD_W25_EN4B, NULL, 0);
+		if (ret) {
+			debug("SF: Setting 4 byte mode failed, moving to 3 byte mode\n");
+			flash->size = 0x1000000;
+		}
+	}
 
 	return flash;
 }

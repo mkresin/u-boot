@@ -64,25 +64,25 @@ all:	$(BINS)
 
 $(obj)imls:	$(obj)imls.o $(obj)crc32.o $(obj)image.o $(obj)md5.o \
 		$(obj)sha1.o $(LIBFDT_OBJS)
-	$(CC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^
-	$(STRIP) $@
+	@$(call compile,$(CC) $(HOSTCFLAGS) $(HOSTLDFLAGS) -o $@ $^)
+	@$(call compile,$(STRIP) $@)
 
 # Some files complain if compiled with -pedantic, use HOSTCFLAGS_NOPED
 $(obj)image.o: $(SRCTREE)/common/image.c
-	$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 $(obj)imls.o: $(SRCTREE)/tools/imls/imls.c
-	$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 # Some of the tool objects need to be accessed from outside the tools/imls directory
 $(obj)%.o: $(SRCTREE)/common/%.c
-	$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/%.c
-	$(CC) -g $(HOSTCFLAGS) -c -o $@ $<
+	@$(call compile,$(CC) -g $(HOSTCFLAGS) -c -o $@ $<)
 
 $(obj)%.o: $(SRCTREE)/lib/libfdt/%.c
-	$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<
+	@$(call compile,$(CC) -g $(HOSTCFLAGS_NOPED) -c -o $@ $<)
 
 clean:
 	rm -rf *.o imls

@@ -232,6 +232,8 @@ else
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
 endif
 
+CFLAGS += $(QSDK_CFLAGS)
+
 CFLAGS_SSP := $(call cc-option,-fno-stack-protector)
 CFLAGS += $(CFLAGS_SSP)
 # Some toolchains enable security related warning flags by default,
@@ -308,25 +310,45 @@ ALL_CFLAGS = $(CFLAGS) $(CFLAGS_$(BCURDIR)/$(@F)) $(CFLAGS_$(BCURDIR))
 EXTRA_CPPFLAGS = $(CPPFLAGS_$(BCURDIR)/$(@F)) $(CPPFLAGS_$(BCURDIR))
 ALL_CFLAGS += $(EXTRA_CPPFLAGS)
 
+RED=\e[1;31;40m
+GRN=\e[1;32;40m
+YLW=\e[1;33;40m
+CYN=\e[1;36;40m
+NRM=\e[0m
+
+ifeq ($(verbose),)
+define compile
+	echo -e "$(CYN)$(firstword $1)$(GRN) $(subst $(TOPDIR)/,,$(abspath $<))$(RED)"
+	$1
+	echo -ne "$(NRM)"
+endef
+else
+define compile
+	echo -e "$(CYN)$1$(RED)"
+	$1
+	echo -ne "$(NRM)"
+endef
+endif
+
 # The _DEP version uses the $< file target (for dependency generation)
 # See rules.mk
 EXTRA_CPPFLAGS_DEP = $(CPPFLAGS_$(BCURDIR)/$(addsuffix .o,$(basename $<))) \
 		$(CPPFLAGS_$(BCURDIR))
 $(obj)%.s:	%.S
-	$(CPP) $(ALL_AFLAGS) -o $@ $<
+	@$(call compile,$(CPP) $(ALL_AFLAGS) -o $@ $<)
 $(obj)%.o:	%.S
-	$(CC)  $(ALL_AFLAGS) -o $@ $< -c
+	@$(call compile,$(CC)  $(ALL_AFLAGS) -o $@ $< -c)
 $(obj)%.o:	%.c
-	$(CC)  $(ALL_CFLAGS) -o $@ $< -c
+	@$(call compile,$(CC)  $(ALL_CFLAGS) -o $@ $< -c)
 $(obj)%.i:	%.c
-	$(CPP) $(ALL_CFLAGS) -o $@ $< -c
+	@$(call compile,$(CPP) $(ALL_CFLAGS) -o $@ $< -c)
 $(obj)%.s:	%.c
-	$(CC)  $(ALL_CFLAGS) -o $@ $< -c -S
+	@$(call compile,$(CC)  $(ALL_CFLAGS) -o $@ $< -c -S)
 
 #########################################################################
 
 # If the list of objects to link is empty, just create an empty built-in.o
-cmd_link_o_target = $(if $(strip $1),\
+cmd_link_o_target = $(silent)$(if $(strip $1),\
 		      $(LD) $(LDFLAGS) -r -o $@ $1,\
 		      rm -f $@; $(AR) rcs $@ )
 

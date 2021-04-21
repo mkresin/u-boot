@@ -77,6 +77,9 @@ typedef	struct	global_data {
 	unsigned long	tlb_addr;
 #endif
 	const void	*fdt_blob;	/* Our device tree, NULL if none */
+#ifdef CONFIG_IPQ40XX_XIP
+	unsigned long	malloc_end;
+#endif
 	void		**jt;		/* jump table */
 	char		env_buf[32];	/* buffer for getenv() before reloc. */
 #if defined(CONFIG_POST) || defined(CONFIG_LOGBUFFER)

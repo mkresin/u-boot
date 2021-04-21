@@ -137,7 +137,7 @@ static const char *const mtdparts_default = NULL;
 
 /* copies of last seen 'mtdids', 'mtdparts' and 'partition' env variables */
 #define MTDIDS_MAXLEN		128
-#define MTDPARTS_MAXLEN		512
+#define MTDPARTS_MAXLEN		1024
 #define PARTITION_MAXLEN	16
 static char last_ids[MTDIDS_MAXLEN];
 static char last_parts[MTDPARTS_MAXLEN];
@@ -308,6 +308,7 @@ static int get_mtd_info(u8 type, u8 num, struct mtd_info **mtd)
 		printf("Device %s not found!\n", mtd_dev);
 		return 1;
 	}
+	put_mtd_device(*mtd);
 
 	return 0;
 }
@@ -1627,10 +1628,6 @@ static int parse_mtdids(const char *const ids)
 		}
 		p++;
 
-		/* check if requested device exists */
-		if (mtd_device_validate(type, num, &size) != 0)
-			return 1;
-
 		/* locate <mtd-id> */
 		mtd_id = p;
 		if ((p = strchr(mtd_id, ',')) != NULL) {
@@ -1642,6 +1639,13 @@ static int parse_mtdids(const char *const ids)
 		if (mtd_id_len == 0) {
 			printf("mtdids: no <mtd-id> identifier\n");
 			break;
+		}
+
+		/* check if requested device exists */
+		if (mtd_device_validate(type, num, &size) != 0) {
+			/* Skip adding invalid mtd to list entry */
+			ret = 0;
+			continue;
 		}
 
 		/* check if this id is already on the list */

@@ -28,7 +28,7 @@
 /* Required to obtain the getline prototype from stdio.h */
 #define _GNU_SOURCE
 
-#include "mkimage.h"
+#include "imagetool.h"
 #include <image.h>
 #include "imximage.h"
 
@@ -209,7 +209,7 @@ static void set_dcd_rst_v2(struct imx_header *imxhdr, uint32_t dcd_len,
 
 static void set_imx_hdr_v1(struct imx_header *imxhdr, uint32_t dcd_len,
 					struct stat *sbuf,
-					struct mkimage_params *params)
+					struct image_tool_params *params)
 {
 	imx_header_v1_t *hdr_v1 = &imxhdr->header.hdr_v1;
 	flash_header_v1_t *fhdr_v1 = &hdr_v1->fhdr;
@@ -252,7 +252,7 @@ static void set_imx_hdr_v1(struct imx_header *imxhdr, uint32_t dcd_len,
 
 static void set_imx_hdr_v2(struct imx_header *imxhdr, uint32_t dcd_len,
 					struct stat *sbuf,
-					struct mkimage_params *params)
+					struct image_tool_params *params)
 {
 	imx_header_v2_t *hdr_v2 = &imxhdr->header.hdr_v2;
 	flash_header_v2_t *fhdr_v2 = &hdr_v2->fhdr;
@@ -493,7 +493,7 @@ static int imximage_check_image_types(uint8_t type)
 }
 
 static int imximage_verify_header(unsigned char *ptr, int image_size,
-			struct mkimage_params *params)
+			struct image_tool_params *params)
 {
 	struct imx_header *imx_hdr = (struct imx_header *) ptr;
 
@@ -522,7 +522,7 @@ static void imximage_print_header(const void *ptr)
 }
 
 static void imximage_set_header(void *ptr, struct stat *sbuf, int ifd,
-				struct mkimage_params *params)
+				struct image_tool_params *params)
 {
 	struct imx_header *imxhdr = (struct imx_header *)ptr;
 	uint32_t dcd_len;
@@ -544,7 +544,7 @@ static void imximage_set_header(void *ptr, struct stat *sbuf, int ifd,
 	(*set_imx_hdr)(imxhdr, dcd_len, sbuf, params);
 }
 
-int imximage_check_params(struct mkimage_params *params)
+int imximage_check_params(struct image_tool_params *params)
 {
 	if (!params)
 		return CFG_INVALID;
@@ -582,5 +582,5 @@ static struct image_type_params imximage_params = {
 
 void init_imx_image_type(void)
 {
-	mkimage_register(&imximage_params);
+	register_image_type(&imximage_params);
 }

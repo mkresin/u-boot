@@ -81,5 +81,8 @@ int cleanup_before_linux(void)
 	 */
 	invalidate_dcache_all();
 
+
+	clear_l2cache_err();
+
 	return 0;
 }

@@ -138,6 +138,8 @@ struct ubi_volume_desc;
 int ubi_get_device_info(int ubi_num, struct ubi_device_info *di);
 void ubi_get_volume_info(struct ubi_volume_desc *desc,
 			 struct ubi_volume_info *vi);
+
+long long ubi_get_volume_size(char *volume);
 struct ubi_volume_desc *ubi_open_volume(int ubi_num, int vol_id, int mode);
 struct ubi_volume_desc *ubi_open_volume_nm(int ubi_num, const char *name,
 					   int mode);

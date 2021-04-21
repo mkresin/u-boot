@@ -25,7 +25,7 @@
 /* Required to obtain the getline prototype from stdio.h */
 #define _GNU_SOURCE
 
-#include "mkimage.h"
+#include "imagetool.h"
 #include <image.h>
 #include "kwbimage.h"
 
@@ -73,7 +73,7 @@ static int lineno = -1;
 /*
  * Report Error if xflag is set in addition to default
  */
-static int kwbimage_check_params (struct mkimage_params *params)
+static int kwbimage_check_params (struct image_tool_params *params)
 {
 	if (!strlen (params->imagename)) {
 		printf ("Error:%s - Configuration file not specified, "
@@ -307,7 +307,7 @@ INVL_CMD:
 }
 
 static void kwbimage_set_header (void *ptr, struct stat *sbuf, int ifd,
-				struct mkimage_params *params)
+				struct image_tool_params *params)
 {
 	struct kwb_header *hdr = (struct kwb_header *)ptr;
 	bhr_t *mhdr = &hdr->kwb_hdr;
@@ -341,7 +341,7 @@ static void kwbimage_set_header (void *ptr, struct stat *sbuf, int ifd,
 }
 
 static int kwbimage_verify_header (unsigned char *ptr, int image_size,
-			struct mkimage_params *params)
+			struct image_tool_params *params)
 {
 	struct kwb_header *hdr = (struct kwb_header *)ptr;
 	bhr_t *mhdr = &hdr->kwb_hdr;
@@ -401,5 +401,5 @@ static struct image_type_params kwbimage_params = {
 
 void init_kwb_image_type (void)
 {
-	mkimage_register (&kwbimage_params);
+	register_image_type (&kwbimage_params);
 }

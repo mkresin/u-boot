@@ -24,6 +24,8 @@
 include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libi2c.o
+CPPFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+CFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
 
 COBJS-$(CONFIG_BFIN_TWI_I2C) += bfin-twi_i2c.o
 COBJS-$(CONFIG_DRIVER_DAVINCI_I2C) += davinci_i2c.o
@@ -46,6 +48,8 @@ COBJS-$(CONFIG_TSI108_I2C) += tsi108_i2c.o
 COBJS-$(CONFIG_U8500_I2C) += u8500_i2c.o
 COBJS-$(CONFIG_SH_I2C) += sh_i2c.o
 COBJS-$(CONFIG_SH_SH7734_I2C) += sh_sh7734_i2c.o
+COBJS-$(CONFIG_IPQ806X_I2C) += ipq_i2c.o
+COBJS-$(CONFIG_IPQ40XX_I2C) += ipq40xx_i2c.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)

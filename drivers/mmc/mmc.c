@@ -275,7 +275,7 @@ struct mmc *find_mmc_device(int dev_num)
 	return NULL;
 }
 
-static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt)
+static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt, int arg)
 {
 	struct mmc_cmd cmd;
 	ulong end;
@@ -313,7 +313,7 @@ static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt)
 		goto err_out;
 
 	cmd.cmdidx = MMC_CMD_ERASE;
-	cmd.cmdarg = SECURE_ERASE;
+	cmd.cmdarg = arg;
 	cmd.resp_type = MMC_RSP_R1b;
 
 	err = mmc_send_cmd(mmc, &cmd, NULL);
@@ -333,33 +333,69 @@ mmc_berase(int dev_num, unsigned long start, lbaint_t blkcnt)
 	int err = 0;
 	struct mmc *mmc = find_mmc_device(dev_num);
 	lbaint_t blk = 0, blk_r = 0;
-	int timeout = 1000;
+	int timeout = 2000;
+	int arg = SECURE_ERASE;
 
 	if (!mmc)
 		return -1;
 
-	if ((start % mmc->erase_grp_size) || (blkcnt % mmc->erase_grp_size))
-		printf("\n\nCaution! Your devices Erase group is 0x%x\n"
-			"The erase range would be change to 0x%lx~0x%lx\n\n",
-		       mmc->erase_grp_size, start & ~(mmc->erase_grp_size - 1),
-		       ((start + blkcnt + mmc->erase_grp_size)
-		       & ~(mmc->erase_grp_size - 1)) - 1);
+	if (!(mmc->sec_feature_support & EXT_CSD_SEC_ER_EN)) {
+		return -1;
+	}
 
-	while (blk < blkcnt) {
-		blk_r = ((blkcnt - blk) > mmc->erase_grp_size) ?
-			mmc->erase_grp_size : (blkcnt - blk);
-		err = mmc_erase_t(mmc, start + blk, blk_r);
+	if ((start % mmc->erase_grp_size) || (blkcnt % mmc->erase_grp_size)) {
+		if (mmc->sec_feature_support & EXT_CSD_SEC_GB_CL_EN) {
+			arg = MMC_SECURE_TRIM1_ARG;
+		} else {
+			printf("\n\nCaution! Your devices Erase group is 0x%x\n"
+				"The erase range would be change to 0x%lx~0x%lx\n\n",
+				mmc->erase_grp_size, start & ~(mmc->erase_grp_size - 1),
+				((start + blkcnt + mmc->erase_grp_size)
+				& ~(mmc->erase_grp_size - 1)) - 1);
+		}
+	}
+
+	if (arg != MMC_SECURE_TRIM1_ARG) {
+		while (blk < blkcnt) {
+
+			blk_r = ((blkcnt - blk) > mmc->erase_grp_size) ?
+				mmc->erase_grp_size : (blkcnt - blk);
+
+			err = mmc_erase_t(mmc, start + blk, blk_r, arg);
+
+			if (err)
+				break;
+
+			blk += blk_r;
+
+			/* Waiting for the ready status */
+			if (mmc_send_status(mmc, timeout))
+				return 0;
+		}
+
+		return blk;
+	} else {
+		err = mmc_erase_t(mmc, start, blkcnt, arg);
+
 		if (err)
-			break;
-
-		blk += blk_r;
+			return -1;
 
 		/* Waiting for the ready status */
 		if (mmc_send_status(mmc, timeout))
-			return 0;
-	}
+			return -1;
 
-	return blk;
+		arg = MMC_SECURE_TRIM2_ARG;
+		err = mmc_erase_t(mmc, start, blkcnt, arg);
+
+		if (err)
+			return -1;
+
+		/* Waiting for the ready status */
+		if (mmc_send_status(mmc, timeout)) {
+			return 0;
+		}
+		return  blkcnt;
+	}
 }
 
 static ulong
@@ -1164,6 +1200,9 @@ int mmc_startup(struct mmc *mmc)
 		/* store the partition info of emmc */
 		if (ext_csd[EXT_CSD_PARTITIONING_SUPPORT] & PART_SUPPORT)
 			mmc->part_config = ext_csd[EXT_CSD_PART_CONF];
+
+		if(ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT])
+			mmc->sec_feature_support = ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT];
 	}
 
 	if (IS_SD(mmc))

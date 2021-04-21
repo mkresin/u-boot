@@ -140,12 +140,16 @@ extern char *env_name_spec;
 
 #define ENV_SIZE (CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
 
+#ifndef CONFIG_ENV_SIZE_MAX
+#define CONFIG_ENV_SIZE_MAX CONFIG_ENV_SIZE
+#endif
+
 typedef struct environment_s {
 	uint32_t	crc;		/* CRC32 over data bytes	*/
 #ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
 	unsigned char	flags;		/* active/obsolete flags	*/
 #endif
-	unsigned char	data[ENV_SIZE]; /* Environment data		*/
+	unsigned char	data[CONFIG_ENV_SIZE_MAX - ENV_HEADER_SIZE]; /* Environment data		*/
 } env_t;
 
 #ifdef ENV_IS_EMBEDDED

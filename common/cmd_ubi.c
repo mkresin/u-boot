@@ -313,6 +313,17 @@ static int ubi_volume_write(char *volume, void *buf, size_t size)
 	return 0;
 }
 
+long long ubi_get_volume_size(char *volume)
+{
+	struct ubi_volume *vol;
+
+	vol = ubi_find_volume(volume);
+	if (vol == NULL)
+		return -ENODEV;
+
+	return vol->used_bytes;
+}
+
 static int ubi_volume_read(char *volume, char *buf, size_t size)
 {
 	int err, lnum, off, len, tbuf_size;

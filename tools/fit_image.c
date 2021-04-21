@@ -1,4 +1,5 @@
 /*
+ * (C) Copyright 2014 The Linux Foundation. All rights reserved.
  * (C) Copyright 2008 Semihalf
  *
  * (C) Copyright 2000-2004
@@ -27,6 +28,7 @@
  * MA 02111-1307 USA
  */
 
+#include "imagetool.h"
 #include "mkimage.h"
 #include <image.h>
 #include <u-boot/crc.h>
@@ -34,7 +36,7 @@
 static image_header_t header;
 
 static int fit_verify_header (unsigned char *ptr, int image_size,
-			struct mkimage_params *params)
+			struct image_tool_params *params)
 {
 	return fdt_check_header ((void *)ptr);
 }
@@ -59,7 +61,7 @@ static int fit_check_image_types (uint8_t type)
  * returns:
  *     only on success, otherwise calls exit (EXIT_FAILURE);
  */
-static int fit_handle_file (struct mkimage_params *params)
+static int fit_handle_file (struct image_tool_params *params)
 {
 	char tmpfile[MKIMAGE_MAX_TMPFILE_LEN];
 	char cmd[MKIMAGE_MAX_DTC_CMDLINE_LEN];
@@ -155,7 +157,92 @@ static int fit_handle_file (struct mkimage_params *params)
 	return (EXIT_SUCCESS);
 }
 
-static int fit_check_params (struct mkimage_params *params)
+static int fit_save_datafile (struct image_tool_params *params,
+				const void *file_data, size_t file_size)
+{
+	int dfd;
+	const char *datafile = params->outfile;
+
+	dfd = open(datafile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY,
+		   S_IRUSR | S_IWUSR);
+	if (dfd < 0) {
+		fprintf(stderr, "%s: Can't open \"%s\": %s\n",
+			params->cmdname, datafile, strerror(errno));
+		return (EXIT_FAILURE);
+	}
+
+	if (write(dfd, (void *)file_data, file_size) != (ssize_t)file_size) {
+		fprintf(stderr, "%s: Write error on \"%s\": %s\n",
+			params->cmdname, datafile, strerror(errno));
+		close(dfd);
+		return (EXIT_FAILURE);
+	}
+
+	close(dfd);
+
+	return (EXIT_SUCCESS);
+}
+
+static int fit_extract_datafile (void *ptr, struct image_tool_params *params)
+{
+	const void *fit = (const void *) ptr;
+	int images_noffset, noffset, ndepth;
+	const void *file_data = NULL;
+	size_t file_size;
+
+	images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
+
+	/* check if ptr has a valid blob */
+	if (fdt_check_header (fit)) {
+		fprintf (stderr, "%s: Invalid FIT blob\n", params->cmdname);
+		unlink (params->imagefile);
+		return (EXIT_FAILURE);
+	}
+
+	ndepth = 0;
+	noffset = fdt_next_node(fit, images_noffset, &ndepth);
+	while (noffset >= 0 && ndepth > 0) {
+		const char *name = fdt_get_name(fit, noffset, NULL);
+
+		if (ndepth != 1)
+			goto next_node;
+
+		if (strcmp(params->datafile, name)) {
+			/* This is not the image you're looking for... */
+			goto next_node;
+		}
+
+		if (!fit_image_check_hashes(fit, noffset)) {
+			fprintf(stderr,
+				"%s: Invalid hash in image %s, aborting\n",
+				params->cmdname, params->datafile);
+			unlink (params->imagefile);
+			return (EXIT_FAILURE);
+		}
+
+		if (fit_image_get_data(fit, noffset, &file_data, &file_size)) {
+			fprintf(stderr,
+				"%s: Can't read data in image %s, aborting\n",
+				params->cmdname, params->datafile);
+			unlink(params->imagefile);
+			return (EXIT_FAILURE);
+		}
+
+		break;
+next_node:
+		noffset = fdt_next_node(fit, noffset, &ndepth);
+	}
+
+	if (!file_data) {
+		fprintf(stderr, "%s: Can't find image name %s\n",
+			params->cmdname, params->datafile);
+		return (EXIT_FAILURE);
+	}
+
+	return fit_save_datafile(params, file_data, file_size);
+}
+
+static int fit_check_params (struct image_tool_params *params)
 {
 	return	((params->dflag && (params->fflag || params->lflag)) ||
 		(params->fflag && (params->dflag || params->lflag)) ||
@@ -171,10 +258,11 @@ static struct image_type_params fitimage_params = {
 	.check_image_type = fit_check_image_types,
 	.fflag_handle = fit_handle_file,
 	.set_header = NULL,	/* FIT images use DTB header */
+	.extract_datafile = fit_extract_datafile,
 	.check_params = fit_check_params,
 };
 
 void init_fit_image_type (void)
 {
-	mkimage_register (&fitimage_params);
+	register_image_type (&fitimage_params);
 }

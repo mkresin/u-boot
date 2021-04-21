@@ -31,6 +31,10 @@ COBJS	+= cache_v7.o
 
 COBJS	+= cpu.o
 COBJS	+= syslib.o
+COBJS-y	+= cmd_bootipq.o
+ifeq ($(CONFIG_IPQ_APPSBL_DLOAD),y)
+	COBJS-y += cmd_dumpipq_data.o
+endif
 
 SRCS	:= $(START:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))

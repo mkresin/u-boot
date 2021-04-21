@@ -53,7 +53,7 @@
 
 #if defined(CONFIG_FIT)
 #include <u-boot/md5.h>
-#include <sha1.h>
+#include <u-boot-sha1.h>
 
 static int fit_check_ramdisk(const void *fit, int os_noffset,
 		uint8_t arch, int verify);
@@ -2369,7 +2369,7 @@ int fit_image_get_load(const void *fit, int noffset, ulong *load)
 	const uint32_t *data;
 
 	data = fdt_getprop(fit, noffset, FIT_LOAD_PROP, &len);
-	if (data == NULL) {
+	if ((data == NULL) || (!*data)) {
 		fit_get_debug(fit, noffset, FIT_LOAD_PROP, len);
 		return -1;
 	}
