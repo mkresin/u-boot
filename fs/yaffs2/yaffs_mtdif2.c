@@ -18,7 +18,7 @@
 #include "asm/errno.h"
 
 const char *yaffs_mtdif2_c_version =
-    "$Id: yaffs_mtdif2.c,v 1.17 2007/02/14 01:09:06 wookey Exp $";
+    "$Id: yaffs_mtdif2.c,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $";
 
 #include "yportenv.h"
 
@@ -60,7 +60,11 @@ int nandmtd2_WriteChunkWithTagsToNAND(yaffs_Device * dev, int chunkInNAND,
 
 	if (data) {
 		ops.mode = MTD_OOB_AUTO;
+#ifdef YAFFS_IGNORE_TAGS_ECC	
+		ops.ooblen = sizeof(pt.t);
+#else
 		ops.ooblen = sizeof(pt);
+#endif
 		ops.len = dev->nDataBytesPerChunk;
 		ops.ooboffs = 0;
 		ops.datbuf = (__u8 *)data;
@@ -126,8 +130,18 @@ int nandmtd2_ReadChunkWithTagsFromNAND(yaffs_Device * dev, int chunkInNAND,
 				&dummy, data);
 	else if (tags) {
 		ops.mode = MTD_OOB_AUTO;
+#ifdef YAFFS_IGNORE_TAGS_ECC	
+		ops.ooblen = sizeof(pt.t);
+		ops.len = data ? dev->nDataBytesPerChunk : sizeof(pt.t);
+		
+
+		
+#else
 		ops.ooblen = sizeof(pt);
 		ops.len = data ? dev->nDataBytesPerChunk : sizeof(pt);
+
+
+#endif
 		ops.ooboffs = 0;
 		ops.datbuf = data;
 		ops.oobbuf = dev->spareBuffer;

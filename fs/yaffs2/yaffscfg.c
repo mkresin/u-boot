@@ -165,7 +165,7 @@ int yaffs_StartUp(void)
 	flashDev->nReservedBlocks = 5;
 //  flashDev->nShortOpCaches = (options.no_cache) ? 0 : 10;
 	flashDev->nShortOpCaches = 10; // Use caches
-	flashDev->useNANDECC = 0; // do not use YAFFS's ECC
+	flashDev->useNANDECC = 1; // do not use YAFFS's ECC
 
 	if (yaffsVersion == 2)
 	{
@@ -182,10 +182,12 @@ int yaffs_StartUp(void)
 		flashDev->nDataBytesPerChunk = mtd->oobblock;
 		flashDev->nChunksPerBlock = mtd->erasesize / mtd->oobblock;
 #endif
-		nBlocks = mtd->size / mtd->erasesize;
+//		nBlocks = mtd->size / mtd->erasesize;
+		nBlocks=lldiv(mtd->size,mtd->erasesize);
 
 		flashDev->nCheckpointReservedBlocks = 10;
-		flashDev->startBlock = 0;
+		//eric : which block is yaffs start 
+		flashDev->startBlock = 240;//must modify hear 
 		flashDev->endBlock = nBlocks - 1;
 	}
 	else
@@ -267,6 +269,7 @@ void read_a_file(char *fn)
 
 void cmd_yaffs_mount(char *mp)
 {
+printk("yaffs_StartUp\n");
 	yaffs_StartUp();
 	int retval = yaffs_mount(mp);
 	if( retval != -1)
@@ -338,7 +341,7 @@ void cmd_yaffs_mwrite_file(char *fn, char *addr, int size)
 	{
 		printf("Error opening file: %d\n", outh);
 	}
-
+printk("yaffs_write\n");
 	yaffs_write(outh,addr,size);
 
 	yaffs_close(outh);

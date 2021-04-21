@@ -1,0 +1,1 @@
+/home/chris_zhao/XGS_1010/loader/u-boot-2011.12/../../sdk/system/linux/linux-3.18.24.x/include/linux/mtd/rtk_flash_common.h

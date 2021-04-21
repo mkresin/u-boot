@@ -35,12 +35,12 @@ COBJS-y	+= nand_spl_load.o
 endif
 else
 COBJS-y += nand.o
-COBJS-y += nand_bbt.o
+#COBJS-y += nand_bbt.o
 COBJS-y += nand_ids.o
 COBJS-y += nand_util.o
 endif
 COBJS-y += nand_ecc.o
-COBJS-y += nand_base.o
+#COBJS-y += nand_base.o
 
 COBJS-$(CONFIG_NAND_ATMEL) += atmel_nand.o
 COBJS-$(CONFIG_DRIVER_NAND_BFIN) += bfin_nand.o
@@ -62,6 +62,22 @@ COBJS-$(CONFIG_NAND_S3C64XX) += s3c64xx.o
 COBJS-$(CONFIG_NAND_SPEAR) += spr_nand.o
 COBJS-$(CONFIG_NAND_OMAP_GPMC) += omap_gpmc.o
 COBJS-$(CONFIG_NAND_PLAT) += nand_plat.o
+COBJS-$(CONFIG_NAND_LUNA) += luna_nand.o
+
+else
+
+# If NOT def CONFIG_CMD_NAND, but MTD Driver is Enabled on SPI related platform
+
+ifdef CONFIG_MTD_DEVICE
+ifdef CONFIG_MTD_PARTITIONS
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= nand_ids.o
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= nand_base.o
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= nand_bbt.o
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= nand_ecc.o
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= nand_util.o
+endif
+endif
+
 endif
 
 COBJS	:= $(COBJS-y)

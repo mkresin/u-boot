@@ -128,7 +128,7 @@ struct mtd_info {
 	 * Any driver registering a struct mtd_info must ensure a writesize of
 	 * 1 or larger.
 	 */
-	u_int32_t writesize;
+	u_int32_t writesize; //rtk,page size
 
 	u_int32_t oobsize;   /* Amount of OOB data per block (e.g. 16) */
 	u_int32_t oobavail;  /* Available OOB bytes per block */

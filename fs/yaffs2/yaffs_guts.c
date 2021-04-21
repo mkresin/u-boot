@@ -15,7 +15,7 @@
 #include <common.h>
 
 const char *yaffs_guts_c_version =
-    "$Id: yaffs_guts.c,v 1.52 2007/10/16 00:45:05 charles Exp $";
+    "$Id: yaffs_guts.c,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $";
 
 #include "yportenv.h"
 #include "linux/stat.h"

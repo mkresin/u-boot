@@ -40,7 +40,7 @@ DEPS := $(basename $(patsubst %,$(obj).depend.%,$(PWD_SRCS)))
 #	3. Add in the HOSTSRCS
 $(obj).depend:	$(src)Makefile $(TOPDIR)/config.mk $(DEPS) $(OTHER_SRCS) \
 		$(HOSTSRCS)
-	cat /dev/null $(DEPS) >$@
+	@cat /dev/null $(DEPS) >$@
 	@for f in $(OTHER_SRCS); do \
 		g=`basename $$f | sed -e 's/\(.*\)\.[[:alnum:]_]/\1.o/'`; \
 		$(CC) -M $(CPPFLAGS) -MQ $(obj)$$g $$f >> $@ ; \
@@ -50,7 +50,7 @@ $(obj).depend:	$(src)Makefile $(TOPDIR)/config.mk $(DEPS) $(OTHER_SRCS) \
 		$(HOSTCC) -M $(HOSTCPPFLAGS) -MQ $(obj)$$g $$f >> $@ ; \
 	done
 
-MAKE_DEPEND = $(CC) -M $(CPPFLAGS) $(EXTRA_CPPFLAGS_DEP) \
+MAKE_DEPEND = $(COMPILE_PROMPT) $(CC) -M $(CPPFLAGS) $(EXTRA_CPPFLAGS_DEP) \
 		-MQ $(addsuffix .o,$(obj)$(basename $<)) $< >$@
 
 
@@ -61,8 +61,8 @@ $(obj).depend.%:	%.S
 	$(MAKE_DEPEND)
 
 $(HOSTOBJS): $(obj)%.o: %.c
-	$(HOSTCC) $(HOSTCFLAGS) $(HOSTCFLAGS_$(@F)) $(HOSTCFLAGS_$(BCURDIR)) -o $@ $< -c
+	$(COMPILE_PROMPT) $(HOSTCC) $(HOSTCFLAGS) $(HOSTCFLAGS_$(@F)) $(HOSTCFLAGS_$(BCURDIR)) -o $@ $< -c
 $(NOPEDOBJS): $(obj)%.o: %.c
-	$(HOSTCC) $(HOSTCFLAGS_NOPED) $(HOSTCFLAGS_$(@F)) $(HOSTCFLAGS_$(BCURDIR)) -o $@ $< -c
+	$(COMPILE_PROMPT) $(HOSTCC) $(HOSTCFLAGS_NOPED) $(HOSTCFLAGS_$(@F)) $(HOSTCFLAGS_$(BCURDIR)) -o $@ $< -c
 
 #########################################################################

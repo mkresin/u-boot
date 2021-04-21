@@ -23,6 +23,28 @@
 
 #########################################################################
 
+# look and feel parameters
+ifeq ($(QUIET), 0)
+COMPILE_PROMPT :=
+LINK_PROMPT    :=
+BUILD_PROMPT   :=
+STRIP_PROMPT   :=
+OBJCPY_PROMPT  :=
+OBJDMP_PROMPT  :=
+MAKE_PROMPT    :=
+CMDLNK_PROMPT  :=
+else
+COMPILE_PROMPT = @echo "[CC] $@" &&
+LINK_PROMPT    = @echo "[LD] $@" &&
+BUILD_PROMPT   = @echo "[BUILD] $@" &&
+STRIP_PROMPT   = @echo "[STRIP] $@" &&
+OBJCPY_PROMPT  = @echo "[OBJCPY] $@" &&
+OBJDMP_PROMPT  = @echo "[OBJDUMP] $@" &&
+MAKE_PROMPT    = @echo "[MAKE] $@" &&
+CMDLNK_PROMPT  = @echo "[PACK] $@" &&
+MAKE          := $(MAKE) --no-print-directory
+endif
+
 ifeq ($(CURDIR),$(SRCTREE))
 dir :=
 else
@@ -186,7 +208,7 @@ OBJCFLAGS += --gap-fill=0xff
 gccincdir := $(shell $(CC) -print-file-name=include)
 
 CPPFLAGS := $(DBGFLAGS) $(OPTFLAGS) $(RELFLAGS)		\
-	-D__KERNEL__
+	-D__KERNEL__ -D__UBOOT__ -D__BOOTLOADER__ -Werror
 
 # Enable garbage collection of un-used sections for SPL
 ifeq ($(CONFIG_SPL_BUILD),y)
@@ -217,6 +239,9 @@ endif
 CPPFLAGS += -I$(TOPDIR)/include
 CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\
 	-isystem $(gccincdir) -pipe $(PLATFORM_CPPFLAGS)
+
+CPPFLAGS += -I$(TOPDIR)/board/Realtek/switch -I$(TOPDIR)/board/Realtek/include
+CPPFLAGS += -I$(TOPDIR)/board/Realtek/switch/sdk/system/include -I$(TOPDIR)/board/Realtek/switch/sdk/include  -I$(TOPDIR)/board/Realtek/switch/sdk/system/linux
 
 ifdef BUILD_TAG
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes \
@@ -302,21 +327,56 @@ ALL_CFLAGS += $(EXTRA_CPPFLAGS)
 EXTRA_CPPFLAGS_DEP = $(CPPFLAGS_$(BCURDIR)/$(addsuffix .o,$(basename $<))) \
 		$(CPPFLAGS_$(BCURDIR))
 $(obj)%.s:	%.S
-	$(CPP) $(ALL_AFLAGS) -o $@ $<
+	$(COMPILE_PROMPT) $(CPP) $(ALL_AFLAGS) -o $@ $<
 $(obj)%.o:	%.S
-	$(CC)  $(ALL_AFLAGS) -o $@ $< -c
+	$(COMPILE_PROMPT) $(CC)  $(ALL_AFLAGS) -o $@ $< -c
 $(obj)%.o:	%.c
-	$(CC)  $(ALL_CFLAGS) -o $@ $< -c
+	$(COMPILE_PROMPT) $(CC)  $(ALL_CFLAGS) -o $@ $< -c
 $(obj)%.i:	%.c
-	$(CPP) $(ALL_CFLAGS) -o $@ $< -c
+	$(COMPILE_PROMPT) $(CPP) $(ALL_CFLAGS) -o $@ $< -c
 $(obj)%.s:	%.c
-	$(CC)  $(ALL_CFLAGS) -o $@ $< -c -S
+	$(COMPILE_PROMPT) $(CC)  $(ALL_CFLAGS) -o $@ $< -c -S
 
 #########################################################################
 
 # If the list of objects to link is empty, just create an empty built-in.o
-cmd_link_o_target = $(if $(strip $1),\
+cmd_link_o_target = $(CMDLNK_PROMPT) $(if $(strip $1),\
 		      $(LD) $(LDFLAGS) -r -o $@ $1,\
 		      rm -f $@; $(AR) rcs $@ )
+
+get_otto_file = echo -n "[OTTO] Verifying $(abspath $1)... "; \
+	$(if $(wildcard $2), \
+		if [ -z $1 ]; then echo "Missing destination operand!"; exit 1; fi; \
+		cmp $2 $1 > /dev/null 2>&1; \
+		if [ "$$?" -ne 0 ]; then \
+			echo -n "synchronizing... "; \
+			rm -rf $1; \
+			cp -r $2 $1; \
+			chmod 544 $1; \
+		fi, \
+		$(if $(wildcard $1), \
+			echo "", \
+			echo "FAIL!"; exit 1 \
+		) \
+	); \
+	echo "done"; \
+
+get_otto_dir = echo -n "[OTTO] Verifying $(abspath $1)... "; \
+	$(if $(wildcard $2), \
+		if [ -z $1 ]; then echo "Missing destination operand!"; exit 1; fi; \
+		diff -r $1 $2 --exclude *.o > /dev/null 2>&1; \
+		if [ "$$?" -ne 0 ]; then \
+			echo -n "synchronizing... "; \
+			rm -rf $1; \
+			cp -r $2 $1; \
+                        rm -rf `find $1 -name '\.svn'`;\
+			chmod 444 $1/*; \
+		fi, \
+		$(if $(wildcard $1), \
+			echo "", \
+			echo "FAIL!"; exit 1 \
+		) \
+	); \
+	echo "done"; \
 
 #########################################################################

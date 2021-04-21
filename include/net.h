@@ -120,6 +120,7 @@ extern int eth_getenv_enetaddr_by_index(const char *base_name, int index,
 extern int usb_eth_initialize(bd_t *bi);
 extern int eth_init(bd_t *bis);			/* Initialize the device */
 extern int eth_send(volatile void *packet, int length);	   /* Send a packet */
+extern int eth_recv(unsigned char **pkt, int max_len,int *port); /* Receive a packet*/
 
 #ifdef CONFIG_API
 extern int eth_receive(volatile void *packet, int length); /* Receive a packet*/
@@ -421,6 +422,7 @@ extern void	NetSetHandler(rxhand_f *);	/* Set RX packet handler	*/
 extern void net_set_icmp_handler(rxhand_icmp_f *f); /* Set ICMP RX handler */
 extern void	NetSetTimeout(ulong, thand_f *);/* Set timeout handler		*/
 
+extern void NetInit(void);
 /* Transmit "NetTxPacket" */
 extern void	NetSendPacket(volatile uchar *, int);
 

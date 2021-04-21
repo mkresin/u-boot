@@ -61,7 +61,7 @@ env_t *env_ptr = &environment;
 #elif defined(CONFIG_NAND_ENV_DST)
 env_t *env_ptr = (env_t *)CONFIG_NAND_ENV_DST;
 #else /* ! ENV_IS_EMBEDDED */
-env_t *env_ptr;
+env_t *env_ptr=NULL;
 #endif /* ENV_IS_EMBEDDED */
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -376,7 +376,7 @@ void env_relocate_spec(void)
 		else /* flags are equal - almost impossible */
 			gd->env_valid = 1;
 	}
-
+	if(env_ptr!=NULL)
 	free(env_ptr);
 
 	if (gd->env_valid == 1)

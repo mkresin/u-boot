@@ -304,6 +304,7 @@ struct nand_hw_control {
  * @steps:	number of ecc steps per page
  * @size:	data bytes per ecc step
  * @bytes:	ecc bytes per step
+ * @strength:	max number of correctible bits per ECC step
  * @total:	total number of ecc bytes per page
  * @prepad:	padding information for syndrome based ecc generators
  * @postpad:	padding information for syndrome based ecc generators
@@ -325,6 +326,7 @@ struct nand_ecc_ctrl {
 	int			size;
 	int			bytes;
 	int			total;
+	int			strength;
 	int			prepad;
 	int			postpad;
 	struct nand_ecclayout	*layout;
@@ -456,17 +458,29 @@ struct nand_chip {
 	int		(*errstat)(struct mtd_info *mtd, struct nand_chip *this, int state, int status, int page);
 	int		(*write_page)(struct mtd_info *mtd, struct nand_chip *chip,
 				      const uint8_t *buf, int page, int cached, int raw);
+//ericchung add
+	void (*read_id) (struct mtd_info *mtd, unsigned char id[5], int chip_sel);
+	int (*read_ecc_page) (struct mtd_info *mtd, u16 chipnr, unsigned int page, u_char *data, 
+										u_char *oob_buf);
+	int (*read_oob) (struct mtd_info *mtd, u16 chipnr, int page, int len, u_char *buf);
+	int (*write_ecc_page) (struct mtd_info *mtd, u16 chipnr, unsigned int page, const u_char *data,
+											const u_char *oob_buf, int isBBT);										
+	int (*write_oob) (struct mtd_info *mtd, u16 chipnr, int page, int len, const u_char *buf);
+	int (*erase_block) (struct mtd_info *mtd, u16 chipnr, int page);
+	
 
 	int		chip_delay;
 	unsigned int	options;
 
 	int		page_shift;
+	int		chunk_shift;
+	
 	int		phys_erase_shift;
 	int		bbt_erase_shift;
 	int		chip_shift;
 	int		numchips;
 	uint64_t	chipsize;
-	int		pagemask;
+	int		pagemask;//page number
 	int		pagebuf;
 	int		subpagesize;
 	uint8_t		cellinfo;
@@ -494,6 +508,18 @@ struct nand_chip {
 	struct nand_bbt_descr	*bbt_md;
 
 	struct nand_bbt_descr	*badblock_pattern;
+
+//rtk nand 	
+	u_char oob_shift; //rtk add
+	unsigned int oob_size;	//spare area size
+	unsigned int ppb;	//(chunk) page per block
+	unsigned int block_num;
+	unsigned int page_num;
+	unsigned long	device_size;
+	u_char		*g_databuf;
+	u_char		*g_oobbuf;
+//	__u32 *erase_page_flag;
+	unsigned char active_chip;
 
 	void		*priv;
 };
@@ -542,7 +568,8 @@ struct nand_manufacturers {
 	char * name;
 };
 
-extern const struct nand_flash_dev nand_flash_ids[];
+//extern const struct nand_flash_dev nand_flash_ids[];
+extern struct nand_flash_dev nand_flash_ids[];
 extern const struct nand_manufacturers nand_manuf_ids[];
 
 extern int nand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd);

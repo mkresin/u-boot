@@ -3,7 +3,7 @@
  * Copyright (C) 2004 by FS Forth-Systeme GmbH.
  * All rights reserved.
  *
- * $Id: ns9750_eth.h,v 1.2 2004/02/24 13:25:39 mpietrek Exp $
+ * $Id: lxt971a.h,v 1.1.1.1 2012/02/01 07:50:42 yachang Exp $
  * @Author: Markus Pietrek
  * @References: [1] NS9750 Hardware Reference, December 2003
  *              [2] Intel LXT971 Datasheet #249414 Rev. 02

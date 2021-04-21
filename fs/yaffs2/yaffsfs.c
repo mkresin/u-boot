@@ -32,7 +32,7 @@
 #endif
 
 
-const char *yaffsfs_c_version="$Id: yaffsfs.c,v 1.18 2007/07/18 19:40:38 charles Exp $";
+const char *yaffsfs_c_version="$Id: yaffsfs.c,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $";
 
 // configurationList is the list of devices that are supported
 static yaffsfs_DeviceConfiguration *yaffsfs_configurationList;

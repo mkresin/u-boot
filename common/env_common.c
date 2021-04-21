@@ -30,6 +30,8 @@
 #include <linux/stddef.h>
 #include <search.h>
 #include <errno.h>
+#include <soc.h>
+#include <pblr.h>
 #include <malloc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -41,6 +43,13 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MK_STR(x)	XMK_STR(x)
 
 const uchar default_environment[] = {
+#if defined(CONFIG_BOARDVERSION)
+	"boardversion="	CONFIG_BOARDVERSION		"\0"
+#endif
+#if defined(CONFIG_BOARDMODEL)
+	"boardmodel="	CONFIG_BOARDMODEL		"\0"
+#endif
+    "ledModeInitSkip=0\0"
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
 #endif
@@ -53,12 +62,15 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_NFSBOOTCOMMAND
 	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
 #endif
-#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
+#if defined(CONFIG_BOOTDELAY)
 	"bootdelay="	MK_STR(CONFIG_BOOTDELAY)	"\0"
 #endif
-#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-	"baudrate="	MK_STR(CONFIG_BAUDRATE)		"\0"
-#endif
+/* Assign the baudrate to the default value at init_baudrate()
+   to fix br@default and br@tcl/soc_t mismatch issue
+ */
+//#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
+//	"baudrate="	MK_STR(CONFIG_BAUDRATE)		"\0"
+//#endif
 #ifdef	CONFIG_LOADS_ECHO
 	"loads_echo="	MK_STR(CONFIG_LOADS_ECHO)	"\0"
 #endif
@@ -101,6 +113,9 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_NETMASK
 	"netmask="	MK_STR(CONFIG_NETMASK)		"\0"
 #endif
+#ifdef	CONFIG_BAUDRATE
+	"baudrate="	MK_STR(CONFIG_BAUDRATE)		"\0"
+#endif
 #ifdef	CONFIG_HOSTNAME
 	"hostname="	MK_STR(CONFIG_HOSTNAME)		"\0"
 #endif
@@ -116,13 +131,17 @@ const uchar default_environment[] = {
 #if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
 	"pcidelay="	MK_STR(CONFIG_PCI_BOOTDELAY)	"\0"
 #endif
+#ifdef	CONFIG_POSTWORD
+	"postword="	CONFIG_POSTWORD			"\0"
+#endif
+
 #ifdef	CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
 #endif
 	"\0"
 };
 
-struct hsearch_data env_htab;
+struct hsearch_data env_htab = {0};
 
 static uchar env_get_char_init(int index)
 {
@@ -157,6 +176,11 @@ const uchar *env_get_addr(int index)
 
 void set_default_env(const char *s)
 {
+#if defined(CONFIG_ENV_CRC_ERROR_SAVE_DEFAULT_ENV)
+	int ret = 0;
+	int	save_default_env_flag = 0;
+#endif
+
 	if (sizeof(default_environment) > ENV_SIZE) {
 		puts("*** Error - default environment is too large\n\n");
 		return;
@@ -167,6 +191,9 @@ void set_default_env(const char *s)
 			printf("*** Warning - %s, "
 				"using default environment\n\n",
 				s + 1);
+#if defined(CONFIG_ENV_CRC_ERROR_SAVE_DEFAULT_ENV)
+			save_default_env_flag = 1;
+#endif
 		} else {
 			puts(s);
 		}
@@ -177,6 +204,14 @@ void set_default_env(const char *s)
 	if (himport_r(&env_htab, (char *)default_environment,
 			sizeof(default_environment), '\0', 0) == 0)
 		error("Environment import failed: errno = %d\n", errno);
+
+#if defined(CONFIG_ENV_CRC_ERROR_SAVE_DEFAULT_ENV)
+	if(save_default_env_flag == 1)
+	{
+		ret = saveenv();
+		printf("*** Store Default environment into ENV\n");
+	}
+#endif
 
 	gd->flags |= GD_FLG_ENV_READY;
 }

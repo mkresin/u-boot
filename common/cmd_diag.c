@@ -28,6 +28,14 @@
 #include <command.h>
 #include <post.h>
 
+static ulong diag_getmode(void);
+
+static ulong diag_getmode()
+{
+	ulong diagmode = getenv_ulong("diagmode",16,0);
+	return diagmode;
+}
+
 int do_diag (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned int i;
@@ -50,10 +58,10 @@ int do_diag (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	} else {
 		/* Run tests */
 		if (argc == 2) {
-			post_run (NULL, POST_RAM | POST_MANUAL);
+			post_run (NULL, POST_RAM | diag_getmode()| POST_MANUAL);
 		} else {
 			for (i = 2; i < argc; i++) {
-			    if (post_run (argv[i], POST_RAM | POST_MANUAL) != 0)
+			    if (post_run (argv[i], POST_RAM | diag_getmode()| POST_MANUAL) != 0)
 				printf ("%s - unable to execute the test\n",
 					argv[i]);
 			}

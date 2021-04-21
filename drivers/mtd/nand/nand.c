@@ -49,9 +49,8 @@ static void nand_init_chip(struct mtd_info *mtd, struct nand_chip *nand,
 		maxchips = 1;
 	mtd->priv = nand;
 
-	nand->IO_ADDR_R = nand->IO_ADDR_W = (void  __iomem *)base_addr;
 	if (board_nand_init(nand) == 0) {
-		if (nand_scan(mtd, maxchips) == 0) {
+		if( rtk_nand_scan(mtd, maxchips)== 0) {
 			if (!mtd->name)
 				mtd->name = (char *)default_nand_name;
 #ifdef CONFIG_NEEDS_MANUAL_RELOC
@@ -66,6 +65,7 @@ static void nand_init_chip(struct mtd_info *mtd, struct nand_chip *nand,
 			 */
 			sprintf(dev_name[i], "nand%d", i);
 			mtd->name = dev_name[i++];
+			printf("nand.c nand_init_chip mtd size is %x\r\n",mtd->size);
 			add_mtd_device(mtd);
 #endif
 		} else
@@ -81,6 +81,8 @@ void nand_init(void)
 {
 	int i;
 	unsigned int size = 0;
+	printf("enter nand_init\n");
+
 	for (i = 0; i < CONFIG_SYS_MAX_NAND_DEVICE; i++) {
 		nand_init_chip(&nand_info[i], &nand_chip[i], base_address[i]);
 		size += nand_info[i].size / 1024;

@@ -22,7 +22,8 @@
 +	256	256 Byte page size
 *	512	512 Byte page size
 */
-const struct nand_flash_dev nand_flash_ids[] = {
+//const struct nand_flash_dev nand_flash_ids[] = {
+struct nand_flash_dev nand_flash_ids[] = {
 
 #ifdef CONFIG_MTD_NAND_MUSEUM_IDS
 	{"NAND 1MiB 5V 8-bit",		0x6e, 256, 1, 0x1000, 0},

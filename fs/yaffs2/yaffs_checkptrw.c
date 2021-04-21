@@ -16,7 +16,7 @@
 #include <malloc.h>
 
 const char *yaffs_checkptrw_c_version =
-    "$Id: yaffs_checkptrw.c,v 1.14 2007/05/15 20:07:40 charles Exp $";
+    "$Id: yaffs_checkptrw.c,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $";
 
 
 #include "yaffs_checkptrw.h"

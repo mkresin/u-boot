@@ -115,10 +115,10 @@ JTAG debugger.
 I report the versions of the utilities I used (they are provided with ELDK):
 
 -bash-3.2# nandwrite --version
-nandwrite $Revision: 1.32 $
+nandwrite $Revision: 1.1.1.1 $
 
 flash_eraseall --version
-flash_eraseall $Revision: 1.22 $
+flash_eraseall $Revision: 1.1.1.1 $
 
 nandwrite reports a warning if the file to be saved is not sector aligned.
 This should have no consequences, but I preferred to pad u-boot.bin

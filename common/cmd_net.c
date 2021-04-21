@@ -47,7 +47,7 @@ int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	tftpboot,	3,	1,	do_tftpb,
+	tftpboot,	3,	0,	do_tftpb,
 	"boot image via network using TFTP protocol",
 	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
@@ -284,7 +284,7 @@ int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	ping,	2,	1,	do_ping,
+	ping,	2,	0,	do_ping,
 	"send ICMP ECHO_REQUEST to network host",
 	"pingAddress"
 );

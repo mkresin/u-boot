@@ -58,6 +58,8 @@
 #define CONFIG_SHA1		/* and SHA1 */
 #endif
 
+#include <configs/autoconf.h>
+
 /*
  * Operating System Codes
  */
@@ -173,7 +175,25 @@
 #define IH_COMP_LZMA		3	/* lzma  Compression Used	*/
 #define IH_COMP_LZO		4	/* lzo   Compression Used	*/
 
+/*
+ * Image Magic Number
+ * Format: (total 32 bits, 4 Bytes)
+ *      [b31 ... b12] : Chip ID      (20 bits)
+ *      [b11 ... b04] : Vendor ID    (8 bits)
+ *      [b03 ... b00] : Product ID   (4 bits)
+ */
+#ifdef	CONFIG_IH_MAGIC_NUMBER
+#define	IH_MAGIC	CONFIG_IH_MAGIC_NUMBER
+#else
 #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
+#endif
+#undef  IH_MAGIC_SHOW       /* Show the image magic number by IMI command*/
+
+#ifdef	CONFIG_ENABLE_IH_MAGIC_NUMBER_CHK
+#undef IH_MAGIC_NOCHK  /* DO NOT Check the Magic Number */
+#else
+#define  IH_MAGIC_NOCHK  /* Check the Magic Number */
+#endif
 #define IH_NMLEN		32	/* Image Name Length		*/
 
 /*
@@ -464,7 +484,11 @@ void memmove_wd(void *to, void *from, size_t len, ulong chunksz);
 
 static inline int image_check_magic(const image_header_t *hdr)
 {
+#ifdef	IH_MAGIC_NOCHK
+	return 1;
+#else
 	return (image_get_magic(hdr) == IH_MAGIC);
+#endif
 }
 static inline int image_check_type(const image_header_t *hdr, uint8_t type)
 {

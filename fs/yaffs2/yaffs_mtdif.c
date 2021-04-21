@@ -15,7 +15,7 @@
 #include <common.h>
 
 const char *yaffs_mtdif_c_version =
-    "$Id: yaffs_mtdif.c,v 1.19 2007/02/14 01:09:06 wookey Exp $";
+    "$Id: yaffs_mtdif.c,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $";
 
 #include "yportenv.h"
 

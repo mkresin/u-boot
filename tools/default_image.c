@@ -33,6 +33,42 @@
 
 static image_header_t header;
 
+/* Add or remove current timezone from UTC time */
+static uint32_t timezone_operate(int isAdd, uint32_t time)
+{
+	char buf[32];
+	char sign = 0;
+	int hr = 0;
+	int min = 0;
+	uint32_t final_time = time;
+	time_t t = time;
+	struct tm tm_time;
+
+	memcpy(&tm_time, localtime(&t), sizeof(struct tm));
+
+	memset(buf, 0, sizeof(buf));
+	strftime(buf, sizeof(buf), "%z", &tm_time);
+
+	sscanf(buf, "%c%02d%02d", &sign, &hr, &min);
+
+	if ('+' == sign)
+	{
+		if (isAdd)
+			final_time += (hr * 60 * 60) + (min * 60);
+		else
+			final_time -= (hr * 60 * 60) + (min * 60);
+	}
+	else if ('-' == sign)
+	{
+		if (isAdd)
+			final_time -= (hr * 60 * 60) + (min * 60);
+		else
+			final_time += (hr * 60 * 60) + (min * 60);
+	}
+
+	return final_time;
+}
+
 static int image_check_image_types(uint8_t type)
 {
 	if (((type > IH_TYPE_INVALID) && (type < IH_TYPE_FLATDT)) ||
@@ -112,7 +148,7 @@ static void image_set_header(void *ptr, struct stat *sbuf, int ifd,
 
 	/* Build new header */
 	image_set_magic(hdr, IH_MAGIC);
-	image_set_time(hdr, sbuf->st_mtime);
+	image_set_time(hdr, timezone_operate(1, sbuf->st_mtime));
 	image_set_size(hdr, sbuf->st_size - sizeof(image_header_t));
 	image_set_load(hdr, params->addr);
 	image_set_ep(hdr, params->ep);

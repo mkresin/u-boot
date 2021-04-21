@@ -102,7 +102,7 @@ extern void post_word_store(ulong value);
 #define POST_NORMAL		0x02	/* test runs on normal booting */
 #define POST_SLOWTEST		0x04	/* test is slow, enabled by key press */
 #define POST_POWERTEST		0x08	/* test runs after watchdog reset */
-
+#define POST_NORMAL2    0x10
 #define POST_COLDBOOT		0x80	/* first boot after power-on */
 
 #define POST_ROM		0x0100	/* test runs in ROM */
@@ -118,7 +118,7 @@ extern void post_word_store(ulong value);
 #define POST_ALWAYS		(POST_NORMAL	| \
 				 POST_SLOWTEST	| \
 				 POST_MANUAL	| \
-				 POST_POWERON	)
+				 POST_POWERON	| POST_NORMAL2)
 
 #define POST_FAIL_SAVE		0x80
 

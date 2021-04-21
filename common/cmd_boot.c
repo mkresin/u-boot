@@ -28,6 +28,18 @@
 #include <command.h>
 #include <net.h>
 
+#ifdef CONFIG_INTERRUPT_SUPPORT
+#include <asm/mipsregs.h>
+#include <interrupt.h>
+#endif /* end of CONFIG_INTERRUPT_SUPPORT */
+
+#ifdef CONFIG_INTERRUPT_SUPPORT
+extern void __attribute__((nomips16)) __attribute__((weak)) write_ebase(ulong addr);
+extern unsigned int __attribute__((nomips16)) __attribute__((weak)) read_ebase(void);
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
+
+
+
 #ifdef CONFIG_CMD_GO
 
 /* Allow ports to override the default behavior */
@@ -42,12 +54,27 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong	addr, rc;
 	int     rcode = 0;
 
+#ifdef CONFIG_INTERRUPT_SUPPORT
+		unsigned int ebase = MIPS_DEFAULT_EBASE;
+		unsigned int ebase_org = MIPS_DEFAULT_EBASE;
+		ebase_org = read_c0_ebase();
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
+
+
 	if (argc < 2)
 		return cmd_usage(cmdtp);
 
 	addr = simple_strtoul(argv[1], NULL, 16);
 
 	printf ("## Starting application at 0x%08lX ...\n", addr);
+
+#ifdef CONFIG_INTERRUPT_SUPPORT
+		{ // for INTERRUPT
+			common_disable_interrupt();
+			write_c0_ebase(ebase);
+		}
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
+
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
@@ -57,6 +84,12 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (rc != 0) rcode = 1;
 
 	printf ("## Application terminated, rc = 0x%lX\n", rc);
+#ifdef CONFIG_INTERRUPT_SUPPORT
+	{ // for INTERRUPT
+		write_c0_ebase(ebase_org);
+		common_enable_interrupt();
+	}
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
 	return rcode;
 }
 

@@ -155,6 +155,7 @@ typedef struct environment_s {
 	unsigned char	flags;		/* active/obsolete flags	*/
 #endif
 	unsigned char	data[ENV_SIZE]; /* Environment data		*/
+	//unsigned char	data[0]; /* Environment data		*/
 } env_t;
 
 #ifdef ENV_IS_EMBEDDED

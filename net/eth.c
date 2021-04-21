@@ -27,6 +27,10 @@
 #include <miiphy.h>
 #include <phy.h>
 
+
+extern int swnic_rx_pkt(struct eth_device *dev,unsigned char **pkt, int max_len,int *port);
+
+
 void eth_parse_enetaddr(const char *addr, uchar *enetaddr)
 {
 	char *end;
@@ -193,6 +197,8 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 	if (!eth_getenv_enetaddr_by_index(base_name, eth_number, env_enetaddr))
 		return -1;
 
+	memset(dev->enetaddr, 0, 6);
+
 	if (memcmp(env_enetaddr, "\0\0\0\0\0\0", 6)) {
 		if (memcmp(dev->enetaddr, "\0\0\0\0\0\0", 6) &&
 			memcmp(dev->enetaddr, env_enetaddr, 6)) {
@@ -272,6 +278,7 @@ int eth_initialize(bd_t *bis)
 #if defined(CONFIG_DB64460) || defined(CONFIG_P3Mx)
 	mv6446x_eth_initialize(bis);
 #endif
+
 	if (!eth_devices) {
 		puts ("No ethernet found.\n");
 		show_boot_progress (-64);
@@ -412,6 +419,15 @@ int eth_send(volatile void *packet, int length)
 
 	return eth_current->send(eth_current, packet, length);
 }
+#if 1 /*Nobody uses loader eth loopback*/
+int eth_recv(unsigned char **pkt, int max_len,int *port)
+{
+	if (!eth_current)
+		return -1;
+
+	return swnic_rx_pkt(eth_current, pkt, max_len,port);
+}
+#endif
 
 int eth_rx(void)
 {

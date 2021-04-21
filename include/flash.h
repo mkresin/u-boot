@@ -29,12 +29,35 @@
  * FLASH Info: contains chip specific data, per FLASH bank
  */
 
-typedef struct {
+typedef struct{ 
 	ulong	size;			/* total bank size in bytes		*/
 	ushort	sector_count;		/* number of erase units		*/
 	ulong	flash_id;		/* combined device & manufacturer code	*/
 	ulong	start[CONFIG_SYS_MAX_FLASH_SECT];   /* virtual sector start address */
 	uchar	protect[CONFIG_SYS_MAX_FLASH_SECT]; /* sector protection status	*/
+        uchar   flags;
+#if defined(CONFIG_FLASH_SPI)
+        ulong   io_status;
+        uchar   dio_read;     //dio read command
+        uchar   dio_mode;     //enhance mode format
+        uchar   dio_read_dummy;//dummy bytes(dummy_cycle/2)
+//      uchar   dio_pp;       //all pp do not need pp_dummy on 2008.06.25
+//      uchar   dio_pp_dummy; //all pp do not need pp_dummy on 2008.06.25
+
+        uchar   qio_read;     //qio read command
+        uchar   qio_mode;     //enhance mode format
+        uchar   qio_read_dummy; //dummy bytes(dummy_cycle/2)
+        uchar   qio_pp;       //page program command
+//      uchar   qio_pp_dummy; //all pp do not need pp_dummy on 2008.06.25
+
+        uchar   qio_eq;       //enter quad mode command
+        uchar   qio_eq_dummy; //enter quad mode dummy
+        uchar   qio_es;       //enter serial mode command
+        uchar   qio_wqe_cmd;  //write quad enable bit command
+        uchar   qio_qeb_loc;  //quad enable bit location
+        uchar   qio_status_len; // bytes of status register which owns quad enable bit
+#endif /*CONFIG_FLASH_SPI*/
+
 #ifdef CONFIG_SYS_FLASH_CFI
 	uchar	portwidth;		/* the width of the port		*/
 	uchar	chipwidth;		/* the width of the chip		*/

@@ -467,7 +467,7 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 			load_baudrate);
 		udelay(50000);
 		gd->baudrate = load_baudrate;
-		serial_setbrg ();
+		serial_setbrg (CONSOLE_CH_INDEX,load_baudrate);
 		udelay(50000);
 		for (;;) {
 			if (getc() == '\r')
@@ -505,7 +505,7 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 			current_baudrate);
 		udelay (50000);
 		gd->baudrate = current_baudrate;
-		serial_setbrg ();
+		serial_setbrg (CONSOLE_CH_INDEX,current_baudrate);
 		udelay (50000);
 		for (;;) {
 			if (getc() == 0x1B) /* ESC */

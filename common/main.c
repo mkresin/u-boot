@@ -41,6 +41,8 @@
 
 #include <post.h>
 #include <linux/ctype.h>
+#include <turnkey/sysinfo.h>
+
 
 #if defined(CONFIG_SILENT_CONSOLE) || defined(CONFIG_POST) || defined(CONFIG_CMDLINE_EDITING)
 DECLARE_GLOBAL_DATA_PTR;
@@ -86,7 +88,7 @@ extern void mdm_init(void); /* defined in board.c */
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
  * returns: 0 -  no key string, allow autoboot 1 - got key string, abort
  */
-#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
+#if defined(CONFIG_BOOTDELAY)
 # if defined(CONFIG_AUTOBOOT_KEYED)
 #ifndef CONFIG_MENU
 static inline
@@ -208,14 +210,29 @@ static int menukey = 0;
 #ifndef CONFIG_MENU
 static inline
 #endif
+
+#define RTK_ABOUT_AUTOBOOT_CHAR     0x1B  /* key to abort the auto boot process, 0x20 - space, 0x1B - ESC */
+
 int abortboot(int bootdelay)
 {
 	int abort = 0;
+	char tkey = 0;
+
+    int rhour, entry, times;
+    _sys_htp_info_get(&htpModeIf, &htpBreakIf, &rhour, &entry, &times);
+    if(1 == htpModeIf)
+    {
+        sys_htp_enable();
+        sys_htp_run_case(rhour);
+        abort = 1;
+        return abort;
+    }
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	printf("Hit Esc key to stop autoboot: %2d ", bootdelay);
+
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -225,9 +242,12 @@ int abortboot(int bootdelay)
 	 */
 	if (bootdelay >= 0) {
 		if (tstc()) {	/* we got a key press	*/
-			(void) getc();  /* consume input	*/
-			puts ("\b\b\b 0");
-			abort = 1;	/* don't auto boot	*/
+			tkey = getc();
+			if(tkey == RTK_ABOUT_AUTOBOOT_CHAR) /*Equal to space key*/
+			{
+			    puts ("\b\b\b 0");
+			    abort = 1;	/* don't auto boot	*/
+            }
 		}
 	}
 #endif
@@ -239,14 +259,20 @@ int abortboot(int bootdelay)
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
+				//abort  = 1;	/* don't auto boot	*/
+				//bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				(void) getc();  /* consume input	*/
+				tkey = getc();  /* consume input	*/
+				/* Only ESC key will enter loader */
+				if (tkey == RTK_ABOUT_AUTOBOOT_CHAR) /* ESC key */
 # endif
-				break;
+				{
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 			}
 			udelay(10000);
 		}
@@ -289,6 +315,13 @@ int run_command2(const char *cmd, int flag)
 }
 
 /****************************************************************************/
+static unsigned char prompt_str[30];
+unsigned char *board_prompt(void);
+
+unsigned char *board_prompt()
+{
+	return prompt_str;
+}
 
 void main_loop (void)
 {
@@ -299,7 +332,7 @@ void main_loop (void)
 	int flag;
 #endif
 
-#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
+#if defined(CONFIG_BOOTDELAY)
 	char *s;
 	int bootdelay;
 #endif
@@ -366,7 +399,7 @@ void main_loop (void)
 	update_tftp (0UL);
 #endif /* CONFIG_UPDATE_TFTP */
 
-#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
+#if defined(CONFIG_BOOTDELAY)
 	s = getenv ("bootdelay");
 	bootdelay = s ? (int)simple_strtol(s, NULL, 10) : CONFIG_BOOTDELAY;
 
@@ -415,6 +448,14 @@ void main_loop (void)
 #endif /* CONFIG_MENUKEY */
 #endif /* CONFIG_BOOTDELAY */
 
+
+#ifdef CONFIG_CUSTOMER_BOARD
+	sprintf((char *)prompt_str,"%s# ", getenv("boardmodel"));
+	rtk_network_on();
+#else
+	sprintf((char *)prompt_str,"%s# ",CONFIG_SYS_PROMPT);
+#endif
+
 	/*
 	 * Main Loop for Monitor Command Processing
 	 */
@@ -432,8 +473,7 @@ void main_loop (void)
 			reset_cmd_timeout();
 		}
 #endif
-		len = readline (CONFIG_SYS_PROMPT);
-
+		len = readline ((const char *)prompt_str);
 		flag = 0;	/* assume no special flags for now */
 		if (len > 0)
 			strcpy (lastcommand, console_buffer);

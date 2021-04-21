@@ -11,6 +11,11 @@
 
 #include <asm/io.h>
 
+#ifdef CONFIG_INTERRUPT_SUPPORT
+#include <asm/mipsregs.h>
+#include <interrupt.h>
+#endif
+
 #ifndef CONFIG_SF_DEFAULT_SPEED
 # define CONFIG_SF_DEFAULT_SPEED	1000000
 #endif
@@ -18,7 +23,7 @@
 # define CONFIG_SF_DEFAULT_MODE		SPI_MODE_3
 #endif
 
-static struct spi_flash *flash;
+static struct spi_flash *flash = NULL;
 
 
 /*
@@ -212,6 +217,10 @@ static int do_spi_flash_read_write(int argc, char * const argv[])
 		return 1;
 	}
 
+#ifdef CONFIG_INTERRUPT_SUPPORT
+	common_disable_interrupt(); /* for INTERRUPT */		
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
+
 	if (strcmp(argv[0], "update") == 0)
 		ret = spi_flash_update(flash, offset, len, buf);
 	else if (strcmp(argv[0], "read") == 0)
@@ -246,6 +255,10 @@ static int do_spi_flash_erase(int argc, char * const argv[])
 	ret = sf_parse_len_arg(argv[2], &len);
 	if (ret != 1)
 		return -1;
+
+#ifdef CONFIG_INTERRUPT_SUPPORT
+		common_disable_interrupt(); /* for INTERRUPT */		
+#endif /*CONFIG_INTERRUPT_SUPPORT*/
 
 	ret = spi_flash_erase(flash, offset, len);
 	if (ret) {

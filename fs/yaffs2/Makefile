@@ -14,7 +14,7 @@
 #
 # NB Warning this Makefile does not include header dependencies.
 #
-# $Id: Makefile,v 1.15 2007/07/18 19:40:38 charles Exp $
+# $Id: Makefile,v 1.1.1.1 2012/02/01 07:50:43 yachang Exp $
 
 #EXTRA_COMPILE_FLAGS = -DYAFFS_IGNORE_TAGS_ECC
 include $(TOPDIR)/config.mk

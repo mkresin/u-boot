@@ -515,6 +515,8 @@ int nand_write_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 		return -EINVAL;
 	}
 
+	if (!(flags & WITH_YAFFS_OOB)) {
+
 	if (!need_skip && !(flags & WITH_DROP_FFS)) {
 		rval = nand_write (nand, offset, length, buffer);
 		if (rval == 0)
@@ -524,6 +526,7 @@ int nand_write_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 		printf ("NAND write to offset %llx failed %d\n",
 			offset, rval);
 		return rval;
+	}
 	}
 
 	while (left_to_write > 0) {

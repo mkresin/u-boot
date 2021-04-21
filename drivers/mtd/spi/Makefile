@@ -26,6 +26,12 @@ include $(TOPDIR)/config.mk
 LIB	:= $(obj)libspi_flash.o
 
 COBJS-$(CONFIG_SPI_FLASH)	+= spi_flash.o
+#This is MTD driver for SPI NAND
+ifdef CONFIG_MTD_DEVICE
+ifdef CONFIG_MTD_PARTITIONS
+COBJS-$(CONFIG_SPI_NAND_FLASH)	+= luna_spi_nand.o
+endif
+endif
 COBJS-$(CONFIG_SPI_FLASH_ATMEL)	+= atmel.o
 COBJS-$(CONFIG_SPI_FLASH_EON)	+= eon.o
 COBJS-$(CONFIG_SPI_FLASH_MACRONIX)	+= macronix.o

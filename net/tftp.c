@@ -321,6 +321,8 @@ TftpSend(void)
 	 && (MasterClient == 0))
 		return;
 #endif
+	memset((void *)NetTxPacket,0,(PKTSIZE_ALIGN));/*RTK patch*/
+
 	/*
 	 *	We will always be sending some sort of packet, so
 	 *	cobble together the packet headers now.
@@ -348,6 +350,7 @@ TftpSend(void)
 		sprintf((char *)pkt, "%lu", TftpTimeoutMSecs / 1000);
 		debug("send option \"timeout %s\"\n", (char *)pkt);
 		pkt += strlen((char *)pkt) + 1;
+
 #ifdef CONFIG_TFTP_TSIZE
 		pkt += sprintf((char *)pkt, "tsize%c%lu%c",
 				0, NetBootFileXferSize, 0);
@@ -801,6 +804,7 @@ void TftpStart(enum proto_t protocol)
 
 	/* zero out server ether in case the server ip has changed */
 	memset(NetServerEther, 0, 6);
+	memset(NetEtherNullAddr, 0, 6);
 	/* Revert TftpBlkSize to dflt */
 	TftpBlkSize = TFTP_BLOCK_SIZE;
 #ifdef CONFIG_MCAST_TFTP

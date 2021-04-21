@@ -231,6 +231,10 @@ static int net_check_prereq(enum proto_t protocol);
 
 static int NetTryCount;
 
+int htpRxIf = 0;
+int htpRxLen = 0;
+uchar htpRxPkt[HTP_LOOPBACK_TEST_PKT_MAX_LEN];
+
 /**********************************************************************/
 
 IPaddr_t	NetArpWaitPacketIP;
@@ -391,9 +395,13 @@ int NetLoop(enum proto_t protocol)
 		 *	Setup packet buffers, aligned correctly.
 		 */
 		NetTxPacket = &PktBuf[0] + (PKTALIGN - 1);
+
 		NetTxPacket -= (ulong)NetTxPacket % PKTALIGN;
 		for (i = 0; i < PKTBUFSRX; i++)
 			NetRxPackets[i] = NetTxPacket + (i+1)*PKTSIZE_ALIGN;
+
+		memset((void *)&PktBuf[0],0,((PKTBUFSRX+1) * PKTSIZE_ALIGN + PKTALIGN));/*RTK patch*/
+		memset((void *)NetTxPacket,0,(PKTSIZE_ALIGN));/*RTK patch*/
 	}
 
 	if (!NetArpWaitTxPacket) {
@@ -672,6 +680,11 @@ void NetStartAgain(void)
 	}
 }
 
+void NetInit(void)
+{
+	eth_init (gd->bd);
+}
+
 /**********************************************************************/
 /*
  *	Miscelaneous bits.
@@ -708,7 +721,12 @@ NetSendPacket(volatile uchar *pkt, int len)
 {
 	(void) eth_send(pkt, len);
 }
-
+#if 0 /*Nobody uses loader eth loopback*/
+int NetRecvPacket(volatile uchar ** pkt, int max_len,int *port)
+{
+    return eth_recv((unsigned char **)pkt, max_len,port);
+}
+#endif
 int
 NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 {
@@ -757,6 +775,7 @@ NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 	pkt += NetSetEther(pkt, ether, PROT_IP);
 	NetSetIP(pkt, dest, dport, sport, len);
 	(void) eth_send(NetTxPacket, (pkt - NetTxPacket) + IP_HDR_SIZE + len);
+
 
 	return 0;	/* transmitted */
 }
@@ -1452,11 +1471,20 @@ NetReceive(volatile uchar *inpkt, int len)
 #endif
 	ushort cti = 0, vlanid = VLAN_NONE, myvlanid, mynvlanid;
 
-	debug("packet received\n");
-
 	NetRxPacket = inpkt;
 	NetRxPacketLen = len;
 	et = (Ethernet_t *)inpkt;
+
+    if((1==htpModeIf) && (0==htpRxIf))
+    {
+        htpRxLen = len;
+        for(x=0; x<len; x++)
+        {
+            htpRxPkt[x] = *(inpkt+x);
+        }
+        htpRxIf = 1;
+        x = 0;
+    }
 
 	/* too small packet? */
 	if (len < ETHER_HDR_SIZE)

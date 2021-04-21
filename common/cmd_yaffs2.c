@@ -27,14 +27,28 @@ extern int yaffs_DumpDevStruct(const char *path);
 int do_ymount (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *mtpoint = argv[1];
-    cmd_yaffs_mount(mtpoint);
+	unsigned long ts;
 
+	if(mtpoint==NULL){
+		
+		return 0;
+	}
+	ts = get_timer (0);	
+    cmd_yaffs_mount(mtpoint);
+	
+	printf("usage time is %ld\n",get_timer(0) - ts);
     return(0);
 }
 
 int do_yumount (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *mtpoint = argv[1];
+
+	if(mtpoint==NULL){
+		printf("usage: yumount mtpoint\n");	
+		return 0;
+	}
+		
     cmd_yaffs_umount(mtpoint);
 
     return(0);
@@ -43,6 +57,12 @@ int do_yumount (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 int do_yls (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *dirname = argv[argc-1];
+
+	if(dirname==NULL){
+		printf("dirname is null\n");	
+		return 0;
+	}
+	
 
     cmd_yaffs_ls(dirname, (argc>2)?1:0);
 
@@ -53,6 +73,11 @@ int do_yrd (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *filename = argv[1];
     printf ("Reading file %s ", filename);
+
+	if(filename==NULL){
+		printf("filename is null\n");	
+		return 0;
+	}
 
     cmd_yaffs_read_file(filename);
 
@@ -79,6 +104,12 @@ int do_yrdm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     char *filename = argv[1];
     ulong addr = simple_strtoul(argv[2], NULL, 16);
 
+	if(argc<2){
+
+		return 0;
+	}
+
+
     cmd_yaffs_mread_file(filename, (char *)addr);
 
     return(0);
@@ -90,6 +121,14 @@ int do_ywrm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     ulong addr = simple_strtoul(argv[2], NULL, 16);
     ulong size = simple_strtoul(argv[3], NULL, 16);
 
+
+	if(argc<2){
+
+		return 0;
+	}
+
+
+	
     cmd_yaffs_mwrite_file(filename, (char *)addr, size);
 
     return(0);
@@ -98,6 +137,11 @@ int do_ywrm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 int do_ymkdir (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *dirname = argv[1];
+
+	if(dirname==NULL){
+
+		return 0;
+	}
 
     cmd_yaffs_mkdir(dirname);
 
@@ -108,6 +152,11 @@ int do_yrmdir (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *dirname = argv[1];
 
+	if(dirname==NULL){
+
+		return 0;
+	}
+
     cmd_yaffs_rmdir(dirname);
 
     return(0);
@@ -116,6 +165,10 @@ int do_yrmdir (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 int do_yrm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *path = argv[1];
+	if(path==NULL){
+
+		return 0;
+	}
 
     cmd_yaffs_rm(path);
 
@@ -126,6 +179,10 @@ int do_ymv (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *oldPath = argv[1];
     char *newPath = argv[2];
+	if(argc<2){
+
+		return 0;
+	}
 
     cmd_yaffs_mv(newPath, oldPath);
 
@@ -135,6 +192,14 @@ int do_ymv (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 int do_ydump (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     char *dirname = argv[1];
+	
+
+	if(dirname==NULL){
+
+		return 0;
+	}
+	
+
     if (yaffs_DumpDevStruct(dirname) != 0)
 	printf("yaffs_DumpDevStruct returning error when dumping path: , %s\n", dirname);
     return 0;

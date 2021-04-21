@@ -30,6 +30,8 @@
 #include <malloc.h>
 #include <spi_flash.h>
 #include <search.h>
+#include <soc.h>
+#include <pblr.h>
 #include <errno.h>
 
 #ifndef CONFIG_ENV_SPI_BUS
@@ -245,11 +247,15 @@ out:
 #else
 int saveenv(void)
 {
-	u32	saved_size, saved_offset, sector = 1;
+	u32	saved_size = 0, saved_offset = 0, sector = 1;
 	char	*res, *saved_buffer = NULL;
 	int	ret = 1;
-	env_t	env_new;
+	//env_t	env_new;
+	env_t	*_env_new;
+#define env_new (*(_env_new))
 	ssize_t	len;
+
+	_env_new = (env_t *)__builtin_alloca(CONFIG_ENV_SIZE);
 
 	if (!env_flash) {
 		env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS,
@@ -345,6 +351,7 @@ out:
 	env_flash = NULL;
 }
 #endif
+
 
 int env_init(void)
 {

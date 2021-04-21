@@ -80,7 +80,7 @@ void print_size(unsigned long long size, const char *s)
 	if (m) {
 		printf (".%ld", m);
 	}
-	printf (" %ciB%s", c, s);
+	printf (" %cB%s", c, s);
 }
 
 /*

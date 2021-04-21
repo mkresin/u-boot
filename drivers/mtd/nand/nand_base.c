@@ -51,6 +51,9 @@
 #include <asm/io.h>
 #include <asm/errno.h>
 
+#include <asm/otto_pll.h> /* Add by MSP */
+
+
 /*
  * CONFIG_SYS_NAND_RESET_CNT is used as a timeout mechanism when resetting
  * a flash.  NAND flash is initialized prior to interrupts so standard timers

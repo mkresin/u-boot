@@ -38,6 +38,9 @@
 #include <asm/byteorder.h>
 #include <linux/compiler.h>
 
+#include <rtk_flash_common.h>
+#include <turnkey/sysinfo.h>
+
 #if defined(CONFIG_CMD_USB)
 #include <usb.h>
 #endif
@@ -117,6 +120,7 @@ static boot_os_fn do_bootm_netbsd;
 static boot_os_fn do_bootm_lynxkdi;
 extern void lynxkdi_boot(image_header_t *);
 #endif
+
 #ifdef CONFIG_BOOTM_RTEMS
 static boot_os_fn do_bootm_rtems;
 #endif
@@ -1108,6 +1112,10 @@ static int image_info(ulong addr)
 			return 1;
 		}
 
+#ifdef  IH_MAGIC_SHOW
+        printf("   Magic Number: %08X\n", image_get_magic(hdr));
+#endif
+
 		if (!image_check_hcrc(hdr)) {
 			puts("   Bad Header Checksum\n");
 			return 1;
@@ -1523,3 +1531,255 @@ static int do_bootm_integrity(int flag, int argc, char * const argv[],
 	return 1;
 }
 #endif
+
+#define PARTITION_SYSINFO     (CONFIG_SYS_FLASH_BASE + PARTITION_ADDR(FLASH_INDEX_SYSINFO))
+#define PARTITION_SYSINFO_END (PARTITION_SYSINFO + PARTITION_SIZE(FLASH_INDEX_SYSINFO) - 1)
+#define RUNTIME_SRC_ADDR 0x81000000
+#define RUNTIME_SRC_ADDR_STR "0x81000000"
+#define PARTITION_ADDR_0 (CONFIG_SYS_FLASH_BASE + PARTITION_ADDR(FLASH_INDEX_KERNEL))
+#ifdef CONFIG_DUAL_IMAGE
+#define PARTITION_ADDR_1 (CONFIG_SYS_FLASH_BASE + PARTITION_ADDR(FLASH_INDEX_KERNEL2))
+#endif
+
+#ifndef CONFIG_BOOT_SPI_NAND
+static int _do_boota_img_check(const void *addr)
+{
+    /* Check image header CRC */
+    if (!image_check_hcrc((image_header_t *)addr))
+    {
+        printf("## Invalid image header on addr 0x%p\n", addr);
+        return 1;
+    }
+
+    if (!image_check_dcrc((image_header_t *)addr))
+    {
+        printf("## Invalid image data on addr 0x%p\n", addr);
+        return 1;
+    }
+
+    return 0;
+}
+
+static int _do_bootm_addr(const void *addr)
+{
+    cmd_tbl_t *run = NULL;
+    char *argu[5];
+    image_header_t ih;
+    unsigned int imgSize = 0;
+
+    /* Check image header CRC */
+    memcpy(&ih, addr, sizeof(ih));
+
+    if (!image_check_hcrc(&ih))
+    {
+        printf("## Invalid image header\n");
+        return 1;
+    }
+
+    /* Check image size */
+    imgSize = ih.ih_size + sizeof(ih);
+
+    if (imgSize <= sizeof(ih) || imgSize > PARTITION_SIZE(FLASH_INDEX_KERNEL))
+    {
+        printf("## Invalid image size\n");
+        return 1;
+    }
+
+    /* Copy flash data to memory and boot from memorty to increse speed */
+    memcpy((void *) RUNTIME_SRC_ADDR, addr, imgSize);
+
+    run = find_cmd("bootm");
+    if (NULL == run) {
+        printf("bootm command is not supported!\n");
+        return 1;
+    }
+    argu[0] = "bootm";
+    argu[1] = RUNTIME_SRC_ADDR_STR;
+    argu[2] = NULL;
+
+    return run->cmd(run, 0, 2, argu);
+}
+
+
+#ifdef CONFIG_DUAL_IMAGE
+static int dual_image_sel (int index)
+{
+    int rc = 0;
+    int selPartition = 0;
+    char *partStr = NULL;
+    char valStr[16] = {0};
+    int partition = 0;
+
+    partStr = getsys(SYSINFO_VAR_DUALACTPART);
+    if (NULL == partStr)
+        partition = IMG_PART0;
+    else
+        partition = simple_strtoul(partStr, NULL, 10);
+
+    if (-1 == index)
+    {
+        /* Only check partition 1, if fail, always boot from partition 0*/
+        if ( partition == IMG_PART1 )
+        {
+            printf ("## Booting image from partition ... %d\n", IMG_PART1);
+
+            rc = _do_bootm_addr((const void *) PARTITION_ADDR_1);
+
+            selPartition = 1;
+        }
+        else
+        {
+            printf ("## Booting image from partition ... %d\n", IMG_PART0);
+
+            rc = _do_bootm_addr((const void *) PARTITION_ADDR_0);
+
+            selPartition = 0;
+        }
+    }
+    else if (IMG_PART0 == index)
+    {
+        if (_do_boota_img_check((const void *) PARTITION_ADDR_0))
+        {
+            printf ("## Partition %d image invalid\n", IMG_PART0);
+            return 1;
+        }
+
+        printf ("## Partition %d selected ...\n", IMG_PART0);
+        printf ("## Writing image info to addr 0x%x\n", PARTITION_SYSINFO);
+        /* copy image_info from SYSINFO partition */
+        sprintf(valStr, "%d", IMG_PART0);
+        setsys(SYSINFO_VAR_DUALACTPART, valStr);
+        savesys();
+
+        rc = _do_bootm_addr((const void *) PARTITION_ADDR_0);
+
+        selPartition = 0;
+    }
+    else if (IMG_PART1 == index)
+    {
+        if (_do_boota_img_check((const void *) PARTITION_ADDR_1))
+        {
+            printf ("## Partition %d image invalid\n", IMG_PART1);
+            return 1;
+        }
+
+        printf ("## Partition %d selected ...\n", IMG_PART1);
+        printf ("## Writing image info to addr 0x%x\n", PARTITION_SYSINFO);
+        /* copy image_info from SYSINFO partition */
+        sprintf(valStr, "%d", IMG_PART1);
+        setsys(SYSINFO_VAR_DUALACTPART, valStr);
+        savesys();
+
+        rc = _do_bootm_addr((const void *) PARTITION_ADDR_1);
+
+        selPartition = 1;
+    }
+    else
+    {
+        printf ("## Please enter correct index (0 or 1)\n");
+        return 1;
+    }
+
+    if (rc)
+    {
+        if (selPartition == IMG_PART0)
+        {
+            printf ("## Boot from partition %d failed. Try to boot from partition %d\n", IMG_PART0, IMG_PART1);
+            if (_do_boota_img_check((const void *) PARTITION_ADDR_1))
+            {
+                printf ("## Partition %d image invalid\n", IMG_PART1);
+                goto fail;
+            }
+
+            /* Change image_info for SYSINFO partition */
+            sprintf(valStr, "%d", IMG_PART1);
+            setsys(SYSINFO_VAR_DUALACTPART, valStr);
+            savesys();
+
+            rc = _do_bootm_addr((const void *) PARTITION_ADDR_1);
+        }
+        else
+        {
+            printf ("## Boot from partition %d failed. Try to boot from partition %d\n", IMG_PART1, IMG_PART0);
+            if (_do_boota_img_check((const void *) PARTITION_ADDR_0))
+            {
+                printf ("## Partition %d image invalid\n", IMG_PART0);
+                goto fail;
+            }
+
+            /* Change image_info for SYSINFO partition */
+            sprintf(valStr, "%d", IMG_PART0);
+            setsys(SYSINFO_VAR_DUALACTPART, valStr);
+            savesys();
+
+            rc = _do_bootm_addr((const void *) PARTITION_ADDR_0);
+        }
+
+        if (rc)
+            goto fail;
+    }
+
+    return rc;
+
+fail:
+    printf ("## Boot from both partitions are all failed.\n");
+
+    return rc;
+}
+
+
+int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int index = -1;
+
+    if (1 == argc)
+    {
+        return dual_image_sel(index);
+    }
+    else if (2 == argc)
+    {
+        if (argv[1][0] == '0')
+        {
+            index = 0;
+        }
+        else if (argv[1][0] == '1')
+        {
+            index = 1;
+        }
+        else
+        {
+            printf ("## Please enter correct index (0 or 1)\n");
+            return cmd_usage(cmdtp);
+        }
+
+        return dual_image_sel(index);
+    }
+    else
+    {
+        return cmd_usage(cmdtp);
+    }
+
+    return cmd_usage(cmdtp);
+}
+
+U_BOOT_CMD(
+    boota, 2, 0, do_boota,
+    "boota  - boot application image from one of dual images partition automatically",
+    "index [index ...]\n"
+    "    - boot application image from one of dual images partition\n"
+    "      automatically; 'index' allow you to force on selected partition\n"
+);
+#else
+int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    return _do_bootm_addr((const void *)PARTITION_ADDR_0));
+}
+
+U_BOOT_CMD(
+    boota, 1, 0, do_boota,
+    "boota  - boot application image from flash partiton\n",
+    ""
+);
+#endif /* !CONFIG_DUAL_IMAGE */
+#endif /* !CONFIG_BOOT_SPI_NAND */
+

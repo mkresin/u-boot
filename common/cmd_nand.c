@@ -36,6 +36,7 @@ int id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *dev_num);
 int find_dev_and_part(const char *id, struct mtd_device **dev,
 		      u8 *part_num, struct part_info **part);
 #endif
+int dump_mem(unsigned int addr, int len);
 
 static int nand_dump(nand_info_t *nand, ulong off, int only_oob, int repeat)
 {
@@ -50,11 +51,15 @@ static int nand_dump(nand_info_t *nand, ulong off, int only_oob, int repeat)
 
 	datbuf = malloc(nand->writesize + nand->oobsize);
 	oobbuf = malloc(nand->oobsize);
+
+
 	if (!datbuf || !oobbuf) {
 		puts("No memory for page buffer\n");
 		return 1;
 	}
 	off &= ~(nand->writesize - 1);
+
+		printk("dump off is %ld\n",off);
 	loff_t addr = (loff_t) off;
 	struct mtd_oob_ops ops;
 	memset(&ops, 0, sizeof(ops));
@@ -63,6 +68,7 @@ static int nand_dump(nand_info_t *nand, ulong off, int only_oob, int repeat)
 	ops.len = nand->writesize;
 	ops.ooblen = nand->oobsize;
 	ops.mode = MTD_OOB_RAW;
+	printk("nand_dump 001 \r\n");
 	i = nand->read_oob(nand, addr, &ops);
 	if (i < 0) {
 		printf("Error (%d) reading page %08lx\n", i, off);
@@ -378,6 +384,7 @@ static void nand_print_and_set_info(int idx)
 	printf("  OOB size   %8d b\n", nand->oobsize);
 	printf("  Erase size %8d b\n", nand->erasesize);
 
+
 	/* Set geometry info */
 	sprintf(buf, "%x", nand->writesize);
 	setenv("nand_writesize", buf);
@@ -465,9 +472,25 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 	if (strcmp(cmd, "bad") == 0) {
 		printf("\nDevice %d bad blocks:\n", dev);
-		for (off = 0; off < nand->size; off += nand->erasesize)
+		printf("nand->size is   %08llx , erase size is  %d\n",nand->size,nand->erasesize);
+#if 0
+		for (off = 0; off < nand->size; off += nand->erasesize){
+				printf("  %08llx\n", (unsigned long long)off);
 			if (nand_block_isbad(nand, off))
 				printf("  %08llx\n", (unsigned long long)off);
+		}
+#endif
+//		extern void rtk_scan_bbt(); /*Mask by MSP*/
+		rtk_scan_bbt();
+		for (off = 0; off <nand->size; off += nand->erasesize){
+//				printf("  %08llx\n", (unsigned long long)off);
+			if (nand_block_isbad(nand, off))
+				printf("  %08llx\n", (unsigned long long)off);
+		}
+		//after pio read, must reset flash (test chip, RS code)
+//		rtk_flash_reset(); /*Mask by MSP*/
+
+
 		return 0;
 	}
 
@@ -560,6 +583,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			goto usage;
 
 		off = (int)simple_strtoul(argv[2], NULL, 16);
+
 		ret = nand_dump(nand, off, !strcmp(&cmd[4], ".oob"), repeat);
 
 		return ret == 0 ? 1 : 0;
@@ -615,9 +639,10 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			mtd_oob_ops_t ops = {
 				.oobbuf = (u8 *)addr,
 				.ooblen = rwsize,
+				.len=rwsize,
 				.mode = MTD_OOB_RAW
 			};
-
+			printk("rwsize is %d\n",rwsize);
 			if (read)
 				ret = nand->read_oob(nand, off, &ops);
 			else
@@ -627,17 +652,29 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			mtd_oob_ops_t ops = {
 				.datbuf = (u8 *)addr,
 				.oobbuf = ((u8 *)addr) + nand->writesize,
-				.len = nand->writesize,
+				.len =rwsize,
 				.ooblen = nand->oobsize,
 				.mode = MTD_OOB_RAW
 			};
 
-			rwsize = nand->writesize + nand->oobsize;
-
-			if (read)
+			if (read){
+//				printf("read nand raw data addr %x,size %d \n",off,rwsize); /*Mask by MSP*/
 				ret = nand->read_oob(nand, off, &ops);
-			else
+
+			}else
 				ret = nand->write_oob(nand, off, &ops);
+
+		}else if (!strcmp(s, ".pio")) {
+
+			extern void rtk_PIO_read(int page,int offset,int length,unsigned char * buffer);
+			if (read){
+				printk("pio read ,size is %d\n",rwsize);
+				//cmd: nand read.pio memaddr pageindex size
+				rtk_PIO_read(off, 0, rwsize, (u8 *)addr);
+			}
+//			dump_mem(addr,rwsize);
+
+
 		} else {
 			printf("Unknown nand command suffix '%s'.\n", s);
 			return 1;
@@ -679,6 +716,12 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		/* todo */
 		return 1;
 	}
+	if (strcmp(cmd,"reset")==0){
+//		extern void rtk_flash_reset(); /*Mask by MSP*/
+//		rtk_flash_reset(); /*Mask by MSP*/
+		return 0;
+
+		}
 
 #ifdef CONFIG_CMD_NAND_LOCK_UNLOCK
 	if (strcmp(cmd, "lock") == 0) {
@@ -727,6 +770,7 @@ U_BOOT_CMD(
 	"NAND sub-system",
 	"info - show available NAND devices\n"
 	"nand device [dev] - show or set current device\n"
+	"nand reset reset flash chip\n"
 	"nand read - addr off|partition size\n"
 	"nand write - addr off|partition size\n"
 	"    read/write 'size' bytes starting at offset 'off'\n"
@@ -768,8 +812,11 @@ U_BOOT_CMD(
 	"nand env.oob - environment offset in OOB of block 0 of"
 	"    first device.\n"
 	"nand env.oob set off|partition - set enviromnent offset\n"
-	"nand env.oob get - get environment offset"
+	"nand env.oob get - get environment offset "
+
 #endif
+
+
 );
 
 static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
@@ -778,11 +825,12 @@ static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
 	int r;
 	char *s;
 	size_t cnt;
+	size_t temp_cnt;
 	image_header_t *hdr;
 #if defined(CONFIG_FIT)
 	const void *fit_hdr = NULL;
 #endif
-
+printk("nand_load_image\n");
 	s = strchr(cmd, '.');
 	if (s != NULL &&
 	    (strcmp(s, ".jffs2") && strcmp(s, ".e") && strcmp(s, ".i"))) {
@@ -826,7 +874,21 @@ static int nand_load_image(cmd_tbl_t *cmdtp, nand_info_t *nand,
 	}
 	show_boot_progress (57);
 
-	r = nand_read_skip_bad(nand, offset, &cnt, (u_char *) addr);
+	//Page size alignment
+
+//	printf("cnt=  0x%lx\n",cnt); /*Mask by MSP*/
+	temp_cnt=cnt;
+
+	if( cnt%nand->writesize ){
+		temp_cnt +=(nand->writesize-(cnt%nand->writesize));
+	}
+
+
+//	printf("temp_cnt=  0x%lx\n",temp_cnt); /*Mask by MSP*/
+
+//	r = nand_read_skip_bad(nand, offset, &cnt, (u_char *) addr);
+	r = nand_read_skip_bad(nand, offset, &temp_cnt, (u_char *) addr);
+
 	if (r) {
 		puts("** Read error\n");
 		show_boot_progress (-58);
@@ -935,3 +997,72 @@ U_BOOT_CMD(nboot, 4, 1, do_nandboot,
 	"boot from NAND device",
 	"[partition] | [[[loadAddr] dev] offset]"
 );
+
+
+
+
+int dump_mem(unsigned int addr, int len)
+{
+unsigned char	*raw,ch;
+int			row,col,rowsz;
+
+	raw = (unsigned char *)addr;
+	if (len == 0) {
+ 		rowsz = 20;
+	}
+	else {
+		rowsz = (len + 15)/16;
+	}
+#ifdef BANK_AUTO_SWITCH
+	unsigned int bank;
+	bank = getbank();
+	switch(bank)
+	{
+		case 1:
+			addr += 0x400000;
+			break;
+		case 2:
+			addr += 0x800000;
+			break;
+		case 3:
+			addr += 0xC00000;
+			break;
+	}
+#endif
+
+	for (row=0;row<rowsz;row++)
+	{
+	 	// Address
+ 		printf("0x%08X: ",(addr + row * 16));
+
+	 	// Show HEX
+ 		for (col=0;col<8;col++) {
+ 			printf("%02X ",raw[col]);
+ 		}
+		//printf("- ");
+ 		for (col=8;col<16;col++) {
+ 			printf("%02X ",raw[col]);
+ 		}
+
+ 		// Show ASCII
+	 	for (col=0;col<16;col++) {
+ 			if ((raw[col] < 0x20) || (raw[col] > 0x7e)) {
+ 				ch = '.';
+ 			}
+ 			else {
+ 				if ((raw[col] == 0x25) || (raw[col] == 0x5c))
+ 					ch = '.';
+ 				else
+ 					ch = raw[col];
+ 			}
+ 			printf("%c",ch);
+ 		}
+
+ 		raw += 16;
+
+ 		printf("\n\r");
+
+	}	// end of for
+	return 1;
+}
+

@@ -156,6 +156,7 @@ void __assert_fail(const char *assertion, const char *file, unsigned line,
 			##args, __FILE__, __LINE__, __func__);		\
 } while (0)
 
+
 #ifndef BUG
 #define BUG() do { \
 	printf("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -222,15 +223,16 @@ typedef void (interrupt_handler_t)(void *);
 #define MIN(x, y)  min(x, y)
 #define MAX(x, y)  max(x, y)
 
-#if defined(CONFIG_ENV_IS_EMBEDDED)
-#define TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
-#elif ( ((CONFIG_ENV_ADDR+CONFIG_ENV_SIZE) < CONFIG_SYS_MONITOR_BASE) || \
-	(CONFIG_ENV_ADDR >= (CONFIG_SYS_MONITOR_BASE + CONFIG_SYS_MONITOR_LEN)) ) || \
-      defined(CONFIG_ENV_IS_IN_NVRAM)
+//#if defined(CONFIG_ENV_IS_EMBEDDED)
+//#define TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
+//#elif ( ((CONFIG_ENV_ADDR+CONFIG_ENV_SIZE) < CONFIG_SYS_MONITOR_BASE) || (CONFIG_ENV_ADDR >= (CONFIG_SYS_MONITOR_BASE + CONFIG_SYS_MONITOR_LEN)) ) || defined(CONFIG_ENV_IS_IN_NVRAM)
+//#define	TOTAL_MALLOC_LEN	(CONFIG_SYS_MALLOC_LEN + CONFIG_ENV_SIZE)
+//#else
+//#define	TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
+//#endif
+
+/* Otto architecture the following is always used */
 #define	TOTAL_MALLOC_LEN	(CONFIG_SYS_MALLOC_LEN + CONFIG_ENV_SIZE)
-#else
-#define	TOTAL_MALLOC_LEN	CONFIG_SYS_MALLOC_LEN
-#endif
 
 /**
  * container_of - cast a member of a structure out to the containing structure
@@ -553,14 +555,18 @@ void ft_pci_setup(void *blob, bd_t *bd);
 
 
 /* $(CPU)/serial.c */
-int	serial_init   (void);
-void	serial_setbrg (void);
+int	serial_init   (int,int);
+void	serial_setbrg (int,int);
 void	serial_putc   (const char);
 void	serial_putc_raw(const char);
 void	serial_puts   (const char *);
 int	serial_getc   (void);
 int	serial_tstc   (void);
-
+void serial_chan_putc(int,const char);
+void serial_chan_puts(int,const char *);
+int	serial_chan_getc   (int);
+int	serial_chan_tstc   (int);
+int serial_IoCtl(int chan,int request,int arg);
 void	_serial_setbrg (const int);
 void	_serial_putc   (const char, const int);
 void	_serial_putc_raw(const char, const int);
@@ -759,6 +765,12 @@ int	had_ctrlc (void);	/* have we had a Control-C since last clear? */
 void	clear_ctrlc (void);	/* clear the Control-C condition */
 int	disable_ctrlc (int);	/* 1 to disable, 0 to enable Control-C detect */
 
+/* common/cmd_sysinfo.c */
+void setsys (char *, char *);
+char *getsys (char *);
+int savesys (void);
+int eraseFlash(unsigned int offset, unsigned int len);
+
 /*
  * STDIO based functions (can always be used)
  */
@@ -925,5 +937,57 @@ int cpu_release(int nr, int argc, char * const argv[]);
 #ifdef DO_DEPS_ONLY
 # include <environment.h>
 #endif
+
+#define HTP_LOOPBACK_TEST_PKT_MAX_LEN (1500)
+
+#define SYS_HTP_MODE_IF  0xb5180000
+#define SYS_HTP_BREAK_IF 0xb5180001
+#define SYS_HTP_RUN_FUNC 0xb5180002
+#define SYS_HTP_RUN_TEST 0xb5180003
+#define SYS_HTP_RUN_TIME 0xb5180004
+
+
+extern int htpRxIf;
+extern int htpRxLen;
+extern int htpModeIf;
+extern int htpBreakIf;
+extern u_long htpFailMsg;
+extern uchar htpRxPkt[HTP_LOOPBACK_TEST_PKT_MAX_LEN];
+
+typedef enum sys_htp_err_e{
+    HTP_ERR_NONE = 0,
+    HTP_ERR_DRAM_VAL,
+    HTP_ERR_FLSH_DDR_VAL,
+    HTP_ERR_FLSH_SPI_PRB,
+    HTP_ERR_FLSH_FLS_VAL,
+    HTP_ERR_PORT_LOP_SET,
+    HTP_ERR_PORT_PKT_VAL,
+    HTP_ERR_GET_INFO,
+    HTP_ERR_BREAK,
+    HTP_ERR_LOG_FULL,
+    HTP_ERR_END
+} sys_htp_err_t;
+
+extern
+int _sys_htp_info_set(int mode, int brk, int hour, int entry, int times);
+extern
+int _sys_htp_info_get(int* mode, int* brk, int* hour, int* entry, int* times);
+
+extern
+int _sys_hpt_ddrtest_run(void);
+extern
+int _sys_htp_fltest_run(void);
+extern
+int _sys_htp_looptest_run(void);
+
+extern
+int sys_htp_enable(void);
+extern
+int sys_htp_run_case(int hour);
+extern
+int sys_htp_print(void);
+extern
+int sys_htp_clear(void);
+
 
 #endif	/* __COMMON_H_ */

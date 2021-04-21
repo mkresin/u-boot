@@ -50,6 +50,8 @@
 #include <serial.h>
 #include <linux/stddef.h>
 #include <asm/byteorder.h>
+#include <soc.h>
+#include <pblr.h>
 #if defined(CONFIG_CMD_NET)
 #include <net.h>
 #endif
@@ -65,9 +67,10 @@ DECLARE_GLOBAL_DATA_PTR;
 	!defined(CONFIG_ENV_IS_IN_NVRAM)	&& \
 	!defined(CONFIG_ENV_IS_IN_ONENAND)	&& \
 	!defined(CONFIG_ENV_IS_IN_SPI_FLASH)	&& \
+	!defined(CONFIG_ENV_IS_IN_SPI_NAND)	&& \
 	!defined(CONFIG_ENV_IS_NOWHERE)
 # error Define one of CONFIG_ENV_IS_IN_{EEPROM|FLASH|DATAFLASH|ONENAND|\
-SPI_FLASH|MG_DISK|NVRAM|MMC} or CONFIG_ENV_IS_NOWHERE
+SPI_FLASH|SPI_NAND|MG_DISK|NVRAM|MMC} or CONFIG_ENV_IS_NOWHERE
 #endif
 
 #define XMK_STR(x)	#x
@@ -293,7 +296,7 @@ int _do_env_set(int flag, int argc, char * const argv[])
 			gd->bd->bi_baudrate = baudrate;
 #endif
 
-			serial_setbrg();
+			serial_setbrg(CONSOLE_CH_INDEX,gd->baudrate);
 			udelay(50000);
 			while (getc() != '\r')
 				;
