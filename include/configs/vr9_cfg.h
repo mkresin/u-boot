@@ -36,7 +36,7 @@
 /*-----------------------------------------------------------------------
  * Board specific configurations
  */
-#if defined(CONFIG_BOOT_FROM_NOR) || defined(CONFIG_BOOT_FROM_UART)
+#ifdef CONFIG_BOOT_FROM_NOR
 
 #ifdef CONFIG_NOR_FLASH_2M
 #define IFX_CONFIG_FLASH_SIZE 2

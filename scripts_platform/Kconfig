@@ -56,7 +56,7 @@ config BOOT_FROM_ETHERNET
 
 config BOOT_FROM_UART
     bool "UART"
-    select ENV_IS_IN_FLASH
+    select ENV_IS_NOWHERE
     help
     Boots from asc port.
 
