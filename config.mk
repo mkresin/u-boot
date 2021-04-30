@@ -305,7 +305,7 @@ endif
 AFLAGS := $(AFLAGS_DEBUG) -D__ASSEMBLY__ $(CPPFLAGS)
 
 LDFLAGS += $(PLATFORM_LDFLAGS)
-LDFLAGS_FINAL += -Bstatic
+LDFLAGS_FINAL += -Bstatic --no-dynamic-linker
 
 LDFLAGS_u-boot += -T $(obj)u-boot.lds $(LDFLAGS_FINAL)
 ifneq ($(CONFIG_SYS_TEXT_BASE),)
