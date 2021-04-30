@@ -54,6 +54,7 @@ PLATFORM_CPPFLAGS += -pipe
 
 LDFLAGS += $(PLATFORM_LDFLAGS)
 LDFLAGS_FINAL += -Bstatic
+LDFLAGS_FINAL += $(call ld-option, --no-dynamic-linker)
 
 export PLATFORM_CPPFLAGS
 export RELFLAGS
