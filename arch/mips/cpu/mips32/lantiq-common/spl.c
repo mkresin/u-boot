@@ -10,8 +10,12 @@
 #include <spi_flash.h>
 #include <nand.h>
 #include <linux/compiler.h>
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
 #include <lzma/LzmaDec.h>
+#endif
+#if defined(CONFIG_LTQ_SPL_COMP_LZO)
 #include <linux/lzo.h>
+#endif
 #include <asm/mipsregs.h>
 #include <asm/arch/nand.h>
 #include <asm/lantiq/spl.h>
@@ -27,7 +31,9 @@ struct spl_image {
 };
 
 DECLARE_GLOBAL_DATA_PTR;
+#if spl_boot_spi_flash
 static struct spi_flash spl_spi_flash;
+#endif
 
 #if spl_boot_nand_flash
 static u8 spl_mc_tune_buf[CONFIG_SYS_NAND_PAGE_SIZE];
@@ -114,6 +120,7 @@ static int spl_parse_image(const image_header_t *hdr, struct spl_image *spl)
 	return 0;
 }
 
+#if spl_boot_spi_flash || spl_boot_nand_flash
 static int spl_check_data(const struct spl_image *spl, unsigned long addr)
 {
 	ulong dcrc = crc32(0, (unsigned char *)addr, spl->data_size);
@@ -125,7 +132,9 @@ static int spl_check_data(const struct spl_image *spl, unsigned long addr)
 
 	return 1;
 }
+#endif
 
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
 static void *spl_lzma_alloc(void *p, size_t size)
 {
 	u8 *ret;
@@ -143,6 +152,7 @@ static void *spl_lzma_alloc(void *p, size_t size)
 static void spl_lzma_free(void *p, void *addr)
 {
 }
+#endif
 
 static int spl_copy_image(struct spl_image *spl, unsigned long addr)
 {
@@ -156,6 +166,7 @@ static int spl_copy_image(struct spl_image *spl, unsigned long addr)
 
 static int spl_uncompress_lzma(struct spl_image *spl, unsigned long addr)
 {
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
 	SRes res;
 	const Byte *prop = (const Byte *) addr;
 	const Byte *src = (const Byte *) addr + LZMA_PROPS_SIZE +
@@ -187,12 +198,13 @@ static int spl_uncompress_lzma(struct spl_image *spl, unsigned long addr)
 			return 1;
 
 	spl->entry_size = dest_len;
-
+#endif
 	return 0;
 }
 
 static int spl_uncompress_lzo(struct spl_image *spl, unsigned long addr)
 {
+#if defined(CONFIG_LTQ_SPL_COMP_LZO)
 	size_t len = CONFIG_SYS_LOAD_SIZE;
 	int ret;
 
@@ -205,6 +217,9 @@ static int spl_uncompress_lzo(struct spl_image *spl, unsigned long addr)
 	spl->entry_size = len;
 
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 static int spl_uncompress(struct spl_image *spl, unsigned long addr)
@@ -238,6 +253,7 @@ static int spl_flash_init(void)
 	return 0;
 }
 
+#if spl_boot_spi_flash
 static int spl_load_spi_flash(struct spl_image *spl)
 {
 	image_header_t hdr;
@@ -285,16 +301,16 @@ static int spl_load_spi_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
+#if spl_boot_nor_flash
 static int spl_load_nor_flash(struct spl_image *spl)
 {
 	image_header_t hdr;
 	int ret;
 	unsigned long addr = CONFIG_SPL_U_BOOT_OFFS;
 
-#if spl_boot_nor_flash
 	addr += CONFIG_SYS_FLASH_BASE;
-#endif
 
 	/*
 	 * Image format:
@@ -323,7 +339,9 @@ static int spl_load_nor_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
+#if spl_boot_nand_flash
 static int spl_load_nand_flash(struct spl_image *spl)
 {
 	const image_header_t *hdr;
@@ -365,18 +383,21 @@ static int spl_load_nand_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
 static int spl_load(struct spl_image *spl)
 {
-	if (spl_boot_spi_flash)
-		return spl_load_spi_flash(spl);
+#if spl_boot_spi_flash
+	return spl_load_spi_flash(spl);
+#endif
 
-	if (spl_boot_nor_flash)
-		return spl_load_nor_flash(spl);
+#if spl_boot_nor_flash
+	return spl_load_nor_flash(spl);
+#endif
 
-	if (spl_boot_nand_flash)
-		return spl_load_nand_flash(spl);
-
+#if spl_boot_nand_flash
+	return spl_load_nand_flash(spl);
+#endif
 	return 1;
 }
 
