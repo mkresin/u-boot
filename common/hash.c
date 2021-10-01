@@ -14,8 +14,8 @@
 #include <command.h>
 #include <hw_sha.h>
 #include <hash.h>
-#include <sha1.h>
-#include <sha256.h>
+#include <u-boot/sha1.h>
+#include <u-boot/sha256.h>
 #include <asm/io.h>
 #include <asm/errno.h>
 

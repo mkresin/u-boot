@@ -7,7 +7,7 @@
 #include <common.h>
 #include <fdtdec.h>
 #include <rsa.h>
-#include <sha1.h>
+#include <u-boot/sha1.h>
 #include <asm/byteorder.h>
 #include <asm/errno.h>
 #include <asm/unaligned.h>

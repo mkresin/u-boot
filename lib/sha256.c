@@ -11,7 +11,7 @@
 #endif /* USE_HOSTCC */
 #include <watchdog.h>
 #include <linux/string.h>
-#include <sha256.h>
+#include <u-boot/sha256.h>
 
 /*
  * 32-bit integer manipulation macros (big endian)
