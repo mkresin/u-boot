@@ -2,6 +2,7 @@
 #define _LINUX_UNALIGNED_LE_BYTESHIFT_H
 
 #include <linux/types.h>
+#include <asm/io.h>
 
 static inline u16 __get_unaligned_le16(const u8 *p)
 {
@@ -10,7 +11,7 @@ static inline u16 __get_unaligned_le16(const u8 *p)
 
 static inline u32 __get_unaligned_le32(const u8 *p)
 {
-	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+	return readb(&p[0]) | readb(&p[1]) << 8 | readb(&p[2]) << 16 | readb(&p[3]) << 24;
 }
 
 static inline u64 __get_unaligned_le64(const u8 *p)
