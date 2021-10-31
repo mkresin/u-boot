@@ -7,6 +7,7 @@
 #include "LzmaDec.h"
 
 #include <linux/string.h>
+#include <asm/io.h>
 
 #define kNumTopBits 24
 #define kTopValue ((UInt32)1 << kNumTopBits)
@@ -703,7 +704,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 
 static void LzmaDec_InitRc(CLzmaDec *p, const Byte *data)
 {
-  p->code = ((UInt32)data[1] << 24) | ((UInt32)data[2] << 16) | ((UInt32)data[3] << 8) | ((UInt32)data[4]);
+  p->code = ((UInt32)readb(&data[1]) << 24) | ((UInt32)readb(&data[2]) << 16) | ((UInt32)readb(&data[3]) << 8) | ((UInt32)readb(&data[4]));
   p->range = 0xFFFFFFFF;
   p->needFlush = 0;
 }
@@ -929,7 +930,7 @@ SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
   if (size < LZMA_PROPS_SIZE)
     return SZ_ERROR_UNSUPPORTED;
   else
-    dicSize = data[1] | ((UInt32)data[2] << 8) | ((UInt32)data[3] << 16) | ((UInt32)data[4] << 24);
+    dicSize = readb(&data[1]) | ((UInt32)readb(&data[2]) << 8) | ((UInt32)readb(&data[3]) << 16) | ((UInt32)readb(&data[4]) << 24);
 
   if (dicSize < LZMA_DIC_MIN)
     dicSize = LZMA_DIC_MIN;
