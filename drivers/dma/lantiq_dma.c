@@ -280,7 +280,7 @@ int ltq_dma_rx_map(struct ltq_dma_device *dev, int index, void *data, int len)
 
 	offset = dma_addr % ltq_dma_burst_align(dev->rx_burst_len);
 
-	ltq_dma_dcache_inv(data, len);
+	ltq_dma_dcache_inv(data - offset, len);
 
 #if 0
 	printf("%s: index %d, data %p, dma_addr %08x, offset %u, len %d\n",
@@ -355,7 +355,7 @@ int ltq_dma_tx_map(struct ltq_dma_device *dev, int index, void *data, int len,
 		__func__, index, desc, data, dma_addr, offset, len);
 #endif
 
-	ltq_dma_dcache_wb_inv(data, len);
+	ltq_dma_dcache_wb_inv(data - offset, len);
 
 	desc->addr = dma_addr - offset;
 	desc->ctl = DMA_DESC_OWN | DMA_DESC_SOP | DMA_DESC_EOP |
