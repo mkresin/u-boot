@@ -10,6 +10,7 @@
 /* Commands */
 #if defined(CONFIG_LTQ_SUPPORT_ETHERNET)
 #define CONFIG_CMD_PING
+#define CONFIG_CMD_TFTPPUT
 #endif
 
 /* Compression */
