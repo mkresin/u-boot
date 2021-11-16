@@ -20,7 +20,7 @@
 #define CONFIG_BOOTDELAY	2
 
 /* Environment */
-#if !defined(CONFIG_SYS_BOOT_RAM)
+#if defined(CONFIG_SYS_BOOT_NOR) || defined(CONFIG_SYS_BOOT_NORSPL)
 #define CONFIG_BOOTCOMMAND \
 	"bootm ${kernel_addr}"
 #endif
