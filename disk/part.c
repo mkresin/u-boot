@@ -19,6 +19,7 @@
 #define PRINTF(fmt,args...)
 #endif
 
+#ifdef HAVE_BLOCK_DEVICE
 struct block_drvr {
 	char *name;
 	block_dev_desc_t* (*get_dev)(int dev);
@@ -48,6 +49,7 @@ static const struct block_drvr block_drvr[] = {
 #endif
 	{ },
 };
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 

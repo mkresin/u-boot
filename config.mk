@@ -264,6 +264,7 @@ CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\
 	-isystem $(gccincdir) -pipe $(PLATFORM_CPPFLAGS)
 
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
+CFLAGS += -Wno-address-of-packed-member
 
 ifdef BUILD_TAG
 CFLAGS += -DBUILD_TAG='"$(BUILD_TAG)"'
