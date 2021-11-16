@@ -19,12 +19,6 @@
 /* Auto boot */
 #define CONFIG_BOOTDELAY	2
 
-/* Environment */
-#if !defined(CONFIG_SYS_BOOT_RAM)
-#define CONFIG_BOOTCOMMAND \
-	"bootm ${kernel_addr}"
-#endif
-
 /* Ethernet */
 #if defined(CONFIG_LTQ_SUPPORT_ETHERNET)
 #define CONFIG_ETHADDR		00:01:02:03:04:05
