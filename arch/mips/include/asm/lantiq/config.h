@@ -116,7 +116,7 @@
 #define CONFIG_MIPS_BOOT_CMDLINE_LEGACY
 
 /* Default environment */
-#if defined(CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH)
+#if defined(CONFIG_LTQ_SUPPORT_NOR_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NOR					\
 	"write-uboot-nor="						\
 	"protect off " __stringify(CONFIG_SYS_FLASH_BASE) " +${filesize} && " \
@@ -128,15 +128,22 @@
 	"load-uboot-norspl-lzo=tftpboot u-boot.ltq.lzo.norspl\0"	\
 	"load-uboot-norspl-lzma=tftpboot u-boot.ltq.lzma.norspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_NOR									\
-	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"				\
-	"update-uboot-norspl-lzo=run load-uboot-norspl-lzo write-uboot-nor\0"		\
-	"update-uboot-norspl-lzma=run load-uboot-norspl-lzma write-uboot-nor\0"
+#if defined(CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH)
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_ENV_UPDATE_UBOOT_NOR \
+	"update-uboot=run load-uboot-norspl-lzma write-uboot-nor\0"
+#elif defined(CONFIG_LTQ_SPL_COMP_LZO)
+#define CONFIG_ENV_UPDATE_UBOOT_NOR \
+	"update-uboot=run load-uboot-norspl-lzo write-uboot-nor\0"
+#endif /* CONFIG_LTQ_SPL_COMP_LZMA */
+#else
+#define CONFIG_ENV_UPDATE_UBOOT_NOR \
+	"update-uboot=run load-uboot-nor write-uboot-nor\0"
+#endif /* CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH */
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NOR
 #define CONFIG_ENV_LOAD_UBOOT_NOR
-#define CONFIG_ENV_UPDATE_UBOOT_NOR
-#endif
+#endif /* CONFIG_LTQ_SUPPORT_NOR_FLASH */
 
 #if defined(CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH)
 #define CONFIG_ENV_SF_PROBE					\
@@ -153,15 +160,20 @@
 	"load-uboot-sf-lzo=tftpboot u-boot.ltq.lzo.sfspl\0"	\
 	"load-uboot-sf-lzma=tftpboot u-boot.ltq.lzma.sfspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_SF								\
-	"update-uboot-sf-lzo=run load-uboot-sf-lzo write-uboot-sf\0"	\
-	"update-uboot-sf-lzma=run load-uboot-sf-lzma write-uboot-sf\0"
+#if defined(CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH)
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_ENV_UPDATE_UBOOT_SF \
+	"update-uboot=run load-uboot-sf-lzma write-uboot-sf\0"
+#elif defined(CONFIG_LTQ_SPL_COMP_LZO)
+#define CONFIG_ENV_UPDATE_UBOOT_SF \
+	"update-uboot=run load-uboot-sf-lzo write-uboot-sf\0"
+#endif /* CONFIG_LTQ_SPL_COMP_LZMA */
+#endif /* CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH */
 #else
 #define CONFIG_ENV_SF_PROBE
 #define CONFIG_ENV_WRITE_UBOOT_SF
 #define CONFIG_ENV_LOAD_UBOOT_SF
-#define CONFIG_ENV_UPDATE_UBOOT_SF
-#endif
+#endif /* CONFIG_LTQ_SUPPORT_SPI_FLASH */
 
 #if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NAND				\
@@ -169,41 +181,66 @@
 	"nand erase 0 ${filesize} && "				\
 	"nand write ${loadaddr} 0 ${filesize}\0"
 
-#define CONFIG_ENV_LOAD_UBOOT_NAND					\
-	"load-uboot-nand-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
-	"load-uboot-nand-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"	\
-
+#if defined(CONFIG_LTQ_SUPPORT_HSNAND_FLASH)
+#define CONFIG_ENV_LOAD_UBOOT_NAND
 #define CONFIG_ENV_LOAD_UBOOT_HSNAND					\
 	"load-uboot-hsnand-lzo=tftpboot u-boot.ltq.lzo.nandhwspl\0"	\
 	"load-uboot-hsnand-lzma=tftpboot u-boot.ltq.lzma.nandhwspl\0"
-
-#define CONFIG_ENV_UPDATE_UBOOT_NAND						\
-	"update-uboot-nand-lzo=run load-uboot-nand-lzo write-uboot-nand\0"	\
-	"update-uboot-nand-lzma=run load-uboot-nand-lzma write-uboot-nand\0"
-
-#define CONFIG_ENV_UPDATE_UBOOT_HSNAND							\
-	"update-uboot-hsnand-lzo=run load-uboot-hsnand-lzo write-uboot-nand\0"		\
-	"update-uboot-hsnand-lzma=run load-uboot-hsnand-lzma write-uboot-nand\0"	\
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_ENV_UPDATE_UBOOT_HSNAND \
+	"update-uboot=run load-uboot-hsnand-lzma write-uboot-nand\0"
+#elif defined(CONFIG_LTQ_SPL_COMP_LZO)
+#define CONFIG_ENV_UPDATE_UBOOT_HSNAND \
+	"update-uboot=run load-uboot-hsnand-lzo write-uboot-nand\0"
+#endif /* CONFIG_LTQ_SPL_COMP_LZMA */
+#else
+#define CONFIG_ENV_LOAD_UBOOT_HSNAND
+#define CONFIG_ENV_LOAD_UBOOT_NAND					\
+	"load-uboot-nand-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
+	"load-uboot-nand-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_ENV_UPDATE_UBOOT_NAND \
+	"update-uboot=run load-uboot-nand-lzma write-uboot-nand\0"
+#elif defined(CONFIG_LTQ_SPL_COMP_LZO)
+#define CONFIG_ENV_UPDATE_UBOOT_NAND \
+	"update-uboot=run load-uboot-nand-lzo write-uboot-nand\0"
+#endif /* CONFIG_LTQ_SPL_COMP_LZMA */
+#endif /* CONFIG_LTQ_SUPPORT_HSNAND_FLASH */
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NAND
 #define CONFIG_ENV_LOAD_UBOOT_NAND
 #define CONFIG_ENV_LOAD_UBOOT_HSNAND
-#define CONFIG_ENV_UPDATE_UBOOT_NAND
-#define CONFIG_ENV_UPDATE_UBOOT_HSNAND
+#endif /* CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH */
+
+#if defined(CONFIG_SYS_BOOT_NOR) || defined(CONFIG_SYS_BOOT_NORSPL)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_NOR
+#elif defined(CONFIG_SYS_BOOT_SFSPL)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_SF
+#elif defined(CONFIG_SYS_BOOT_NANDHWSPL)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_HSNAND
+#elif defined(CONFIG_SYS_BOOT_NANDSPL)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_NAND
+#elif defined(CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_SF
+#elif defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && defined(CONFIG_LTQ_SUPPORT_HSNAND_FLASH)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_HSNAND
+#elif defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_NAND
+#elif defined(CONFIG_LTQ_SUPPORT_NOR_FLASH)
+#define CONFIG_ENV_UPDATE_UBOOT CONFIG_ENV_UPDATE_UBOOT_NOR
+#else
+#define CONFIG_ENV_UPDATE_UBOOT
 #endif
 
 #define CONFIG_ENV_LANTIQ_DEFAULTS	\
 	CONFIG_ENV_WRITE_UBOOT_NOR	\
 	CONFIG_ENV_LOAD_UBOOT_NOR	\
-	CONFIG_ENV_UPDATE_UBOOT_NOR	\
 	CONFIG_ENV_SF_PROBE		\
 	CONFIG_ENV_WRITE_UBOOT_SF	\
 	CONFIG_ENV_LOAD_UBOOT_SF	\
-	CONFIG_ENV_UPDATE_UBOOT_SF	\
 	CONFIG_ENV_WRITE_UBOOT_NAND	\
 	CONFIG_ENV_LOAD_UBOOT_NAND	\
 	CONFIG_ENV_LOAD_UBOOT_HSNAND	\
-	CONFIG_ENV_UPDATE_UBOOT_NAND	\
-	CONFIG_ENV_UPDATE_UBOOT_HSNAND
+	CONFIG_ENV_UPDATE_UBOOT
 
 #endif /* __LANTIQ_CONFIG_H__ */
