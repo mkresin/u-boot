@@ -127,6 +127,8 @@
 	"addmachtype=setenv bootargs ${bootargs}"			\
 	" machtype=" CONFIG_MACH_TYPE "\0"
 
+#define CONFIG_LOADADDR CONFIG_SYS_LOAD_ADDR
+
 #if defined(CONFIG_LTQ_SUPPORT_NOR_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NOR					\
 	"write-uboot-nor="						\
