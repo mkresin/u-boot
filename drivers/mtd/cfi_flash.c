@@ -1167,32 +1167,9 @@ int flash_erase (flash_info_t * info, int s_first, int s_last)
 	return rcode;
 }
 
-#ifdef CONFIG_SYS_FLASH_EMPTY_INFO
-static int sector_erased(flash_info_t *info, int i)
-{
-	int k;
-	int size;
-	u32 *flash;
-
-	/*
-	 * Check if whole sector is erased
-	 */
-	size = flash_sector_size(info, i);
-	flash = (u32 *)info->start[i];
-	/* divide by 4 for longword access */
-	size = size >> 2;
-
-	for (k = 0; k < size; k++) {
-		if (flash_read32(flash++) != 0xffffffff)
-			return 0;	/* not erased */
-	}
-
-	return 1;			/* erased */
-}
-#endif /* CONFIG_SYS_FLASH_EMPTY_INFO */
-
 void flash_print_info (flash_info_t * info)
 {
+#if !defined(CONFIG_SYS_FLASH_EMPTY_INFO)
 	int i;
 
 	if (info->flash_id != FLASH_MAN_CFI) {
@@ -1273,6 +1250,7 @@ void flash_print_info (flash_info_t * info)
 			info->protect[i] ? "RO" : "  ");
 #endif
 	}
+#endif
 	putc ('\n');
 	return;
 }
