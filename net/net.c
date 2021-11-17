@@ -91,7 +91,9 @@
 #include <watchdog.h>
 #include <linux/compiler.h>
 #include "arp.h"
+#if defined(CONFIG_CMD_BOOTP)
 #include "bootp.h"
+#endif
 #include "cdp.h"
 #if defined(CONFIG_CMD_DNS)
 #include "dns.h"
@@ -390,13 +392,13 @@ restart:
 			DhcpRequest();		/* Basically same as BOOTP */
 			break;
 #endif
-
+#if defined(CONFIG_CMD_BOOTP)
 		case BOOTP:
 			BootpTry = 0;
 			NetOurIP = 0;
 			BootpRequest();
 			break;
-
+#endif
 #if defined(CONFIG_CMD_RARP)
 		case RARP:
 			RarpTry = 0;

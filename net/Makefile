@@ -8,7 +8,7 @@
 # CFLAGS += -DDEBUG
 
 obj-$(CONFIG_CMD_NET)  += arp.o
-obj-$(CONFIG_CMD_NET)  += bootp.o
+obj-$(CONFIG_CMD_BOOTP)  += bootp.o
 obj-$(CONFIG_CMD_CDP)  += cdp.o
 obj-$(CONFIG_CMD_DNS)  += dns.o
 obj-$(CONFIG_CMD_NET)  += eth.o

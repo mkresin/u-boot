@@ -597,6 +597,7 @@ static int BootpExtended(u8 *e)
 }
 #endif
 
+#if defined(CONFIG_CMD_BOOTP)
 void
 BootpRequest(void)
 {
@@ -696,6 +697,7 @@ BootpRequest(void)
 #endif
 	NetSendPacket(NetTxPacket, pktlen);
 }
+#endif
 
 #if defined(CONFIG_CMD_DHCP)
 static void DhcpOptionsProcess(uchar *popt, struct Bootp_t *bp)
