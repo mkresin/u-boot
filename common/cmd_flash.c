@@ -273,6 +273,7 @@ flash_fill_sect_ranges (ulong addr_first, ulong addr_last,
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
+#if !defined(CONFIG_SYS_FLASH_EMPTY_INFO)
 static int do_flinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
@@ -304,7 +305,7 @@ static int do_flinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif /* CONFIG_SYS_NO_FLASH */
 	return 0;
 }
-
+#endif
 static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
@@ -678,12 +679,14 @@ int flash_sect_protect (int p, ulong addr_first, ulong addr_last)
 # define TMP_PROT_OFF	/* empty */
 #endif
 
+#if !defined(CONFIG_SYS_FLASH_EMPTY_INFO)
 U_BOOT_CMD(
 	flinfo,    2,    1,    do_flinfo,
 	"print FLASH memory information",
 	"\n    - print information for all FLASH memory banks\n"
 	"flinfo N\n    - print information for FLASH memory bank # N"
 );
+#endif
 
 U_BOOT_CMD(
 	erase,   3,   0,  do_flerase,
