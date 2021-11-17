@@ -36,5 +36,29 @@
 #undef CONFIG_BOOTM_NETBSD
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
+#undef CONFIG_GZIP_COMPRESSED
+#if !defined(CONFIG_CMD_UBIFS)
+#undef CONFIG_ZLIB
+#undef CONFIG_GZIP
+#endif
+
+/* allow tiny binaries */
+#if !defined(CONFIG_LTQ_ADVANCED_CONSOLE)
+#undef CONFIG_SYS_HUSH_PARSER
+#undef CONFIG_CMD_MII
+#undef CONFIG_CMD_BDI
+#undef CONFIG_CMD_EDITENV
+#undef CONFIG_CMD_IMI
+#undef CONFIG_CMD_LOADS
+#undef CONFIG_CMD_LOADB
+/* only cp (memory copy) for u-boot update */
+#if defined(CONFIG_SYS_BOOT_NOR) || defined(CONFIG_SYS_BOOT_NORSPL)
+#define CONFIG_CMD_MEMORY_MINIMAL
+#else
+#undef CONFIG_CMD_MEMORY
+#endif
+#define CONFIG_SYS_FLASH_EMPTY_INFO
+#define CONFIG_SYS_IMAGE_EMPTY_INFO
+#endif
 
 #endif /* __OPENWRT_LANTIQ_COMMON_H */
