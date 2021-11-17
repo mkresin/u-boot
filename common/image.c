@@ -263,6 +263,7 @@ void image_multi_getimg(const image_header_t *hdr, ulong idx,
 	}
 }
 
+#if !defined(CONFIG_SYS_IMAGE_EMPTY_INFO)
 static void image_print_type(const image_header_t *hdr)
 {
 	const char *os, *arch, *type, *comp;
@@ -274,6 +275,7 @@ static void image_print_type(const image_header_t *hdr)
 
 	printf("%s %s %s (%s)\n", arch, os, type, comp);
 }
+#endif
 
 /**
  * image_print_contents - prints out the contents of the legacy format image
@@ -289,6 +291,7 @@ static void image_print_type(const image_header_t *hdr)
  */
 void image_print_contents(const void *ptr)
 {
+#if !defined(CONFIG_SYS_IMAGE_EMPTY_INFO)
 	const image_header_t *hdr = (const image_header_t *)ptr;
 	const char *p;
 
@@ -328,6 +331,7 @@ void image_print_contents(const void *ptr)
 			}
 		}
 	}
+#endif
 }
 
 
