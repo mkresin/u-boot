@@ -88,6 +88,12 @@
 #define CONFIG_SPL_LZO_SUPPORT
 #endif
 
+#if defined(CONFIG_LTQ_SPL_COMP_LZMA)
+#define CONFIG_LZMA
+#define CONFIG_SPL_LZMA_SUPPORT
+#endif
+
+
 /* Basic commands */
 #define CONFIG_CMD_BDI
 #define CONFIG_CMD_EDITENV
@@ -118,11 +124,13 @@
 	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && "	\
 	"cp.b $fileaddr " __stringify(CONFIG_SYS_FLASH_BASE) " $filesize\0"
 
-#define CONFIG_ENV_LOAD_UBOOT_NOR					\
-	"load-uboot-nor=tftpboot u-boot.ltq.lzo.norspl\0"
+#define CONFIG_ENV_LOAD_UBOOT_NOR						\
+	"load-uboot-nor=tftpboot u-boot.bin\0"				\
+	"load-uboot-norspl=tftpboot u-boot.ltq.lzo.norspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_NOR					\
-	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"
+#define CONFIG_ENV_UPDATE_UBOOT_NOR							\
+	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"	\
+	"update-uboot-norspl=run load-uboot-norspl write-uboot-nor\0"
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NOR
 #define CONFIG_ENV_LOAD_UBOOT_NOR
@@ -159,7 +167,7 @@
 	"nand write $fileaddr 0 $filesize\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NAND					\
-	"load-uboot-nand=tftpboot u-boot.ltq.lzo.nandspl\0"
+	"load-uboot-nand=tftpboot u-boot.ltq.lzo.nandspl\0" \
 
 #define CONFIG_ENV_LOAD_UBOOT_HSNAND					\
 	"load-uboot-hsnand=tftpboot u-boot.ltq.lzo.nandhwspl\0"
