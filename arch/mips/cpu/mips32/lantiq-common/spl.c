@@ -29,7 +29,9 @@ struct spl_image {
 };
 
 DECLARE_GLOBAL_DATA_PTR;
+#if spl_boot_spi_flash
 static struct spi_flash spl_spi_flash;
+#endif
 
 #if spl_boot_nand_flash || spl_boot_hsnand_flash
 static u8 spl_mc_tune_buf[CONFIG_SYS_NAND_PAGE_SIZE];
@@ -100,6 +102,7 @@ static int spl_parse_image(const image_header_t *hdr, struct spl_image *spl)
 	return 0;
 }
 
+#if spl_boot_spi_flash || spl_boot_nand_flash || spl_boot_hsnand_flash
 static int spl_check_data(const struct spl_image *spl, unsigned long addr)
 {
 	ulong dcrc = crc32(0, (unsigned char *)addr, spl->data_size);
@@ -111,7 +114,9 @@ static int spl_check_data(const struct spl_image *spl, unsigned long addr)
 
 	return 1;
 }
+#endif
 
+#if spl_boot_nor_flash || spl_boot_nand_flash || spl_boot_hsnand_flash
 static int spl_copy_image(struct spl_image *spl, unsigned long addr)
 {
 	spl_puts("SPL: copying U-Boot to RAM\n");
@@ -121,6 +126,7 @@ static int spl_copy_image(struct spl_image *spl, unsigned long addr)
 
 	return 0;
 }
+#endif
 
 #if defined(CONFIG_LTQ_SPL_COMP_LZO)
 static int spl_uncompress_lzo(struct spl_image *spl, unsigned long addr)
@@ -212,6 +218,7 @@ static int spl_uncompress(struct spl_image *spl, unsigned long addr)
 	return ret;
 }
 
+#if spl_boot_spi_flash
 static int spl_load_spi_flash(struct spl_image *spl)
 {
 	image_header_t hdr;
@@ -259,16 +266,16 @@ static int spl_load_spi_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
+#if spl_boot_nor_flash
 static int spl_load_nor_flash(struct spl_image *spl)
 {
 	image_header_t hdr;
 	int ret;
 	unsigned long addr = CONFIG_SPL_U_BOOT_OFFS;
 
-#if spl_boot_nor_flash
 	addr += CONFIG_SYS_FLASH_BASE;
-#endif
 
 	/*
 	 * Image format:
@@ -297,7 +304,9 @@ static int spl_load_nor_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
+#if spl_boot_nand_flash
 static int spl_load_nand_flash(struct spl_image *spl)
 {
 	const image_header_t *hdr;
@@ -339,7 +348,9 @@ static int spl_load_nand_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
+#if spl_boot_hsnand_flash
 static int spl_load_hsnand_flash(struct spl_image *spl)
 {
 	const image_header_t *hdr;
@@ -370,9 +381,7 @@ static int spl_load_hsnand_flash(struct spl_image *spl)
 	 * - U-Boot binary
 	 */
 	spl_puts("SPL: loading U-Boot to RAM\n");
-#if spl_boot_hsnand_flash
 	eb_size = CONFIG_SYS_NAND_BLOCK_SIZE;
-#endif
 	addr = image_cnt * eb_size;
 	hdr = (const image_header_t *)loadaddr;
 
@@ -416,20 +425,25 @@ static int spl_load_hsnand_flash(struct spl_image *spl)
 
 	return ret;
 }
+#endif
 
 static int spl_load(struct spl_image *spl)
 {
-	if (spl_boot_spi_flash)
-		return spl_load_spi_flash(spl);
+#if spl_boot_spi_flash
+	return spl_load_spi_flash(spl);
+#endif
 
-	if (spl_boot_nor_flash)
-		return spl_load_nor_flash(spl);
+#if spl_boot_nor_flash
+	return spl_load_nor_flash(spl);
+#endif
 
-	if (spl_boot_nand_flash)
-		return spl_load_nand_flash(spl);
+#if spl_boot_nand_flash
+	return spl_load_nand_flash(spl);
+#endif
 
-	if (spl_boot_hsnand_flash)
-		return spl_load_hsnand_flash(spl);
+#if spl_boot_hsnand_flash
+	return spl_load_hsnand_flash(spl);
+#endif
 
 	return 1;
 }
