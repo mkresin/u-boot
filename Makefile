@@ -767,6 +767,9 @@ cmd_pad_cat = $(cmd_objcopy) && $(append) || rm -f $@
 quiet_cmd_lzop = LZOP    $@
 cmd_lzop = cat $< | lzop -9 -f - > $@
 
+quiet_cmd_lzma = LZMA    $@
+cmd_lzma = lzma e -lc1 -lp2 -pb2 -so $< > $@
+
 all:		$(ALL-y)
 
 PHONY += dtbs
@@ -815,6 +818,9 @@ u-boot.bin: u-boot FORCE
 u-boot.bin.lzo: u-boot.bin
 	$(call if_changed,lzop)
 
+u-boot.bin.lzma: u-boot.bin
+	$(call if_changed,lzma)
+
 u-boot.ldr:	u-boot
 		$(CREATE_LDR_ENV)
 		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
@@ -843,6 +849,10 @@ MKIMAGEFLAGS_u-boot-lzo.img = -A $(ARCH) -T firmware -C lzo -O u-boot \
 	-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_UBOOT_START) \
 	-n "U-Boot $(UBOOTRELEASE) for $(BOARD) board"
 
+MKIMAGEFLAGS_u-boot-lzma.img = -A $(ARCH) -T firmware -C lzma -O u-boot \
+	-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_UBOOT_START) \
+	-n "U-Boot $(UBOOTRELEASE) for $(BOARD) board"
+
 MKIMAGEFLAGS_u-boot.kwb = -n $(srctree)/$(CONFIG_SYS_KWD_CONFIG:"%"=%) \
 	-T kwbimage -a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_TEXT_BASE)
 
@@ -853,6 +863,9 @@ u-boot.img u-boot.kwb u-boot.pbl: u-boot.bin FORCE
 	$(call if_changed,mkimage)
 
 u-boot-lzo.img: u-boot.bin.lzo FORCE
+	$(call if_changed,mkimage)
+
+u-boot-lzma.img: u-boot.bin.lzma FORCE
 	$(call if_changed,mkimage)
 
 MKIMAGEFLAGS_u-boot-dtb.img = $(MKIMAGEFLAGS_u-boot.img)
@@ -991,11 +1004,24 @@ LTQBOOTIMAGEFLAGS_u-boot.ltq.lzo.sfspl = -t sfspl -e $(CONFIG_SPL_TEXT_BASE) \
 u-boot.ltq.lzo.sfspl: u-boot-lzo.img spl/u-boot-spl.bin
 	$(call if_changed,ltqbootimage)
 
+LTQBOOTIMAGEFLAGS_u-boot.ltq.lzma.sfspl = -t sfspl -e $(CONFIG_SPL_TEXT_BASE) \
+	-x $(CONFIG_SPL_U_BOOT_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
+	-s spl/u-boot-spl.bin -u u-boot-lzma.img
+u-boot.ltq.lzma.sfspl: u-boot-lzma.img spl/u-boot-spl.bin
+	$(call if_changed,ltqbootimage)
+
 LTQBOOTIMAGEFLAGS_u-boot.ltq.lzo.nandspl = -t nandspl -e $(CONFIG_SPL_TEXT_BASE) \
 	-x $(CONFIG_SPL_U_BOOT_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
 	-p $(CONFIG_SYS_NAND_PAGE_SIZE) -X $(CONFIG_SPL_TPL_OFFS) \
 	-s spl/u-boot-spl.bin -T tpl/u-boot-tpl.bin -u u-boot-lzo.img
 u-boot.ltq.lzo.nandspl: u-boot-lzo.img spl/u-boot-spl.bin tpl/u-boot-tpl.bin
+	$(call if_changed,ltqbootimage)
+
+LTQBOOTIMAGEFLAGS_u-boot.ltq.lzma.nandspl = -t nandspl -e $(CONFIG_SPL_TEXT_BASE) \
+	-x $(CONFIG_SPL_U_BOOT_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
+	-p $(CONFIG_SYS_NAND_PAGE_SIZE) -X $(CONFIG_SPL_TPL_OFFS) \
+	-s spl/u-boot-spl.bin -T tpl/u-boot-tpl.bin -u u-boot-lzma.img
+u-boot.ltq.lzma.nandspl: u-boot-lzma.img spl/u-boot-spl.bin tpl/u-boot-tpl.bin
 	$(call if_changed,ltqbootimage)
 
 LTQBOOTIMAGEFLAGS_u-boot.ltq.lzo.nandhwspl = -t nandhwspl \
@@ -1007,10 +1033,25 @@ LTQBOOTIMAGEFLAGS_u-boot.ltq.lzo.nandhwspl = -t nandhwspl \
 u-boot.ltq.lzo.nandhwspl: u-boot-lzo.img spl/u-boot-spl.bin
 	$(call if_changed,ltqbootimage)
 
+LTQBOOTIMAGEFLAGS_u-boot.ltq.lzma.nandhwspl = -t nandhwspl \
+	-x $(CONFIG_SPL_U_BOOT_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
+	-p $(CONFIG_SYS_NAND_PAGE_SIZE) -E $(CONFIG_SYS_NAND_BLOCK_SIZE) \
+	-s spl/u-boot-spl.bin -u u-boot-lzma.img \
+	$(if $(CONFIG_LTQ_SPL_SWAP),-b) \
+	$(if $(CONFIG_LTQ_SPL_REDUND_IMAGES),-r $(CONFIG_LTQ_SPL_REDUND_IMAGES))
+u-boot.ltq.lzma.nandhwspl: u-boot-lzma.img spl/u-boot-spl.bin
+	$(call if_changed,ltqbootimage)
+
 LTQBOOTIMAGEFLAGS_u-boot.ltq.lzo.norspl = -t norspl -x $(CONFIG_SPL_U_BOOT_OFFS) \
 	-X $(CONFIG_SPL_TPL_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
 	-s spl/u-boot-spl.bin -T tpl/u-boot-tpl.bin -u u-boot-lzo.img
 u-boot.ltq.lzo.norspl: u-boot-lzo.img spl/u-boot-spl.bin tpl/u-boot-tpl.bin
+	$(call if_changed,ltqbootimage)
+
+LTQBOOTIMAGEFLAGS_u-boot.ltq.lzma.norspl = -t norspl -x $(CONFIG_SPL_U_BOOT_OFFS) \
+	-X $(CONFIG_SPL_TPL_OFFS) -U $(CONFIG_SPL_U_BOOT_SIZE) \
+	-s spl/u-boot-spl.bin -T tpl/u-boot-tpl.bin -u u-boot-lzma.img
+u-boot.ltq.lzma.norspl: u-boot-lzma.img spl/u-boot-spl.bin tpl/u-boot-tpl.bin
 	$(call if_changed,ltqbootimage)
 
 # Create a new ELF from a raw binary file.  This is useful for arm64

@@ -12,11 +12,14 @@ libs-y += $(CPUDIR)/lantiq-common/
 ifndef CONFIG_SPL_BUILD
 ifdef CONFIG_SYS_BOOT_SFSPL
 ALL-$(CONFIG_SPL_LZO_SUPPORT) += u-boot.ltq.lzo.sfspl
+ALL-$(CONFIG_SPL_LZMA_SUPPORT) += u-boot.ltq.lzma.sfspl
 endif
 ifdef CONFIG_SYS_BOOT_NORSPL
 ALL-$(CONFIG_SPL_LZO_SUPPORT) += u-boot.ltq.lzo.norspl
+ALL-$(CONFIG_SPL_LZMA_SUPPORT) += u-boot.ltq.lzma.norspl
 endif
 ifdef CONFIG_SYS_BOOT_NANDSPL
 ALL-$(CONFIG_SPL_LZO_SUPPORT) += u-boot.ltq.lzo.nandspl
+ALL-$(CONFIG_SPL_LZMA_SUPPORT) += u-boot.ltq.lzma.nandspl
 endif
 endif

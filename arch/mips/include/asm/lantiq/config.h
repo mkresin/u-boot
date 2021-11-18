@@ -122,13 +122,15 @@
 	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && "	\
 	"cp.b $loadaddr " __stringify(CONFIG_SYS_FLASH_BASE) " $filesize\0"
 
-#define CONFIG_ENV_LOAD_UBOOT_NOR						\
-	"load-uboot-nor=tftpboot u-boot.bin\0"				\
-	"load-uboot-norspl=tftpboot u-boot.ltq.lzo.norspl\0"
+#define CONFIG_ENV_LOAD_UBOOT_NOR							\
+	"load-uboot-nor=tftpboot u-boot.bin\0"					\
+	"load-uboot-norspl-lzo=tftpboot u-boot.ltq.lzo.norspl\0"	\
+	"load-uboot-norspl-lzma=tftpboot u-boot.ltq.lzma.norspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_NOR							\
-	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"	\
-	"update-uboot-norspl=run load-uboot-norspl write-uboot-nor\0"
+#define CONFIG_ENV_UPDATE_UBOOT_NOR									\
+	"update-uboot-nor=run load-uboot-nor write-uboot-nor\0"				\
+	"update-uboot-norspl-lzo=run load-uboot-norspl-lzo write-uboot-nor\0"		\
+	"update-uboot-norspl-lzma=run load-uboot-norspl-lzma write-uboot-nor\0"
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NOR
 #define CONFIG_ENV_LOAD_UBOOT_NOR
@@ -146,11 +148,13 @@
 	"run sf-probe && sf erase 0 +$filesize && "		\
 	"sf write $loadaddr 0 $filesize\0"
 
-#define CONFIG_ENV_LOAD_UBOOT_SF					\
-	"load-uboot-sf=tftpboot u-boot.ltq.lzo.sfspl\0"
+#define CONFIG_ENV_LOAD_UBOOT_SF						\
+	"load-uboot-sf-lzo=tftpboot u-boot.ltq.lzo.sfspl\0"	\
+	"load-uboot-sf-lzma=tftpboot u-boot.ltq.lzma.sfspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_SF					\
-	"update-uboot-sf=run load-uboot-sf write-uboot-sf\0"
+#define CONFIG_ENV_UPDATE_UBOOT_SF								\
+	"update-uboot-sf-lzo=run load-uboot-sf-lzo write-uboot-sf\0"	\
+	"update-uboot-sf-lzma=run load-uboot-sf-lzma write-uboot-sf\0"
 #else
 #define CONFIG_ENV_SF_PROBE
 #define CONFIG_ENV_WRITE_UBOOT_SF
@@ -165,16 +169,20 @@
 	"nand write $loadaddr 0 $filesize\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NAND					\
-	"load-uboot-nand=tftpboot u-boot.ltq.lzo.nandspl\0" \
+	"load-uboot-nand-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
+	"load-uboot-nand-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"	\
 
 #define CONFIG_ENV_LOAD_UBOOT_HSNAND					\
-	"load-uboot-hsnand=tftpboot u-boot.ltq.lzo.nandhwspl\0"
+	"load-uboot-hsnand-lzo=tftpboot u-boot.ltq.lzo.nandhwspl\0"	\
+	"load-uboot-hsnand-lzma=tftpboot u-boot.ltq.lzma.nandhwspl\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_NAND					\
-	"update-uboot-nand=run load-uboot-nand write-uboot-nand\0"
+#define CONFIG_ENV_UPDATE_UBOOT_NAND						\
+	"update-uboot-nand-lzo=run load-uboot-nand-lzo write-uboot-nand\0"	\
+	"update-uboot-nand-lzma=run load-uboot-nand-lzma write-uboot-nand\0"
 
-#define CONFIG_ENV_UPDATE_UBOOT_HSNAND					\
-	"update-uboot-hsnand=run load-uboot-hsnand write-uboot-nand\0"
+#define CONFIG_ENV_UPDATE_UBOOT_HSNAND							\
+	"update-uboot-hsnand-lzo=run load-uboot-hsnand-lzo write-uboot-nand\0"		\
+	"update-uboot-hsnand-lzma=run load-uboot-hsnand-lzma write-uboot-nand\0"	\
 #else
 #define CONFIG_ENV_WRITE_UBOOT_NAND
 #define CONFIG_ENV_LOAD_UBOOT_NAND
