@@ -104,8 +104,8 @@
 	"consoledev=ttyLTQ0\0"
 
 #define CONFIG_ENV_ADDCONSOLE					\
-	"addconsole=setenv bootargs $bootargs"			\
-	" console=$consoledev,$baudrate\0"
+	"addconsole=setenv bootargs ${bootargs}"			\
+	" console=${consoledev},${baudrate}\0"
 
 #if defined(CONFIG_NET_DEV)
 #define CONFIG_ENV_NETDEV					\
@@ -116,23 +116,23 @@
 #endif
 
 #define CONFIG_ENV_ADDIP					\
-	"addip=setenv bootargs $bootargs"			\
-	" ip=$ipaddr:$serverip::::$netdev:off\0"
+	"addip=setenv bootargs ${bootargs}"			\
+	" ip=${ipaddr}:${serverip}::::${netdev}:off\0"
 
 #define CONFIG_ENV_ADDETH					\
-	"addeth=setenv bootargs $bootargs"			\
-	" ethaddr=$ethaddr\0"
+	"addeth=setenv bootargs ${bootargs}"			\
+	" ethaddr=${ethaddr}\0"
 
 #define CONFIG_ENV_ADDMACHTYPE					\
-	"addmachtype=setenv bootargs $bootargs"			\
+	"addmachtype=setenv bootargs ${bootargs}"			\
 	" machtype=" CONFIG_MACH_TYPE "\0"
 
 #if defined(CONFIG_LTQ_SUPPORT_NOR_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NOR					\
 	"write-uboot-nor="						\
-	"protect off " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && " \
-	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && "	\
-	"cp.b $fileaddr " __stringify(CONFIG_SYS_FLASH_BASE) " $filesize\0"
+	"protect off " __stringify(CONFIG_SYS_FLASH_BASE) " +${filesize} && " \
+	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +${filesize} && "	\
+	"cp.b ${fileaddr} " __stringify(CONFIG_SYS_FLASH_BASE) " ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NOR					\
 	"load-uboot-nor=tftpboot u-boot.bin\0"				\
@@ -152,8 +152,8 @@
 
 #define CONFIG_ENV_WRITE_UBOOT_SF				\
 	"write-uboot-sf="					\
-	"run sf-probe && sf erase 0 +$filesize && "		\
-	"sf write $fileaddr 0 $filesize\0"
+	"run sf-probe && sf erase 0 +${filesize} && "		\
+	"sf write ${fileaddr} 0 ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_SF					\
 	"load-uboot-sfspl=tftpboot u-boot.ltq.sfspl\0"			\
@@ -168,8 +168,8 @@
 #if defined(CONFIG_LTQ_SUPPORT_NAND_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NAND				\
 	"write-uboot-nand="					\
-	"nand erase 0 $filesize && "				\
-	"nand write $fileaddr 0 $filesize\0"
+	"nand erase 0 ${filesize} && "				\
+	"nand write ${fileaddr} 0 ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NAND						\
 	"load-uboot-nandspl=tftpboot u-boot.ltq.nandspl\0"			\
