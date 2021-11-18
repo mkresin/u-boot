@@ -704,7 +704,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
 
 static void LzmaDec_InitRc(CLzmaDec *p, const Byte *data)
 {
-  p->code = ((UInt32)data[1] << 24) | ((UInt32)data[2] << 16) | ((UInt32)data[3] << 8) | ((UInt32)data[4]);
+  p->code = ((UInt32)readb(&data[1]) << 24) | ((UInt32)readb(&data[2]) << 16) | ((UInt32)readb(&data[3]) << 8) | ((UInt32)readb(&data[4]));
   p->range = 0xFFFFFFFF;
   p->needFlush = 0;
 }
