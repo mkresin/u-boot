@@ -27,6 +27,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CONFIG_SYS_MEMTEST_SCRATCH 0
 #endif
 
+#if !defined(CONFIG_CMD_MEMORY_MINIMAL)
 static int mod_mem(cmd_tbl_t *, int, int, int, char * const []);
 
 /* Display values from last command.
@@ -35,9 +36,11 @@ static int mod_mem(cmd_tbl_t *, int, int, int, char * const []);
 static uint	dp_last_addr, dp_last_size;
 static uint	dp_last_length = 0x40;
 static uint	mm_last_addr, mm_last_size;
+#endif
 
 static	ulong	base_address = 0;
 
+#if !defined(CONFIG_CMD_MEMORY_MINIMAL)
 /* Memory Display
  *
  * Syntax:
@@ -332,6 +335,7 @@ static int do_mem_cmp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	printf("Total of %ld %s(s) were the same\n", ngood, type);
 	return rcode;
 }
+#endif
 
 static int do_mem_cp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -448,6 +452,7 @@ static int do_mem_cp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return 0;
 }
 
+#if !defined(CONFIG_CMD_MEMORY_MINIMAL)
 static int do_mem_base(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char * const argv[])
 {
@@ -1127,8 +1132,10 @@ static int do_mem_crc(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 #endif
+#endif
 
 /**************************************************/
+#if !defined(CONFIG_CMD_MEMORY_MINIMAL)
 U_BOOT_CMD(
 	md,	3,	1,	do_mem_md,
 	"memory display",
@@ -1154,6 +1161,7 @@ U_BOOT_CMD(
 	"memory write (fill)",
 	"[.b, .w, .l] address value [count]"
 );
+#endif
 
 U_BOOT_CMD(
 	cp,	4,	1,	do_mem_cp,
@@ -1161,6 +1169,7 @@ U_BOOT_CMD(
 	"[.b, .w, .l] source target count"
 );
 
+#if !defined(CONFIG_CMD_MEMORY_MINIMAL)
 U_BOOT_CMD(
 	cmp,	4,	1,	do_mem_cmp,
 	"memory compare",
@@ -1255,4 +1264,5 @@ U_BOOT_CMD(
 	"display memory information",
 	""
 );
+#endif
 #endif
