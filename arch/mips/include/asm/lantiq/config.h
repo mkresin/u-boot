@@ -119,9 +119,9 @@
 #if defined(CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NOR					\
 	"write-uboot-nor="						\
-	"protect off " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && " \
-	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +$filesize && "	\
-	"cp.b $loadaddr " __stringify(CONFIG_SYS_FLASH_BASE) " $filesize\0"
+	"protect off " __stringify(CONFIG_SYS_FLASH_BASE) " +${filesize} && " \
+	"erase " __stringify(CONFIG_SYS_FLASH_BASE) " +${filesize} && "	\
+	"cp.b ${loadaddr} " __stringify(CONFIG_SYS_FLASH_BASE) " ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NOR							\
 	"load-uboot-nor=tftpboot u-boot.bin\0"					\
@@ -146,8 +146,8 @@
 
 #define CONFIG_ENV_WRITE_UBOOT_SF				\
 	"write-uboot-sf="					\
-	"run sf-probe && sf erase 0 +$filesize && "		\
-	"sf write $loadaddr 0 $filesize\0"
+	"run sf-probe && sf erase 0 +${filesize} && "		\
+	"sf write ${loadaddr} 0 ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_SF						\
 	"load-uboot-sf-lzo=tftpboot u-boot.ltq.lzo.sfspl\0"	\
@@ -166,8 +166,8 @@
 #if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH)
 #define CONFIG_ENV_WRITE_UBOOT_NAND				\
 	"write-uboot-nand="					\
-	"nand erase 0 $filesize && "				\
-	"nand write $loadaddr 0 $filesize\0"
+	"nand erase 0 ${filesize} && "				\
+	"nand write ${loadaddr} 0 ${filesize}\0"
 
 #define CONFIG_ENV_LOAD_UBOOT_NAND					\
 	"load-uboot-nand-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
