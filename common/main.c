@@ -1341,6 +1341,8 @@ static int builtin_run_command(const char *cmd, int flag)
 	int argc, inquotes;
 	int repeatable = 1;
 	int rc = 0;
+	bool checkrc = false;
+	char nsepchar;
 
 	debug_parser("[RUN_COMMAND] cmd[%p]=\"", cmd);
 	if (DEBUG_PARSER) {
@@ -1367,6 +1369,11 @@ static int builtin_run_command(const char *cmd, int flag)
 
 	debug_parser("[PROCESS_SEPARATORS] %s\n", cmd);
 	while (*str) {
+		if (rc < 0 && checkrc)
+			return -1;
+
+		checkrc = false;
+		nsepchar = 1;
 
 		/*
 		 * Find separator, or string end
@@ -1376,6 +1383,15 @@ static int builtin_run_command(const char *cmd, int flag)
 			if ((*sep=='\'') &&
 			    (*(sep-1) != '\\'))
 				inquotes=!inquotes;
+
+			if (!inquotes &&
+			    (*sep == '&') && (*(sep+1) == '&') &&	/* seperator */
+			    ( sep != str) &&				/* past string start	*/
+			    (*(sep-1) != '\\'))	{			/* and NOT escaped	*/
+				nsepchar = 2;
+				checkrc = true;
+				break;
+			}
 
 			if (!inquotes &&
 			    (*sep == ';') &&	/* separator		*/
@@ -1389,7 +1405,7 @@ static int builtin_run_command(const char *cmd, int flag)
 		 */
 		token = str;
 		if (*sep) {
-			str = sep + 1;	/* start of command for next pass */
+			str = sep + nsepchar;	/* start of command for next pass */
 			*sep = '\0';
 		}
 		else
