@@ -108,8 +108,6 @@
 
 #define CONFIG_ENV_SIZE			(8 * 1024)
 
-#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
-
 /* Console */
 #define CONFIG_LTQ_ADVANCED_CONSOLE
 #define CONFIG_BAUDRATE			115200
@@ -120,16 +118,7 @@
 #define CONFIG_CMD_MISC
 #define CONFIG_CMD_ECHO
 
-/* Boot */
-#define CONFIG_MIPS_BOOT_FDT
-#define CONFIG_FIT
-#define CONFIG_OF_LIBFDT
-#define CONFIG_LZMA
-#define CONFIG_LZO
-
 /* Environment */
-#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
-
 #define CONFIG_ENV_MTDPARTS			\
 	"mtdids="MTDIDS_DEFAULT"\0"		\
 	"mtdparts="MTDPARTS_DEFAULT"\0"
@@ -137,6 +126,9 @@
 /* Pull in default board configs for Lantiq XWAY VRX200 */
 #include <asm/lantiq/config.h>
 #include <asm/arch/config.h>
+
+/* Pull in default OpenWrt configs for Lantiq SoC */
+#include "openwrt-lantiq-common.h"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_ENV_LANTIQ_DEFAULTS	\
