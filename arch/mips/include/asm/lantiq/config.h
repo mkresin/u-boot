@@ -108,10 +108,7 @@
 #define CONFIG_DISPLAY_BOARDINFO
 
 /* Boot interface */
-#define CONFIG_FIT
-#define CONFIG_OF_LIBFDT
 #define CONFIG_MIPS_BOOT_CMDLINE_LEGACY
-#define CONFIG_MIPS_BOOT_FDT
 
 /* Default environment */
 #if defined(CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH)
