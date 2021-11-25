@@ -19,6 +19,9 @@
 /* Auto boot */
 #define CONFIG_BOOTDELAY	2
 
+/* Maximum boot image size */
+#define CONFIG_SYS_BOOTM_LEN	0x1000000 /* 16 MB */
+
 /* Ethernet */
 #if defined(CONFIG_LTQ_SUPPORT_ETHERNET)
 #define CONFIG_ETHADDR		00:01:02:03:04:05
