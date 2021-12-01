@@ -48,6 +48,12 @@
 #define CONFIG_RBTREE
 #define CONFIG_CMD_UBI
 
+/* 2nd stage bootloader */
+#if defined(CONFIG_SYS_BOOT_2NDSTAGE)
+#define CONFIG_SYS_TEXT_BASE		0x80002000
+#define CONFIG_SKIP_LOWLEVEL_INIT
+#endif
+
 /* Environment */
 #if defined(CONFIG_SYS_BOOT_NANDSPL)
 #define CONFIG_ENV_IS_IN_NAND
