@@ -20,6 +20,20 @@
 
 #define CONFIG_LTQ_SUPPORT_NOR_FLASH		/* Have a parallel NOR flash */
 
+#if defined(CONFIG_SYS_BOOT_NORSPL)
+#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
+#define CONFIG_LTQ_SPL_CONSOLE
+#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_LTQ_SPL_MC_TUNE
+#define CONFIG_MISC_INIT_R
+
+#define CONFIG_SPL_TPL_OFFS		0x100
+#define CONFIG_SPL_TPL_SIZE		0x4000
+#define CONFIG_SPL_MC_TUNE_OFFS		0x4100
+#define CONFIG_SPL_U_BOOT_OFFS		0x4300
+#define CONFIG_SPL_U_BOOT_SIZE		0x5bd00
+#endif
+
 /* 2nd stage bootloader */
 #if defined(CONFIG_SYS_BOOT_BRN)
 #define CONFIG_SYS_TEXT_BASE		0x80002000
@@ -27,7 +41,7 @@
 #endif
 
 /* Environment */
-#if defined(CONFIG_SYS_BOOT_NOR)
+#if defined(CONFIG_SYS_BOOT_NOR) || defined(CONFIG_SYS_BOOT_NORSPL)
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_ENV_OFFSET		(384 * 1024)
