@@ -51,6 +51,7 @@ int checkboard(void)
 	return 0;
 }
 
+#if !defined(CONFIG_SPL_BUILD)
 void show_boot_progress(int arg)
 {
 	if (!do_gpio_init)
@@ -66,6 +67,7 @@ void show_boot_progress(int arg)
 		gpio_set_value(GPIO_POWER_RED, 0);
 	}
 }
+#endif
 
 static const struct ltq_eth_port_config eth_port_config[] = {
 	/* MAC0: Realtek rtl8306 switch */
