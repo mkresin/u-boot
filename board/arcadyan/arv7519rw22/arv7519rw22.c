@@ -9,6 +9,7 @@
 #include <asm/lantiq/eth.h>
 #include <asm/lantiq/chipid.h>
 #include <asm/lantiq/cpu.h>
+#include <asm/lantiq/mem.h>
 #include <asm/arch/gphy.h>
 
 #if defined(CONFIG_SYS_BOOT_RAM)
@@ -59,6 +60,7 @@ int checkboard(void)
 	return 0;
 }
 
+#if !defined(CONFIG_SPL_BUILD)
 void show_boot_progress(int arg)
 {
 	if (!do_gpio_init)
@@ -73,6 +75,12 @@ void show_boot_progress(int arg)
 		gpio_set_value(GPIO_POWER_GREEN, 1);
 		gpio_set_value(GPIO_ALARM_BLUE, 0);
 	}
+}
+#endif
+
+int misc_init_r(void)
+{
+	return mc_tune_store_flash();
 }
 
 static const struct ltq_eth_port_config eth_port_config[] = {
