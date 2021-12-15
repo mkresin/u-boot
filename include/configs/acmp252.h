@@ -18,12 +18,22 @@
 
 #define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
 
+#if defined(CONFIG_SYS_BOOT_NORSPL)
+#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NOR flash SPL */
+#define CONFIG_LTQ_SPL_CONSOLE
+#define CONFIG_LTQ_SPL_COMP_LZO
+#define CONFIG_SPL_TPL_OFFS		0x100
+#define CONFIG_SPL_TPL_SIZE		0x3100
+#define CONFIG_SPL_U_BOOT_OFFS		0x3200
+#define CONFIG_SPL_U_BOOT_SIZE		0x1ce00
+#endif
+
 /* Switch devices */
 #define CONFIG_SWITCH_MULTI
 #define CONFIG_SWITCH_ADM6996I
 
 /* Environment */
-#if defined(CONFIG_SYS_BOOT_NOR)
+#if defined(CONFIG_SYS_BOOT_NOR) || defined(CONFIG_SYS_BOOT_NORSPL)
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_ENV_OFFSET		(128 * 1024)
