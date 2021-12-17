@@ -26,8 +26,10 @@
 #define CONFIG_SYS_NAND_OOBSIZE		64
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(128 * 1024)
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
-/* The whole NAND flash is used in OpenWrt and no space left for the BBT */
-/* #define CONFIG_SYS_NAND_USE_FLASH_BBT */
+/*
+ * No need for bad block table, ubi covers the whole nand and takes care of bad
+ * blocks
+ */
 
 #define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH	/* Build NAND flash SPL */
 #define CONFIG_LTQ_SPL_COMP_LZO
@@ -40,6 +42,17 @@
 #define CONFIG_SPL_MC_TUNE_OFFS		0x5800
 #define CONFIG_SPL_U_BOOT_OFFS		0x6000
 #define CONFIG_SPL_U_BOOT_SIZE		0x4a000
+
+/* MTD devices */
+#define CONFIG_MTD_PARTITIONS
+#define CONFIG_MTD_DEVICE
+#define CONFIG_CMD_MTDPARTS
+#define MTDIDS_DEFAULT			"nand0=nand-xway"
+#define MTDPARTS_DEFAULT		"mtdparts=nand-xway:-(ubi)"
+
+/* UBI */
+#define CONFIG_RBTREE
+#define CONFIG_CMD_UBI
 
 /* Environment */
 #if defined(CONFIG_SYS_BOOT_NORSPL)
@@ -59,8 +72,12 @@
 #define CONFIG_CONSOLE_ASC		1
 
 /* Boot */
+#define CONFIG_ENV_MTDPARTS			\
+	"mtdids="MTDIDS_DEFAULT"\0"		\
+	"mtdparts="MTDPARTS_DEFAULT"\0"
+
 #define CONFIG_BOOTCOMMAND \
-	"nand read ${loadaddr} 0x0 0x200000; bootm ${loadaddr}"
+	"ubi part ubi; ubi read ${loadaddr} kernel; bootm"
 
 /* Pull in default board configs for Lantiq XWAY VRX200 */
 #include <asm/lantiq/config.h>
@@ -70,6 +87,7 @@
 #include "openwrt-lantiq-common.h"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
-	CONFIG_ENV_LANTIQ_DEFAULTS
+	CONFIG_ENV_LANTIQ_DEFAULTS \
+	CONFIG_ENV_MTDPARTS
 
 #endif /* __CONFIG_H */
