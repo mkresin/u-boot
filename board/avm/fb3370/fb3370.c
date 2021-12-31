@@ -125,8 +125,8 @@ int board_eth_init(bd_t * bis)
 	 * EVA Bootloader applies incompatible settings. Reset the subsystems
 	 * to have them in default state.
 	 */
-	ltq_reset_once(LTQ_RESET_ETH, 200);
-	ltq_reset_once(LTQ_RESET_DMA, 200);
+	ltq_reset_once(LTQ_RESET_ETH, 1000);
+	ltq_reset_once(LTQ_RESET_DMA, 1000);
 
 	__udelay(50000);
 
