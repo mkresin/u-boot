@@ -106,10 +106,15 @@ static struct ltq_ebu_regs *ltq_ebu_regs =
 
 void ltq_ebu_init(void)
 {
-	if (ebu_region0_nor || ebu_region0_nand)
+	if (ebu_region0_nor)
 		ltq_writel(&ltq_ebu_regs->addr_sel_0, LTQ_EBU_REGION0_BASE |
 			EBU_ADDRSEL_MASK(3) | EBU_ADDRSEL_REGEN);
-	else
+
+	if (ebu_region0_nand)
+		ltq_writel(&ltq_ebu_regs->addr_sel_0, LTQ_EBU_REGION1_BASE |
+			EBU_ADDRSEL_MASK(3) | EBU_ADDRSEL_REGEN);
+
+	if (!ebu_region0_nor && !ebu_region0_nand)
 		ltq_clrbits(&ltq_ebu_regs->addr_sel_0, EBU_ADDRSEL_REGEN);
 
 	if (ebu_region1_nor || ebu_region1_nand)
