@@ -160,9 +160,19 @@
 #define CONFIG_SYS_TEXT_BASE		0xB0000000
 #endif
 
-#if defined(CONFIG_SYS_BOOT_SFSPL) || defined(CONFIG_SYS_BOOT_NANDSPL)
+#if defined(CONFIG_SYS_BOOT_SFSPL)
 #define CONFIG_SYS_TEXT_BASE		0x80100000
 #define CONFIG_SPL_TEXT_BASE		0xBE1A0000
+#endif
+
+#if defined(CONFIG_SYS_BOOT_NANDSPL)
+#define CONFIG_SYS_TEXT_BASE            0x80100000
+#if defined(CONFIG_TPL_BUILD)
+#define CONFIG_SPL_TEXT_BASE            0xBE1A0800
+#else
+#define CONFIG_SPL_TEXT_BASE            0xBE1A0000
+#endif
+#define CONFIG_TPL_TEXT_BASE            0xBE1A0800
 #endif
 
 #if defined(CONFIG_SYS_BOOT_NORSPL)

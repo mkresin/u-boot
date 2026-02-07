@@ -75,11 +75,20 @@
 #endif
 
 
+#if defined(CONFIG_SYS_BOOT_NANDSPL) && defined(CONFIG_TPL) && !defined(CONFIG_TPL_BUILD)
+#define TPL_LOADER      1
+#define SPL_ENTRY       tpl_load_image
+#else
+#define SPL_ENTRY       spl_lantiq_init
+#endif
+
 	.set noreorder
 
 	.globl _start
 	.text
 _start:
+
+#if defined(TPL_LOADER)
 	/* Entry point */
 	b	main
 	 nop
@@ -95,7 +104,8 @@ _start:
 
 	.align	4
 main:
-
+#endif
+#ifndef TPL_LOADER
 	/* Init Timer */
 	mtc0	zero, CP0_COUNT
 	mtc0	zero, CP0_COMPARE
@@ -138,11 +148,11 @@ main:
 	addi	t1, 4
 	bltl	t1, t2, 1b
 	 sw	zero, 0(t1)
-
+#endif
 	/* Setup stack pointer and force alignment on a 16 byte boundary */
 	li	t0, (CONFIG_SPL_STACK_BASE & ~0xF)
 	la	sp, 0(t0)
 
-	la	t9, spl_lantiq_init
+	la	t9, SPL_ENTRY
 	jr	t9
 	 nop

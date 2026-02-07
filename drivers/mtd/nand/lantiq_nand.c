@@ -124,3 +124,98 @@ __weak int board_nand_init(struct nand_chip *chip)
 {
 	return ltq_nand_init(chip);
 }
+
+#if defined(CONFIG_SYS_BOOT_NANDSPL) && defined(CONFIG_SPL_BUILD)
+static noinline void spl_nand_write(unsigned int cmd, unsigned int addr)
+{
+	unsigned long base_addr = CONFIG_SYS_NAND_BASE + NAND_CMD_CS;
+	void __iomem *io_addr = (void __iomem *)(base_addr + addr);
+	ltq_writeb(io_addr, cmd);
+	ltq_nand_wait_ready();
+}
+
+static noinline void spl_nand_command(int block, int page, unsigned int cmd)
+{
+	int page_addr = page + block * CONFIG_SYS_NAND_PAGE_COUNT;
+
+	/* command latch cycle */
+	spl_nand_write(cmd, NAND_CMD_CLE);
+
+	/* column address */
+	spl_nand_write(0, NAND_CMD_ALE);
+#if (CONFIG_SYS_NAND_PAGE_SIZE > 512)
+	spl_nand_write(0, NAND_CMD_ALE);
+#endif
+
+	/* row address */
+	spl_nand_write(page_addr & 0xff, NAND_CMD_ALE);
+	spl_nand_write((page_addr >> 8) & 0xff, NAND_CMD_ALE);
+
+#if (CONFIG_SYS_NAND_PAGE_SIZE <= 512) && defined(CONFIG_SYS_NAND_4_ADDR_CYCLE)
+	/* One more address cycle for devices > 32MiB */
+	spl_nand_write((page_addr >> 16) & 0x0f, NAND_CMD_ALE);
+#endif
+#if (CONFIG_SYS_NAND_PAGE_SIZE > 512) && defined(CONFIG_SYS_NAND_5_ADDR_CYCLE)
+	/* One more address cycle for devices > 128MiB */
+	spl_nand_write((page_addr >> 16) & 0x0f, NAND_CMD_ALE);
+#endif
+
+#if (CONFIG_SYS_NAND_PAGE_SIZE > 512)
+	spl_nand_write(NAND_CMD_READSTART, NAND_CMD_CLE);
+#endif
+
+	while ((ltq_readl(&ltq_nand_regs->wait) & NAND_WAIT_RDBY) != NAND_WAIT_RDBY)
+		;
+}
+
+static noinline void spl_nand_read_buf(u8 *buf, unsigned int len)
+{
+	void __iomem *io_addr = (void __iomem *)(CONFIG_SYS_NAND_BASE + NAND_CMD_CS);
+	unsigned int i;
+
+	for (i = 0; i < len; i++)
+		buf[i] = ltq_readb(io_addr);
+}
+
+static noinline int spl_nand_read_page(int block, int page, void *dst)
+{
+	u8 *p = dst;
+
+	spl_nand_command(block, page, NAND_CMD_READ0);
+	spl_nand_read_buf(p, CONFIG_SYS_NAND_PAGE_SIZE);
+
+	return 0;
+}
+
+int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
+{
+	unsigned int block = offs / CONFIG_SYS_NAND_BLOCK_SIZE;
+	unsigned int lastblock = (offs + size - 1) / CONFIG_SYS_NAND_BLOCK_SIZE;
+	unsigned int page = (offs % CONFIG_SYS_NAND_BLOCK_SIZE) /
+					CONFIG_SYS_NAND_PAGE_SIZE;
+	unsigned int cnt = 0;
+
+	while (block <= lastblock) {
+		while (page < CONFIG_SYS_NAND_PAGE_COUNT) {
+			spl_nand_read_page(block, page, dst);
+			dst += CONFIG_SYS_NAND_PAGE_SIZE;
+			page++;
+
+			cnt += CONFIG_SYS_NAND_PAGE_SIZE;
+			if (cnt >= size)
+				return 0;
+		}
+		page = 0;
+		block++;
+	}
+
+	return 0;
+}
+
+void nand_init(void)
+{
+	ltq_writel(&ltq_nand_regs->con, NAND_CON_OUT_CS1 | NAND_CON_IN_CS1 |
+		NAND_CON_PRE_P | NAND_CON_WP_P | NAND_CON_SE_P |
+		NAND_CON_CS_P | NAND_CON_CSMUX);
+}
+#endif

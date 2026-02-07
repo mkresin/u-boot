@@ -46,9 +46,9 @@
  */
 #if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && defined(CONFIG_SYS_BOOT_NANDSPL)
 #define CONFIG_SPL
+#define CONFIG_TPL
 #define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SPL_NAND_DRIVERS
-#define CONFIG_SPL_NAND_SIMPLE
 #define CONFIG_SPL_NAND_ECC
 
 /* use software ECC until driver supports HW ECC */

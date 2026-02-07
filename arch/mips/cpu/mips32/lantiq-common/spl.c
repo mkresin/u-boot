@@ -468,3 +468,17 @@ hang:
 	for (;;)
 		;
 }
+
+#if defined(CONFIG_SYS_BOOT_NANDSPL) && defined(CONFIG_TPL)
+void __noreturn tpl_load_image(void)
+{
+        void (*tpl)(void) __noreturn;
+
+        nand_init();
+        nand_spl_load_image(CONFIG_SPL_TPL_OFFS, CONFIG_SPL_TPL_SIZE,
+                (void *)CONFIG_TPL_TEXT_BASE);
+
+        tpl = (void *)CONFIG_TPL_TEXT_BASE;
+        tpl();
+}
+#endif
