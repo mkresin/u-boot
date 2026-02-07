@@ -5,8 +5,8 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
-#include <sha256.h>
-#include <sha1.h>
+#include <u-boot/sha256.h>
+#include <u-boot/sha1.h>
 #include <asm/errno.h>
 #include "ace_sha.h"
 

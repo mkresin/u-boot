@@ -24,7 +24,7 @@
 #include <mtd/mtd-user.h>
 #endif
 
-#include <sha1.h>
+#include <u-boot/sha1.h>
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <image.h>
